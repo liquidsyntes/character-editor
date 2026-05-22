@@ -17,7 +17,7 @@ export default async function PreviewPage({
   let data: CharacterData = {};
   try { data = JSON.parse(character.data); } catch {}
 
-  const charName = character.name || data.name || 'Безымянный персонаж';
+  const charName = character.name || [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Безымянный персонаж';
 
   return (
     <>

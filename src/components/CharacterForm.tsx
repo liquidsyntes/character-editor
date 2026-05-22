@@ -86,7 +86,7 @@ export default function CharacterForm({
           </Link>
           <div className="toolbar-dot"></div>
           <span className="toolbar-title">
-            {data.name || 'Новый персонаж'}
+            {[data.firstName, data.lastName].filter(Boolean).join(' ') || 'Новый персонаж'}
           </span>
         </div>
         <div className="toolbar-right">
@@ -155,41 +155,44 @@ export default function CharacterForm({
               <div className="section-body">
                 <div className="section-body-inner">
                   {rows.map((row, rowIdx) => {
+                    const renderField = (field: typeof section.fields[number]) => (
+                      <div key={field.id} className="field">
+                        <label className="field-label" htmlFor={field.id}>{field.label}</label>
+                        {field.type === 'select' ? (
+                          <select
+                            className="field-select"
+                            id={field.id}
+                            value={data[field.id] || ''}
+                            onChange={e => handleChange(field.id, e.target.value)}
+                          >
+                            <option value="" disabled>Выберите…</option>
+                            {field.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            className="field-input"
+                            id={field.id}
+                            type="text"
+                            placeholder={field.placeholder}
+                            value={data[field.id] || ''}
+                            onChange={e => handleChange(field.id, e.target.value)}
+                            autoComplete="off"
+                          />
+                        )}
+                      </div>
+                    );
+
                     if (row.row > 0 && row.fields.length > 1) {
                       const cls = row.fields.length === 3 ? 'field-row field-row-3' : 'field-row';
                       return (
                         <div key={rowIdx} className={cls}>
-                          {row.fields.map(field => (
-                            <div key={field.id} className="field">
-                              <label className="field-label" htmlFor={field.id}>{field.label}</label>
-                              <input
-                                className="field-input"
-                                id={field.id}
-                                type="text"
-                                placeholder={field.placeholder}
-                                value={data[field.id] || ''}
-                                onChange={e => handleChange(field.id, e.target.value)}
-                                autoComplete="off"
-                              />
-                            </div>
-                          ))}
+                          {row.fields.map(renderField)}
                         </div>
                       );
                     }
-                    return row.fields.map(field => (
-                      <div key={field.id} className="field">
-                        <label className="field-label" htmlFor={field.id}>{field.label}</label>
-                        <input
-                          className="field-input"
-                          id={field.id}
-                          type="text"
-                          placeholder={field.placeholder}
-                          value={data[field.id] || ''}
-                          onChange={e => handleChange(field.id, e.target.value)}
-                          autoComplete="off"
-                        />
-                      </div>
-                    ));
+                    return row.fields.map(renderField);
                   })}
                 </div>
               </div>
@@ -201,7 +204,7 @@ export default function CharacterForm({
       {showExport && (
         <ExportModal
           data={data}
-          name={data.name}
+          name={[data.firstName, data.lastName].filter(Boolean).join(' ')}
           onClose={() => setShowExport(false)}
         />
       )}

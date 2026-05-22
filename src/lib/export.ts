@@ -1,26 +1,25 @@
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
 
+function deriveName(data: CharacterData, name?: string): string {
+  return name || [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Безымянный персонаж';
+}
+
 export function exportToMarkdown(data: CharacterData, name?: string): string {
   const lines: string[] = [];
 
-  const charName = name || data.name || 'Безымянный персонаж';
+  const charName = deriveName(data, name);
   lines.push(`# ${charName}`);
   lines.push('');
 
   for (const section of CHARACTER_SCHEMA) {
-    const filledFields = section.fields.filter(
-      f => data[f.id] && data[f.id].trim() !== ''
-    );
-
-    if (filledFields.length === 0) continue;
-
     lines.push(`## ${section.icon} ${section.label}`);
     lines.push('');
 
-    for (const field of filledFields) {
+    for (const field of section.fields) {
+      const value = data[field.id]?.trim();
       lines.push(`**${field.label}**`);
-      lines.push(data[field.id]);
+      lines.push(value ? data[field.id] : '*[не заполнено]*');
       lines.push('');
     }
   }
@@ -44,7 +43,7 @@ export function exportToJSON(data: CharacterData, name?: string): string {
   }
 
   return JSON.stringify(
-    { name: name || data.name || 'Безымянный персонаж', sections: structured },
+    { name: deriveName(data, name), sections: structured },
     null,
     2
   );
@@ -53,7 +52,7 @@ export function exportToJSON(data: CharacterData, name?: string): string {
 export function exportToPlainText(data: CharacterData, name?: string): string {
   const lines: string[] = [];
 
-  const charName = name || data.name || 'Безымянный персонаж';
+  const charName = deriveName(data, name);
   lines.push(charName.toUpperCase());
   lines.push('═'.repeat(charName.length + 4));
   lines.push('');

@@ -332,6 +332,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-dim); opacity: 0.5; font-style: italic;
 }
 .field-textarea { resize: vertical; min-height: 40px; }
+.field-select { cursor: pointer; appearance: none; -webkit-appearance: none; }
+.field-select option { background: var(--bg-elevated); color: var(--text-primary); }
 
 /* ── Modal ─────────────────────────────── */
 .modal-overlay {

@@ -13,7 +13,9 @@ export async function createCharacter() {
 }
 
 export async function updateCharacter(id: string, formData: CharacterData) {
-  const name = formData.name || '';
+  const firstName = formData.firstName || '';
+  const lastName = formData.lastName || '';
+  const name = [firstName, lastName].filter(Boolean).join(' ');
   const summary = formData.oneLiner || '';
 
   await prisma.character.update({
