@@ -18,6 +18,7 @@ interface CharacterItem {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
+  projectId: string | null;
 }
 
 function formatDate(d: string) {
@@ -28,8 +29,14 @@ function formatDate(d: string) {
 
 export default function DashboardClient({
   characters: initial,
+  projectId,
+  projectName,
+  projectEmoji,
 }: {
   characters: CharacterItem[];
+  projectId?: string | null;
+  projectName?: string;
+  projectEmoji?: string;
 }) {
   const [characters, setCharacters] = useState(initial);
   const [search, setSearch] = useState('');
@@ -70,13 +77,26 @@ export default function DashboardClient({
     await duplicateCharacter(id);
   };
 
+  const isProjectContext = projectId !== undefined;
+
   return (
     <>
       <header className="toolbar">
         <div className="toolbar-left">
+          {isProjectContext && (
+            <Link href="/" className="btn btn-back btn-ghost btn-sm">
+              <span className="arrow">←</span> Проекты
+            </Link>
+          )}
           <div className="toolbar-dot"></div>
-          <span className="toolbar-title">Character Card</span>
-          <span className="toolbar-sub">Редактор</span>
+          <span className="toolbar-title">
+            {isProjectContext ? (
+              <>{projectEmoji} {projectName}</>
+            ) : (
+              <>Character Card</>
+            )}
+          </span>
+          {!isProjectContext && <span className="toolbar-sub">Редактор</span>}
         </div>
         <div className="toolbar-right">
           <span className="toolbar-badge">{characters.filter(c => !c.isArchived).length} персонажей</span>
@@ -104,7 +124,7 @@ export default function DashboardClient({
             </div>
             <form action={async () => {
               const { createCharacter } = await import('@/lib/actions');
-              await createCharacter();
+              await createCharacter(projectId);
             }}>
               <button type="submit" className="btn btn-accent">＋ Новый персонаж</button>
             </form>
@@ -182,7 +202,7 @@ export default function DashboardClient({
         )}
       </div>
 
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(!showTweaks)} />
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
     </>
   );
 }

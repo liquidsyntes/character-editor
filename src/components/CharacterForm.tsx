@@ -7,20 +7,30 @@ import { updateCharacter } from '@/lib/actions';
 import { CharacterData } from '@/types/character';
 import ExportModal from './ExportModal';
 import TweaksPanel from './TweaksPanel';
+import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
 import Link from 'next/link';
 
 export default function CharacterForm({
   characterId,
   initialData,
+  siblings = [],
+  projectId,
+  projectName,
 }: {
   characterId: string;
   initialData: CharacterData;
+  siblings?: SiblingCharacter[];
+  projectId?: string;
+  projectName?: string;
 }) {
+  const backHref = projectId ? `/project/${projectId}` : '/project/unassigned';
+  const backLabel = projectName || 'Без проекта';
   const [data, setData] = useState<CharacterData>(initialData);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['basic']));
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showExport, setShowExport] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
+  const [showCharList, setShowCharList] = useState(false);
   const [isPending, startTransition] = useTransition();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
@@ -81,8 +91,15 @@ export default function CharacterForm({
     <>
       <header className="toolbar">
         <div className="toolbar-left">
-          <Link href="/" className="btn btn-back btn-ghost btn-sm">
-            <span className="arrow">←</span> Персонажи
+          {siblings.length > 0 && (
+            <button
+              className={`btn btn-icon btn-sm ${showCharList ? 'active' : ''}`}
+              onClick={() => setShowCharList(!showCharList)}
+              title="Персонажи"
+            >📋</button>
+          )}
+          <Link href={backHref} className="btn btn-back btn-ghost btn-sm">
+            <span className="arrow">←</span> {backLabel}
           </Link>
           <div className="toolbar-dot"></div>
           <span className="toolbar-title">
@@ -209,7 +226,15 @@ export default function CharacterForm({
         />
       )}
 
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(!showTweaks)} />
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+
+      <CharacterListPanel
+        isOpen={showCharList}
+        onClose={() => setShowCharList(false)}
+        characters={siblings}
+        currentId={characterId}
+        backHref={backHref}
+      />
     </>
   );
 }

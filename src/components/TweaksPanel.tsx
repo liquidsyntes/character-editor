@@ -50,7 +50,10 @@ export default function TweaksPanel({
 
   return (
     <div className={`tweaks-overlay ${isOpen ? 'open' : ''}`}>
-      <div className="tweaks-title">Настройки</div>
+      <div className="tweaks-header">
+        <div className="tweaks-title">Настройки</div>
+        <button className="panel-close-btn" onClick={onClose} title="Закрыть (Esc)">✕</button>
+      </div>
       <div className="tweak-group">
         <div className="tweak-label">Тема</div>
         <div className="tweak-options">

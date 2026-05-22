@@ -1,18 +1,17 @@
-import { prisma } from '@/lib/prisma';
-import DashboardClient from '@/components/DashboardClient';
+import { listProjects, getUnassignedCharacterCount } from '@/lib/actions';
+import ProjectDashboard from '@/components/ProjectDashboard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const characters = await prisma.character.findMany({
-    orderBy: { updatedAt: 'desc' },
-  });
+  const projects = await listProjects();
+  const unassignedCount = await getUnassignedCharacterCount();
 
-  const serialized = characters.map(c => ({
-    ...c,
-    createdAt: c.createdAt.toISOString(),
-    updatedAt: c.updatedAt.toISOString(),
+  const serialized = projects.map(p => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
   }));
 
-  return <DashboardClient characters={serialized} />;
+  return <ProjectDashboard projects={serialized} unassignedCount={unassignedCount} />;
 }
