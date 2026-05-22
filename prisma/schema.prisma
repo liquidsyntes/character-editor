@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Character {
+  id        String   @id @default(cuid())
+  name      String   @default("")
+  data      String   @default("{}")
+  emoji     String   @default("👤")
+  color     String   @default("#d4a853")
+  summary   String   @default("")
+  isDraft   Boolean  @default(true)
+  isArchived Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
