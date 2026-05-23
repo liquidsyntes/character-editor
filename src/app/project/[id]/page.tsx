@@ -28,7 +28,8 @@ export default async function ProjectPage({
     <DashboardClient
       characters={serialized}
       projectId={id}
-      projectName={project.name || 'Новый проект'}
+      projectName={project.name || ''}
+      projectDescription={project.description || ''}
       projectEmoji={project.emoji}
     />
   );

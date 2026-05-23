@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { CharacterData } from '@/types/character';
 import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
-import { archiveCharacter, deleteCharacter, duplicateCharacter } from '@/lib/actions';
+import { archiveCharacter, deleteCharacter, duplicateCharacter, updateProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
 
 interface CharacterItem {
@@ -30,12 +30,14 @@ function formatDate(d: string) {
 export default function DashboardClient({
   characters: initial,
   projectId,
-  projectName,
+  projectName: initialName,
+  projectDescription: initialDesc,
   projectEmoji,
 }: {
   characters: CharacterItem[];
   projectId?: string | null;
   projectName?: string;
+  projectDescription?: string;
   projectEmoji?: string;
 }) {
   const [characters, setCharacters] = useState(initial);
@@ -44,7 +46,30 @@ export default function DashboardClient({
   const [showTweaks, setShowTweaks] = useState(false);
   const total = getTotalFieldCount();
 
+  // Editable project fields
+  const [pName, setPName] = useState(initialName || '');
+  const [pDesc, setPDesc] = useState(initialDesc || '');
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => { setCharacters(initial); }, [initial]);
+
+  const saveProject = useCallback((name: string, description: string) => {
+    if (!projectId || projectId === null) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      await updateProject(projectId, { name, description });
+    }, 800);
+  }, [projectId]);
+
+  const handleNameChange = (val: string) => {
+    setPName(val);
+    saveProject(val, pDesc);
+  };
+
+  const handleDescChange = (val: string) => {
+    setPDesc(val);
+    saveProject(pName, val);
+  };
 
   const filtered = characters.filter(c => {
     if (filter === 'archived' && !c.isArchived) return false;
@@ -78,6 +103,7 @@ export default function DashboardClient({
   };
 
   const isProjectContext = projectId !== undefined;
+  const isRealProject = isProjectContext && projectId !== null;
 
   return (
     <>
@@ -91,7 +117,7 @@ export default function DashboardClient({
           <div className="toolbar-dot"></div>
           <span className="toolbar-title">
             {isProjectContext ? (
-              <>{projectEmoji} {projectName}</>
+              <>{projectEmoji} {pName || 'Новый проект'}</>
             ) : (
               <>Character Card</>
             )}
@@ -109,6 +135,33 @@ export default function DashboardClient({
       </header>
 
       <div className="dashboard">
+        {/* Editable project header */}
+        {isRealProject && (
+          <div className="project-header">
+            <div className="project-header-emoji">{projectEmoji}</div>
+            <div className="project-header-fields">
+              <input
+                className="project-header-name"
+                type="text"
+                value={pName}
+                onChange={e => handleNameChange(e.target.value)}
+                placeholder="Название проекта..."
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <input
+                className="project-header-desc"
+                type="text"
+                value={pDesc}
+                onChange={e => handleDescChange(e.target.value)}
+                placeholder="Добавьте описание..."
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="dashboard-header">
           <h1 className="dashboard-title">Персонажи</h1>
           <div className="dashboard-actions">
