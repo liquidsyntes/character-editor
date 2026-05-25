@@ -128,8 +128,10 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
     id: 'role',
     icon: '🎭',
     label: 'Роль в истории',
-    fieldCount: 4,
+    fieldCount: 6,
     fields: [
+      { id: 'characterFunction', label: 'Функция персонажа', placeholder: '', type: 'select', options: ['Протагонист', 'Антагонист', 'Наставник', 'Трикстер', 'Союзник', 'Тень'], row: 5 },
+      { id: 'plotSignificance', label: 'Значимость в сюжете', placeholder: '', type: 'select', options: ['Центральный персонаж', 'Персонаж второго плана', 'Эпизодический персонаж', 'Катализатор событий'], row: 5 },
       { id: 'roleInPlot', label: 'Кто он в сюжете?', placeholder: 'Невидимый свидетель', type: 'text' },
       { id: 'conflictType', label: 'Главный тип конфликта', placeholder: 'Внутренний — борьба с собственным прошлым', type: 'text' },
       { id: 'coreContradiction', label: 'Главное противоречие', placeholder: 'Хочет покоя, но сам создаёт хаос вокруг себя', type: 'text' },
