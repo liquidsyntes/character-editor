@@ -8,6 +8,7 @@ import { CharacterData } from '@/types/character';
 import ExportModal from './ExportModal';
 import TweaksPanel from './TweaksPanel';
 import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
+import { useAiSettings } from '@/lib/ai/useAiSettings';
 import Link from 'next/link';
 
 export default function CharacterForm({
@@ -35,6 +36,15 @@ export default function CharacterForm({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
+  // ── AI settings ────────────────────────
+  const { settings: aiSettings } = useAiSettings();
+
+  // ── AI Fill state ──────────────────────
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState<string>('');
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
+
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
   const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
@@ -60,6 +70,194 @@ export default function CharacterForm({
       return next;
     });
   }, [doSave]);
+
+  // ── AI Fill handler ────────────────────
+  const aiAbortRef = useRef<AbortController | null>(null);
+
+  const handleAiFill = useCallback(async () => {
+    // Cancel previous request if any
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+    }
+
+    setAiLoading(true);
+    setAiError(null);
+    setAiProgress('Думаю над персонажем...');
+
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
+    // Safety timeout — 90 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      // Collect context from already-filled fields
+      const contextParts: string[] = [];
+      if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
+      if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
+      if (data.gender) contextParts.push(`Пол: ${data.gender}`);
+      if (data.age) contextParts.push(`Возраст: ${data.age}`);
+      if (data.oneLiner) contextParts.push(`Суть: ${data.oneLiner}`);
+      if (data.characterFunction) contextParts.push(`Функция: ${data.characterFunction}`);
+
+      const context = contextParts.filter(Boolean).join('; ') || undefined;
+
+      console.log('[AI Fill] Starting with fields:', Object.keys(data).filter(k => data[k]?.trim()).length, 'filled');
+      setAiProgress('Отправляю запрос к AI...');
+
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          context,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          temperature: aiSettings.temperature,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
+      }
+
+      setAiProgress('Получаю ответ...');
+
+      const result = await res.json();
+      console.log('[AI Fill] Response:', { filledCount: result.filledCount, usage: result.usage, warning: result.warning });
+
+      if (!result.data || Object.keys(result.data).length === 0) {
+        throw new Error('AI не вернул ни одного заполненного поля. Попробуйте добавить больше исходных данных (хотя бы имя и пол).');
+      }
+
+      // Merge AI results with current data
+      setData(prev => {
+        const next = { ...prev, ...result.data };
+        // Save immediately
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => doSave(next), 800);
+        return next;
+      });
+
+      const tokens = result.usage
+        ? ` · ${result.usage.promptTokens + result.usage.completionTokens} токенов`
+        : '';
+
+      const usedProvider = result.provider || aiSettings.provider;
+      setAiProgress(
+        `✓ Заполнено ${result.filledCount} полей${tokens} · ${usedProvider}` +
+        (result.warning ? ` (⚠ ${result.warning})` : '')
+      );
+
+      // Expand all sections
+      setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
+
+      setTimeout(() => {
+        setAiLoading(false);
+        setAiProgress('');
+      }, 4000);
+
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setAiError('Прервано по таймауту (90 секунд). DeepSeek не успел ответить — попробуйте ещё раз.');
+      } else if (err instanceof TypeError && err.message.includes('fetch')) {
+        setAiError('Ошибка сети — сервер не отвечает. Проверьте, запущен ли npm run dev.');
+      } else {
+        const msg = err instanceof Error ? err.message : 'Неизвестная ошибка';
+        setAiError(msg);
+        console.error('[AI Fill] Error:', err);
+      }
+      setAiLoading(false);
+      setAiProgress('');
+      // Don't auto-dismiss errors — user should read them
+    }
+  }, [data, doSave]);
+
+  const handleAiCancel = useCallback(() => {
+    if (aiAbortRef.current) {
+      aiAbortRef.current.abort();
+    }
+    setAiLoading(false);
+    setAiProgress('');
+    setAiError(null);
+  }, []);
+
+  // ── AI Fill per-section handler ──────
+  const handleAiFillSection = useCallback(async (sectionId: string) => {
+    if (aiSectionLoading) return; // one at a time
+
+    const section = CHARACTER_SCHEMA.find(s => s.id === sectionId);
+    if (!section) return;
+
+    setAiSectionLoading(sectionId);
+    setAiError(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      // Build context from key filled fields
+      const contextParts: string[] = [];
+      if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
+      if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
+      if (data.gender) contextParts.push(`Пол: ${data.gender}`);
+      if (data.age) contextParts.push(`Возраст: ${data.age}`);
+      if (data.oneLiner) contextParts.push(`Суть: ${data.oneLiner}`);
+      const context = contextParts.filter(Boolean).join('; ') || undefined;
+
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          sectionIds: [sectionId],
+          context,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          temperature: aiSettings.temperature,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
+      }
+
+      const result = await res.json();
+
+      if (!result.data || Object.keys(result.data).length === 0) {
+        throw new Error(`AI не заполнил ни одного поля в секции «${section.label}».`);
+      }
+
+      setData(prev => {
+        const next = { ...prev, ...result.data };
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => doSave(next), 800);
+        return next;
+      });
+
+      // Expand the filled section
+      setOpenSections(prev => new Set(prev).add(sectionId));
+
+      // Brief success flash
+      setTimeout(() => setAiSectionLoading(null), 2000);
+
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const msg = err instanceof Error ? err.message : 'Ошибка';
+      setAiError(msg);
+      setAiSectionLoading(null);
+    }
+  }, [data, doSave, aiSectionLoading, aiSettings]);
 
   const toggleSection = (id: string) => {
     setOpenSections(prev => {
@@ -117,6 +315,21 @@ export default function CharacterForm({
             </div>
             <span className="progress-label">{filled}/{total}</span>
           </div>
+
+          {/* ── AI Fill Button ── */}
+          <button
+            className={`btn btn-sm btn-ai ${aiLoading ? 'loading' : ''}`}
+            onClick={handleAiFill}
+            disabled={aiLoading}
+            title="AI заполнит все пустые поля на основе уже введённых данных"
+          >
+            {aiLoading ? (
+              <span className="ai-spinner" />
+            ) : (
+              '✨ AI Заполнить'
+            )}
+          </button>
+
           <button className="btn btn-sm" onClick={expandAll}>Развернуть</button>
           <button className="btn btn-sm" onClick={collapseAll}>Свернуть</button>
           <button className="btn btn-sm btn-primary" onClick={() => setShowExport(true)}>📤 Экспорт</button>
@@ -128,6 +341,27 @@ export default function CharacterForm({
           >⚙</button>
         </div>
       </header>
+
+      {/* ── AI Status Bar ── */}
+      {(aiLoading || aiProgress || aiError) && (
+        <div className={`ai-status ${aiError ? 'ai-error' : aiLoading ? 'ai-loading' : ''}`}>
+          {aiError ? (
+            <>
+              <span>⚠ {aiError}</span>
+              <button
+                className="btn btn-sm ai-retry-btn"
+                onClick={() => { setAiError(null); handleAiFill(); }}
+              >
+                Повторить
+              </button>
+            </>
+          ) : aiLoading ? (
+            <>{aiProgress}</>
+          ) : (
+            <>{aiProgress}</>
+          )}
+        </div>
+      )}
 
       <main className="form-panel" id="formPanel">
         {CHARACTER_SCHEMA.map(section => {
@@ -167,6 +401,17 @@ export default function CharacterForm({
                 <span className="section-count">
                   {sectionFilled}/{section.fields.length}
                 </span>
+                <button
+                  className={`btn btn-icon btn-sm btn-ai-section ${aiSectionLoading === section.id ? 'loading' : ''}`}
+                  disabled={aiSectionLoading !== null || aiLoading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAiFillSection(section.id);
+                  }}
+                  title={`AI заполнит пустые поля в секции «${section.label}»`}
+                >
+                  {aiSectionLoading === section.id ? '⏳' : '✨'}
+                </button>
                 <span className="section-chevron">▶</span>
               </button>
               <div className="section-body">
