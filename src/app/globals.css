@@ -363,7 +363,7 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden; max-height: 0;
   transition: max-height var(--transition-slow), padding var(--transition-slow);
 }
-.section.open .section-body { max-height: 4000px; }
+.section.open .section-body { max-height: 8000px; }
 .section-body-inner { padding: 20px 0 10px 4px; }
 
 /* ── Form Fields ───────────────────────── */
@@ -469,7 +469,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.72rem; color: var(--text-dim); font-weight: 500;
   margin-bottom: 2px; letter-spacing: 0.02em;
 }
-.preview-field-value { font-size: 0.9rem; line-height: 1.6; }
+.preview-field-value { font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
 
 /* ── Tweaks Panel ──────────────────────── */
 .tweaks-overlay {

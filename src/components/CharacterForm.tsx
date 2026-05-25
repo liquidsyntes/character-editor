@@ -187,6 +187,15 @@ export default function CharacterForm({
                               <option key={opt} value={opt}>{opt}</option>
                             ))}
                           </select>
+                        ) : field.type === 'textarea' ? (
+                          <textarea
+                            className="field-input field-textarea"
+                            id={field.id}
+                            placeholder={field.placeholder}
+                            value={data[field.id] || ''}
+                            onChange={e => handleChange(field.id, e.target.value)}
+                            rows={3}
+                          />
                         ) : (
                           <input
                             className="field-input"
