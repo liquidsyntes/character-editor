@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 export type AiProvider = 'deepseek' | 'xai' | 'openai';
 
@@ -8,11 +8,12 @@ export interface AiSettings {
   provider: AiProvider;
   model: string;
   temperature: number;
+  apiKeys: Partial<Record<AiProvider, string>>;
 }
 
 const STORAGE_KEY = 'cc_ai_settings';
 
-const PROVIDER_MODELS: Record<AiProvider, { id: string; label: string }[]> = {
+export const PROVIDER_MODELS: Record<AiProvider, { id: string; label: string }[]> = {
   deepseek: [
     { id: 'deepseek-chat', label: 'DeepSeek Chat' },
     { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
@@ -31,7 +32,7 @@ const PROVIDER_MODELS: Record<AiProvider, { id: string; label: string }[]> = {
   ],
 };
 
-const PROVIDER_LABELS: Record<AiProvider, string> = {
+export const PROVIDER_LABELS: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
   xai: 'Grok (xAI)',
   openai: 'OpenAI',
@@ -41,6 +42,7 @@ const DEFAULTS: AiSettings = {
   provider: 'deepseek',
   model: 'deepseek-chat',
   temperature: 0.85,
+  apiKeys: {},
 };
 
 function loadSettings(): AiSettings {
@@ -54,6 +56,7 @@ function loadSettings(): AiSettings {
           provider: parsed.provider as AiProvider,
           model: parsed.model || PROVIDER_MODELS[parsed.provider as AiProvider]?.[0]?.id || DEFAULTS.model,
           temperature: typeof parsed.temperature === 'number' ? parsed.temperature : DEFAULTS.temperature,
+          apiKeys: parsed.apiKeys && typeof parsed.apiKeys === 'object' ? parsed.apiKeys : {},
         };
       }
     }
@@ -66,47 +69,85 @@ function saveSettings(settings: AiSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-export function useAiSettings() {
-  const [settings, setSettings] = useState<AiSettings>(DEFAULTS);
+interface Return {
+  /** Committed settings — what the app actually uses */
+  saved: AiSettings;
+  /** Staged settings — what's shown in the tweaks panel */
+  staged: AiSettings;
+  /** True when staged differs from saved (unsaved changes) */
+  hasChanges: boolean;
+  updateProvider: (provider: AiProvider) => void;
+  updateModel: (model: string) => void;
+  updateTemperature: (temperature: number) => void;
+  updateApiKey: (provider: AiProvider, key: string) => void;
+  /** Commit staged → saved + localStorage */
+  apply: () => void;
+  /** Reset staged to saved */
+  revert: () => void;
+  PROVIDER_MODELS: typeof PROVIDER_MODELS;
+  PROVIDER_LABELS: typeof PROVIDER_LABELS;
+}
+
+export function useAiSettings(): Return {
+  const [saved, setSaved] = useState<AiSettings>(DEFAULTS);
+  const [staged, setStaged] = useState<AiSettings>(DEFAULTS);
 
   useEffect(() => {
-    setSettings(loadSettings());
+    const loaded = loadSettings();
+    setSaved(loaded);
+    setStaged(loaded);
   }, []);
 
+  const hasChanges = useMemo(() => {
+    return (
+      staged.provider !== saved.provider ||
+      staged.model !== saved.model ||
+      staged.temperature !== saved.temperature ||
+      JSON.stringify(staged.apiKeys) !== JSON.stringify(saved.apiKeys)
+    );
+  }, [staged, saved]);
+
   const updateProvider = useCallback((provider: AiProvider) => {
-    setSettings(prev => {
+    setStaged(prev => {
       const models = PROVIDER_MODELS[provider];
-      const next: AiSettings = {
-        ...prev,
-        provider,
-        model: models[0]?.id || prev.model,
-      };
-      saveSettings(next);
-      return next;
+      return { ...prev, provider, model: models[0]?.id || prev.model };
     });
   }, []);
 
   const updateModel = useCallback((model: string) => {
-    setSettings(prev => {
-      const next = { ...prev, model };
-      saveSettings(next);
-      return next;
-    });
+    setStaged(prev => ({ ...prev, model }));
   }, []);
 
   const updateTemperature = useCallback((temperature: number) => {
-    setSettings(prev => {
-      const next = { ...prev, temperature };
-      saveSettings(next);
-      return next;
-    });
+    setStaged(prev => ({ ...prev, temperature }));
   }, []);
 
+  const updateApiKey = useCallback((provider: AiProvider, key: string) => {
+    setStaged(prev => ({
+      ...prev,
+      apiKeys: { ...prev.apiKeys, [provider]: key.trim() || undefined },
+    }));
+  }, []);
+
+  const apply = useCallback(() => {
+    setSaved(staged);
+    saveSettings(staged);
+  }, [staged]);
+
+  const revert = useCallback(() => {
+    setStaged(saved);
+  }, [saved]);
+
   return {
-    settings,
+    saved,
+    staged,
+    hasChanges,
     updateProvider,
     updateModel,
     updateTemperature,
+    updateApiKey,
+    apply,
+    revert,
     PROVIDER_MODELS,
     PROVIDER_LABELS,
   };

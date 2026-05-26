@@ -55,6 +55,8 @@ export interface CompletionOptions {
   temperature?: number;
   maxTokens?: number;
   stream?: boolean;
+  /** User-supplied API key — overrides env var */
+  apiKey?: string;
 }
 
 interface CompletionResult {
@@ -77,16 +79,17 @@ export async function chatCompletion(
   const provider: ProviderName = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
+  const apiKey = options.apiKey || cfg.apiKey;
 
-  if (!cfg.apiKey) {
-    throw new Error(`AI-провайдер "${provider}" не настроен — отсутствует API-ключ. Добавьте ${provider.toUpperCase()}_API_KEY в .env`);
+  if (!apiKey) {
+    throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI) или в .env как ${provider.toUpperCase()}_API_KEY`);
   }
 
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${cfg.apiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,
@@ -121,16 +124,17 @@ export async function chatCompletionStream(
   const provider: ProviderName = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
+  const apiKey = options.apiKey || cfg.apiKey;
 
-  if (!cfg.apiKey) {
-    throw new Error(`AI-провайдер "${provider}" не настроен — отсутствует API-ключ`);
+  if (!apiKey) {
+    throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI)`);
   }
 
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${cfg.apiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,

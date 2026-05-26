@@ -107,6 +107,145 @@ ${schemaDesc}
   return { system: SYSTEM_PROMPT, user: userPrompt };
 }
 
+
+// ── AI Character Analysis ────────────────────────────────────────
+
+const ANALYZE_SYSTEM_PROMPT = `Ты — опытный редактор и драматург. Ты анализируешь карточки персонажей на русском языке и отвечаешь ТОЛЬКО на русском.
+
+Найди ВСЕ проблемы в заполненных полях:
+1. **Противоречия** — поле А и поле Б утверждают противоположное
+2. **Слепые зоны** — важный аспект упомянут, но не раскрыт
+3. **Клише** — шаблонная формулировка без конкретики
+4. **Психологические нестыковки** — поведение противоречит заявленной мотивации
+5. **Упущенные возможности** — напрашивающиеся связи между полями не раскрыты
+
+## ЖЁСТКИЕ ПРАВИЛА:
+- ВСЕ текстовые поля (title, description, suggestion, summary) ТОЛЬКО на русском. Ни одного английского слова.
+- НИКОГДА не пиши fieldId в тексте (strength, selfDestruct, weakness и т.д.). Вместо fieldId используй РУССКОЕ НАЗВАНИЕ поля, которое указано в комментарии после //.
+  * ПЛОХО: «Поле strength противоречит selfDestruct»
+  * ХОРОШО: «Главная сила противоречит склонности к самоуничтожению»
+- Поле severity — служебное, его значения ТОЛЬКО английские: "contradiction", "gap", "cliche", "inconsistency", "opportunity".
+- В массиве fields указывай fieldId (английские ключи) — это для системы.
+- Анализируй ТОЛЬКО заполненные поля. Не комментируй пустые.
+- Каждая проблема ссылается на КОНКРЕТНЫЕ поля.
+- Пиши конкретно. 2-4 предложения на проблему.
+- Если в категории нет проблем — не включай её в ответ.
+
+## Формат ответа — СТРОГО JSON (без markdown-обёрток):
+
+{
+  "summary": "Общее резюме на русском, 1-2 предложения",
+  "categories": [
+    {
+      "title": "Название категории на русском",
+      "icon": "🔴",
+      "severity": "contradiction",
+      "issues": [
+        {
+          "title": "Краткий заголовок на русском",
+          "fields": ["fieldId1", "fieldId2"],
+          "severity": "contradiction",
+          "description": "Подробное объяснение на русском, 2-4 предложения",
+          "suggestion": "Совет по исправлению на русском (опционально)"
+        }
+      ]
+    }
+  ]
+}
+
+Начни ответ сразу с символа { и закончи }. Никакого текста до или после.`;
+
+export function buildAnalyzePrompt(data: import('@/types/character').CharacterData): { system: string; user: string } {
+  // Build a compact representation of filled fields
+  const filledFields: string[] = [];
+  for (const section of CHARACTER_SCHEMA) {
+    for (const field of section.fields) {
+      const value = data[field.id]?.trim();
+      if (value) {
+        filledFields.push(`${field.label} (id: ${field.id}): "${value.replace(/"/g, '\\"')}"`);
+      }
+    }
+  }
+
+  const userPrompt = `Проанализируй персонажа на противоречия, слепые зоны, клише и психологические нестыковки.
+
+ВАЖНО: в тексте ответа (title, description, suggestion) используй РУССКИЕ названия полей из комментариев (после //). fieldId только в массиве fields.
+
+Заполненные поля (${filledFields.length}):
+${filledFields.join('\n')}
+
+Найди ВСЕ проблемы. Верни JSON строго по схеме.`;
+
+  return { system: ANALYZE_SYSTEM_PROMPT, user: userPrompt };
+}
+
+export function parseAnalyzeResponse(raw: string): import('@/types/character').AnalyzeResult {
+  const json = raw.trim();
+
+  // Strategy 1: direct parse
+  try {
+    const parsed = JSON.parse(json);
+    if (parsed.categories && Array.isArray(parsed.categories)) {
+      return validateAnalyzeResult(parsed);
+    }
+  } catch {}
+
+  // Strategy 2: remove code fences
+  const fenceMatch = json.match(/\`\`\`(?:json)?\s*([\s\S]*?)\s*\`\`\`/);
+  if (fenceMatch) {
+    try {
+      const parsed = JSON.parse(fenceMatch[1].trim());
+      if (parsed.categories && Array.isArray(parsed.categories)) {
+        return validateAnalyzeResult(parsed);
+      }
+    } catch {}
+  }
+
+  // Strategy 3: find JSON object
+  const objStart = json.indexOf('{');
+  if (objStart >= 0) {
+    let depth = 0;
+    let objEnd = -1;
+    for (let i = objStart; i < json.length; i++) {
+      if (json[i] === '{') depth++;
+      if (json[i] === '}') { depth--; if (depth === 0) { objEnd = i; break; } }
+    }
+    if (objEnd > objStart) {
+      try {
+        const parsed = JSON.parse(json.slice(objStart, objEnd + 1));
+        if (parsed.categories && Array.isArray(parsed.categories)) {
+          return validateAnalyzeResult(parsed);
+        }
+      } catch {}
+    }
+  }
+
+  throw new Error('Не удалось разобрать ответ AI — невалидный JSON');
+}
+
+function validateAnalyzeResult(raw: Record<string, unknown>): import('@/types/character').AnalyzeResult {
+  const categories = (raw.categories as any[])?.map((cat: any) => ({
+    title: String(cat.title || ''),
+    icon: String(cat.icon || ''),
+    severity: (['contradiction', 'gap', 'cliche', 'inconsistency', 'opportunity'].includes(cat.severity) ? cat.severity : 'gap') as import('@/types/character').AnalyzeIssue['severity'],
+    issues: (cat.issues as any[])?.map((iss: any) => ({
+      title: String(iss.title || ''),
+      fields: Array.isArray(iss.fields) ? iss.fields.map(String) : [],
+      severity: (['contradiction', 'gap', 'cliche', 'inconsistency', 'opportunity'].includes(iss.severity) ? iss.severity : cat.severity || 'gap') as import('@/types/character').AnalyzeIssue['severity'],
+      description: String(iss.description || ''),
+      suggestion: iss.suggestion ? String(iss.suggestion) : undefined,
+    })) || [],
+  })) || [];
+
+  const totalIssues = categories.reduce((sum, c) => sum + c.issues.length, 0);
+
+  return {
+    categories,
+    totalIssues,
+    summary: String(raw.summary || ''),
+  };
+}
+
 /**
  * Parse LLM JSON response with multiple fallback strategies.
  */
@@ -208,4 +347,55 @@ function validateAndClean(parsed: Record<string, unknown>): CharacterData {
   }
 
   return result;
+}
+
+// ── AI Fix Issues Prompt ────────────────────────────────────────
+
+export function buildFixContext(
+  issues: import('@/types/character').AnalyzeIssue[],
+  data: import('@/types/character').CharacterData
+): string {
+  // Build a map of fieldId → current value + label
+  const fieldInfo: { id: string; label: string; current: string }[] = [];
+  for (const section of CHARACTER_SCHEMA) {
+    for (const field of section.fields) {
+      if (data[field.id]?.trim()) {
+        fieldInfo.push({ id: field.id, label: field.label, current: data[field.id].trim() });
+      }
+    }
+  }
+  const fieldMap = new Map(fieldInfo.map(f => [f.id, f]));
+
+  const issueDescriptions = issues.map((iss, i) => {
+    const fieldsDesc = iss.fields
+      .map(fid => {
+        const info = fieldMap.get(fid);
+        return info
+          ? `«${info.label}» (сейчас: «${info.current.slice(0, 80)}»)`
+          : fid;
+      })
+      .join(', ');
+    return `${i + 1}. **${iss.title}** (${iss.severity})\n   ${iss.description}\n   Затронутые поля: ${fieldsDesc}${iss.suggestion ? `\n   Совет: ${iss.suggestion}` : ''}`;
+  }).join('\n\n');
+
+  const uniqueFieldIds = [...new Set(issues.flatMap(i => i.fields))];
+
+  return `## Инструкция по исправлению противоречий
+
+Ниже — список проблем, найденных в карточке персонажа. Перепиши ТОЛЬКО указанные поля так, чтобы устранить эти проблемы. Остальные поля не трогай.
+
+### Проблемы:
+${issueDescriptions}
+
+### Что нужно исправить:
+Поля для перезаписи: ${uniqueFieldIds.map(fid => {
+  const info = fieldMap.get(fid);
+  return info ? `«${info.label}» (${fid})` : fid;
+}).join(', ')}
+
+ВАЖНО:
+- Перепиши ТОЛЬКО эти поля. Не добавляй другие.
+- Сохрани общий характер персонажа, но устрани противоречия.
+- Используй конкретные, живые формулировки на русском.
+- Если поле участвует в противоречии с другим — выбери одну линию и приведи поле к ней.`;
 }

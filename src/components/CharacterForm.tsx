@@ -7,8 +7,11 @@ import { updateCharacter } from '@/lib/actions';
 import { CharacterData } from '@/types/character';
 import ExportModal from './ExportModal';
 import TweaksPanel from './TweaksPanel';
+import AnalyzePanel from './AnalyzePanel';
+import AnalyzeHistorySidebar, { AnalysisRecord } from './AnalyzeHistorySidebar';
 import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
-import { useAiSettings } from '@/lib/ai/useAiSettings';
+import { useAiSettings, PROVIDER_MODELS, PROVIDER_LABELS } from '@/lib/ai/useAiSettings';
+import { buildFixContext } from '@/lib/ai/prompt';
 import Link from 'next/link';
 
 export default function CharacterForm({
@@ -37,13 +40,18 @@ export default function CharacterForm({
   const router = useRouter();
 
   // ── AI settings ────────────────────────
-  const { settings: aiSettings } = useAiSettings();
+  const { saved: aiSettings } = useAiSettings();
 
   // ── AI Fill state ──────────────────────
   const [aiLoading, setAiLoading] = useState(false);
   const [aiProgress, setAiProgress] = useState<string>('');
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
+  const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [fixLoading, setFixLoading] = useState(false);
 
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
@@ -259,6 +267,157 @@ export default function CharacterForm({
     }
   }, [data, doSave, aiSectionLoading, aiSettings]);
 
+  // ── AI Analyze handler ─────────────────
+  const handleAnalyze = useCallback(async () => {
+    setAnalyzeLoading(true);
+    setAnalyzeError(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      const res = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          temperature: 0.7,
+          apiKey: aiSettings.apiKeys[aiSettings.provider] || undefined,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
+      }
+
+      const result = await res.json();
+
+      const now = new Date();
+      const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' +
+        now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+
+      const record: AnalysisRecord = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        timestamp: ts,
+        result: {
+          categories: result.categories,
+          totalIssues: result.totalIssues,
+          summary: result.summary,
+        },
+        usage: result.usage,
+        provider: result.provider || aiSettings.provider,
+      };
+
+      setAnalyses(prev => [record, ...prev]);
+      setActiveAnalysisId(record.id);
+
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const msg = err instanceof Error ? err.message : 'Ошибка';
+      setAnalyzeError(msg);
+    } finally {
+      setAnalyzeLoading(false);
+    }
+  }, [data, aiSettings]);
+
+  // ── Jump to field ───────────────────────
+  const handleJumpToField = useCallback((fieldId: string, sectionId: string) => {
+    setOpenSections(prev => new Set(prev).add(sectionId));
+    setTimeout(() => {
+      const el = document.getElementById(fieldId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+        el.classList.add('field-highlight');
+        setTimeout(() => el.classList.remove('field-highlight'), 2000);
+      }
+    }, 200);
+  }, []);
+
+  // ── AI Fix handler ─────────────────────
+  const handleFixIssues = useCallback(async (fieldIds: string[]) => {
+    const analysis = analyses.find(a => a.id === activeAnalysisId);
+    if (!analysis || fieldIds.length === 0) return;
+
+    // Collect all issues from the active analysis
+    const allIssues = analysis.result.categories.flatMap(c => c.issues);
+    // Filter to issues that involve the fields we're fixing
+    const relevantIssues = allIssues.filter(iss => iss.fields.some(fid => fieldIds.includes(fid)));
+    if (relevantIssues.length === 0) return;
+
+    // Find which sections contain the affected fields
+    const sectionIds = new Set<string>();
+    for (const section of CHARACTER_SCHEMA) {
+      if (section.fields.some(f => fieldIds.includes(f.id))) {
+        sectionIds.add(section.id);
+      }
+    }
+
+    const fixContext = buildFixContext(relevantIssues, data);
+
+    setFixLoading(true);
+    setAiError(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          sectionIds: [...sectionIds],
+          context: fixContext,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          temperature: aiSettings.temperature,
+          apiKey: aiSettings.apiKeys[aiSettings.provider] || undefined,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(err.error || `Ошибка ${res.status}`);
+      }
+
+      const result = await res.json();
+
+      if (!result.data || Object.keys(result.data).length === 0) {
+        throw new Error('AI не вернул исправленных полей.');
+      }
+
+      setData(prev => {
+        const next = { ...prev, ...result.data };
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => doSave(next), 800);
+        return next;
+      });
+
+      // Expand affected sections
+      setOpenSections(prev => {
+        const next = new Set(prev);
+        sectionIds.forEach(id => next.add(id));
+        return next;
+      });
+
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      setAiError(err instanceof Error ? err.message : 'Ошибка исправления');
+    } finally {
+      setFixLoading(false);
+    }
+  }, [data, doSave, aiSettings, analyses, activeAnalysisId]);
+
   const toggleSection = (id: string) => {
     setOpenSections(prev => {
       const next = new Set(prev);
@@ -287,6 +446,19 @@ export default function CharacterForm({
 
   return (
     <>
+      <div className="app-layout">
+        <AnalyzeHistorySidebar
+          records={analyses}
+          activeId={activeAnalysisId}
+          onSelect={setActiveAnalysisId}
+          onDelete={(id) => {
+            setAnalyses(prev => prev.filter(a => a.id !== id));
+            if (activeAnalysisId === id) setActiveAnalysisId(null);
+          }}
+          onNewAnalysis={handleAnalyze}
+          loading={analyzeLoading}
+        />
+        <div className="app-layout-main">
       <header className="toolbar">
         <div className="toolbar-left">
           {siblings.length > 0 && (
@@ -302,6 +474,13 @@ export default function CharacterForm({
           <div className="toolbar-dot"></div>
           <span className="toolbar-title">
             {[data.firstName, data.lastName].filter(Boolean).join(' ') || 'Новый персонаж'}
+          </span>
+        </div>
+        <div className="toolbar-center">
+          <span className="toolbar-model">
+            {PROVIDER_LABELS[aiSettings.provider] !== undefined
+              ? `${PROVIDER_LABELS[aiSettings.provider]} · ${PROVIDER_MODELS[aiSettings.provider].find(m => m.id === aiSettings.model)?.label || aiSettings.model}`
+              : ''}
           </span>
         </div>
         <div className="toolbar-right">
@@ -330,6 +509,15 @@ export default function CharacterForm({
             )}
           </button>
 
+          <button
+            className={`btn btn-sm btn-analyze ${analyzeLoading ? 'loading' : ''}`}
+            onClick={handleAnalyze}
+            disabled={analyzeLoading || aiLoading}
+            title="AI проанализирует персонажа на противоречия, слепые зоны и клише"
+          >
+            {analyzeLoading ? <span className="ai-spinner" /> : '🔍 Анализ'}
+          </button>
+
           <button className="btn btn-sm" onClick={expandAll}>Развернуть</button>
           <button className="btn btn-sm" onClick={collapseAll}>Свернуть</button>
           <button className="btn btn-sm btn-primary" onClick={() => setShowExport(true)}>📤 Экспорт</button>
@@ -343,7 +531,13 @@ export default function CharacterForm({
       </header>
 
       {/* ── AI Status Bar ── */}
-      {(aiLoading || aiProgress || aiError) && (
+      {analyzeError && (
+        <div className="ai-status ai-error">
+          <span>⚠ {analyzeError}</span>
+          <button className="btn btn-sm ai-retry-btn" onClick={() => { setAnalyzeError(null); handleAnalyze(); }}>Повторить</button>
+        </div>
+      )}
+      {(aiLoading || aiProgress || aiError) && !analyzeError && (
         <div className={`ai-status ${aiError ? 'ai-error' : aiLoading ? 'ai-loading' : ''}`}>
           {aiError ? (
             <>
@@ -481,6 +675,21 @@ export default function CharacterForm({
       )}
 
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+
+        </div>{/* app-layout-main */}
+        {(() => { const a = analyses.find(r => r.id === activeAnalysisId); return a ? (
+          <AnalyzePanel
+            result={a.result}
+            usage={a.usage}
+            provider={a.provider}
+            timestamp={a.timestamp}
+            fixing={fixLoading}
+            onClose={() => setActiveAnalysisId(null)}
+            onJumpToField={handleJumpToField}
+            onFixIssues={handleFixIssues}
+          />
+        ) : null; })()}
+      </div>{/* app-layout */}
 
       <CharacterListPanel
         isOpen={showCharList}

@@ -32,3 +32,29 @@ export interface CharacterRecord {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface AnalyzeIssue {
+  /** Short title (1 line) */
+  title: string;
+  /** Which field IDs are involved */
+  fields: string[];
+  /** Severity: 'contradiction' | 'gap' | 'cliche' | 'inconsistency' | 'opportunity' */
+  severity: 'contradiction' | 'gap' | 'cliche' | 'inconsistency' | 'opportunity';
+  /** Detailed explanation (2-4 sentences, Russian) */
+  description: string;
+  /** Optional suggestion for fixing */
+  suggestion?: string;
+}
+
+export interface AnalyzeCategory {
+  title: string;
+  icon: string;
+  severity: AnalyzeIssue['severity'];
+  issues: AnalyzeIssue[];
+}
+
+export interface AnalyzeResult {
+  categories: AnalyzeCategory[];
+  totalIssues: number;
+  summary: string;
+}

@@ -16,13 +16,20 @@ export default function TweaksPanel({
 
   // AI settings
   const {
-    settings: ai,
+    staged: ai,
+    hasChanges: aiHasChanges,
+    apply: applyAi,
+    revert: revertAi,
     updateProvider,
     updateModel,
     updateTemperature,
+    updateApiKey,
     PROVIDER_MODELS,
     PROVIDER_LABELS,
   } = useAiSettings();
+
+  // API key visibility toggles
+  const [visibleKeys, setVisibleKeys] = useState<Partial<Record<AiProvider, boolean>>>({});
 
   // Init theme/density
   useEffect(() => {
@@ -57,6 +64,10 @@ export default function TweaksPanel({
 
   const providers: AiProvider[] = ['deepseek', 'xai', 'openai'];
   const models = PROVIDER_MODELS[ai.provider] || [];
+
+  const toggleKeyVisibility = (p: AiProvider) => {
+    setVisibleKeys(prev => ({ ...prev, [p]: !prev[p] }));
+  };
 
   return (
     <div className={`tweaks-overlay ${isOpen ? 'open' : ''}`}>
@@ -115,6 +126,53 @@ export default function TweaksPanel({
             <span>0 — точнее</span>
             <span>1.5 — креативнее</span>
           </div>
+        </div>
+
+        {/* API Keys */}
+        <div className="tweak-label" style={{ marginTop: '18px' }}>🔑 API-ключи</div>
+        <div className="tweak-api-keys">
+          {providers.map(p => {
+            const key = ai.apiKeys[p] || '';
+            const hasKey = key.length > 0;
+            const isVisible = visibleKeys[p];
+            return (
+              <div key={p} className={`tweak-api-key-row ${hasKey ? 'has-key' : ''}`}>
+                <span className="tweak-api-key-label">{PROVIDER_LABELS[p]}</span>
+                <div className="tweak-api-key-input-wrap">
+                  <input
+                    type={isVisible ? 'text' : 'password'}
+                    className="tweak-api-key-input"
+                    placeholder={hasKey ? '••••••••••••••••' : `Ключ ${PROVIDER_LABELS[p]}`}
+                    value={key}
+                    onChange={e => updateApiKey(p, e.target.value)}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  <button
+                    className={`tweak-api-key-eye ${isVisible ? 'visible' : ''}`}
+                    onClick={() => toggleKeyVisibility(p)}
+                    title={isVisible ? 'Скрыть ключ' : 'Показать ключ'}
+                    type="button"
+                  >
+                    {isVisible ? '🙈' : '👁'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="tweak-hint">
+          Ключи хранятся в localStorage этого браузера и не передаются на сервер кроме как в API-запросах к провайдеру.
+        </div>
+
+        {/* Apply / Revert */}
+        <div className={`tweak-apply-row ${aiHasChanges ? 'visible' : ''}`}>
+          <button className="tweak-apply-btn" onClick={applyAi}>
+            ✅ Применить
+          </button>
+          <button className="tweak-revert-btn" onClick={revertAi}>
+            ↩ Отменить
+          </button>
         </div>
       </div>
 

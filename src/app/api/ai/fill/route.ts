@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       provider = 'deepseek',
       model,
       temperature = 0.85,
+      apiKey,
     } = body;
 
     if (!existingData || typeof existingData !== 'object') {
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       model,
       temperature: typeof temperature === 'number' ? temperature : 0.85,
       maxTokens: 4096,
+      apiKey: typeof apiKey === 'string' ? apiKey : undefined,
     };
 
     if (stream) {
