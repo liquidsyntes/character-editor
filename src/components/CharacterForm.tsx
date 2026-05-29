@@ -424,7 +424,7 @@ export default function CharacterForm({
           <button className="md:hidden text-on-surface hover:text-primary transition-colors">
             <span className="material-symbols-outlined">menu</span>
           </button>
-          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 lowercase">Редактор персонажа</div>
+          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
           {aiProgress && <span className="text-[12px] text-accent ml-4">{aiProgress}</span>}
           {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
         </div>
@@ -638,7 +638,7 @@ export default function CharacterForm({
           onReject={handleRejectDiff}
         />
       )}
-c:\WINDOWS\TEMP\streamdeck_tmp.md
+
       {showExport && (
         <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />
       )}
