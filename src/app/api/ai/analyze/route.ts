@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       model,
       temperature = 0.7,
       apiKey,
+      context,
     } = body;
 
     if (!existingData || typeof existingData !== 'object') {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { system, user } = buildAnalyzePrompt(existingData);
+    const { system, user } = buildAnalyzePrompt(existingData, context);
 
     const messages = [
       { role: 'system' as const, content: system },

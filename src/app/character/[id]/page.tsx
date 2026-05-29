@@ -17,17 +17,20 @@ export default async function CharacterEditorPage({
 
   const siblings = await getSiblingCharacters(character.projectId);
 
-  // Get project info for breadcrumb
+  // Get project info for breadcrumb and AI lore context
   let projectName: string | undefined;
   let projectId: string | undefined;
+  let projectContext: string | undefined;
+  
   if (character.projectId) {
     const project = await prisma.project.findUnique({
       where: { id: character.projectId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, description: true },
     });
     if (project) {
       projectId = project.id;
       projectName = project.name || 'Новый проект';
+      projectContext = project.description;
     }
   }
 
@@ -38,6 +41,7 @@ export default async function CharacterEditorPage({
       siblings={siblings}
       projectId={projectId}
       projectName={projectName}
+      projectContext={projectContext}
     />
   );
 }

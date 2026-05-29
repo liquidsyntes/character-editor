@@ -20,12 +20,14 @@ export default function CharacterForm({
   siblings = [],
   projectId,
   projectName,
+  projectContext,
 }: {
   characterId: string;
   initialData: CharacterData;
   siblings?: SiblingCharacter[];
   projectId?: string;
   projectName?: string;
+  projectContext?: string;
 }) {
   const backHref = projectId ? `/project/${projectId}` : '/project/unassigned';
   const backLabel = projectName || 'Без проекта';
@@ -51,10 +53,15 @@ export default function CharacterForm({
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [fixedFields, setFixedFields] = useState<string[]>([]);
   const [fixLoading, setFixLoading] = useState(false);
+  const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
 
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
   const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
+
+  const pushUndo = useCallback((stateToSave: CharacterData) => {
+    setAiUndoStack(prev => [...prev, stateToSave].slice(-10)); // Keep last 10 states
+  }, []);
 
   const doSave = useCallback((newData: CharacterData) => {
     setSaveStatus('saving');
@@ -68,6 +75,14 @@ export default function CharacterForm({
       }
     });
   }, [characterId]);
+
+  const handleUndo = useCallback(() => {
+    if (aiUndoStack.length === 0) return;
+    const previous = aiUndoStack[aiUndoStack.length - 1];
+    setAiUndoStack(prev => prev.slice(0, -1));
+    setData(previous);
+    doSave(previous);
+  }, [aiUndoStack, doSave]);
 
   const handleChange = useCallback((fieldId: string, value: string) => {
     setData(prev => {
@@ -101,8 +116,11 @@ export default function CharacterForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          existingData: data, context, provider: aiSettings.provider,
-          model: aiSettings.model, temperature: aiSettings.temperature,
+          existingData: data, 
+          context: projectContext,
+          provider: aiSettings.provider,
+          model: aiSettings.model, 
+          temperature: aiSettings.temperature,
           apiKey: aiSettings.apiKeys[aiSettings.provider],
         }),
         signal: controller.signal,
@@ -118,11 +136,20 @@ export default function CharacterForm({
       if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
 
       setData(prev => {
+        pushUndo(prev);
         const next = { ...prev, ...result.data };
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => doSave(next), 800);
         return next;
       });
+
+      if (result.data) {
+        const filledKeys = Object.keys(result.data);
+        if (filledKeys.length > 0) {
+          setFixedFields(filledKeys);
+          setTimeout(() => setFixedFields([]), 5000);
+        }
+      }
 
       setAiProgress(`✓ Заполнено ${result.filledCount} полей`);
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
@@ -133,7 +160,7 @@ export default function CharacterForm({
       setAiProgress('');
       setAiLoading(false);
     }
-  }, [data, doSave, aiSettings]);
+  }, [data, doSave, aiSettings, projectContext]);
 
   const handleAiFillSection = useCallback(async (sectionId: string) => {
     if (aiSectionLoading) return;
@@ -145,23 +172,45 @@ export default function CharacterForm({
     try {
       const res = await fetch('/api/ai/fill', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ existingData: data, sectionIds: [sectionId], provider: aiSettings.provider, model: aiSettings.model, apiKey: aiSettings.apiKeys[aiSettings.provider] }),
+        body: JSON.stringify({ 
+          existingData: data, 
+          sectionIds: [sectionId], 
+          context: projectContext,
+          provider: aiSettings.provider, 
+          model: aiSettings.model, 
+          apiKey: aiSettings.apiKeys[aiSettings.provider] 
+        }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
       const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Ошибка сервера');
+      
       setData(prev => {
+        pushUndo(prev);
         const next = { ...prev, ...result.data };
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => doSave(next), 800);
         return next;
       });
+      
+      // Highlight newly filled fields
+      if (result.data) {
+        const filledKeys = Object.keys(result.data);
+        if (filledKeys.length > 0) {
+          setFixedFields(filledKeys);
+          setTimeout(() => setFixedFields([]), 5000);
+        }
+      }
+      
       setOpenSections(prev => new Set(prev).add(sectionId));
       setTimeout(() => setAiSectionLoading(null), 2000);
     } catch (err: any) {
-      clearTimeout(timeoutId); setAiSectionLoading(null);
+      clearTimeout(timeoutId); 
+      setAiSectionLoading(null);
+      setAiError(err.message || 'Ошибка при заполнении секции');
     }
-  }, [data, doSave, aiSectionLoading, aiSettings]);
+  }, [data, doSave, aiSectionLoading, aiSettings, projectContext]);
 
   const handleAnalyze = useCallback(async () => {
     setAnalyzeLoading(true); setAnalyzeError(null);
@@ -170,7 +219,14 @@ export default function CharacterForm({
     try {
       const res = await fetch('/api/ai/analyze', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ existingData: data, provider: aiSettings.provider, model: aiSettings.model, temperature: 0.7, apiKey: aiSettings.apiKeys[aiSettings.provider] }),
+        body: JSON.stringify({ 
+          existingData: data, 
+          context: projectContext,
+          provider: aiSettings.provider, 
+          model: aiSettings.model, 
+          temperature: 0.7, 
+          apiKey: aiSettings.apiKeys[aiSettings.provider] 
+        }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -189,7 +245,7 @@ export default function CharacterForm({
     } finally {
       setAnalyzeLoading(false);
     }
-  }, [data, aiSettings]);
+  }, [data, aiSettings, projectContext]);
 
   const handleFixIssues = useCallback(async (fieldIds: string[]) => {
     if (!activeAnalysisId) return;
@@ -211,7 +267,8 @@ export default function CharacterForm({
           provider: aiSettings.provider,
           model: aiSettings.model,
           temperature: 0.7,
-          apiKey: aiSettings.apiKeys[aiSettings.provider]
+          apiKey: aiSettings.apiKeys[aiSettings.provider],
+          context: projectContext
         }),
         signal: controller.signal,
       });
@@ -225,6 +282,7 @@ export default function CharacterForm({
       if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
 
       setData(prev => {
+        pushUndo(prev);
         const next = { ...prev, ...result.data };
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => doSave(next), 800);
@@ -276,11 +334,14 @@ export default function CharacterForm({
           {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
         </div>
         <nav className="hidden md:flex gap-8">
-          <span className="text-on-surface-variant font-label-caps text-label-caps py-2">
-            {saveStatus === 'saving' ? 'Сохраняю...' : saveStatus === 'saved' ? '✓ Сохранено' : ''}
-          </span>
+          {/* Removed text save indicator */}
         </nav>
         <div className="flex items-center gap-4">
+          {aiUndoStack.length > 0 && (
+            <button onClick={handleUndo} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-sm" title="Отменить изменения ИИ">
+              <span className="material-symbols-outlined text-[16px]">undo</span> Отменить
+            </button>
+          )}
           <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" title="История анализа">
             <span className="material-symbols-outlined">history</span>
           </button>
@@ -355,11 +416,16 @@ export default function CharacterForm({
                       {sectionFilled} / {section.fields.length}
                     </span>
                     <button 
-                      className="ml-2 bg-surface-container hover:bg-primary hover:text-on-primary transition-colors p-1 rounded"
+                      className={`ml-2 transition-colors p-1 rounded ${aiSectionLoading === section.id ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-primary hover:text-on-primary'}`}
                       onClick={e => { e.stopPropagation(); handleAiFillSection(section.id); }}
                       title="Автозаполнить секцию"
+                      disabled={aiSectionLoading !== null}
                     >
-                      <span className="material-symbols-outlined text-[16px]">magic_button</span>
+                      {aiSectionLoading === section.id ? (
+                        <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">magic_button</span>
+                      )}
                     </button>
                   </h2>
                   
@@ -447,7 +513,25 @@ export default function CharacterForm({
         onClose={() => setShowAnalyzeHistory(false)}
       />
 
-      {showExport && <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />}
+      {showExport && (
+        <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />
+      )}
+
+      {saveStatus !== 'idle' && (
+        <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full shadow border border-outline-variant text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {saveStatus === 'saving' ? (
+            <>
+              <span className="material-symbols-outlined text-[16px] animate-spin text-primary">sync</span>
+              <span className="text-on-surface-variant">Сохранение...</span>
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+              <span className="text-green-500">Сохранено</span>
+            </>
+          )}
+        </div>
+      )}
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
     </div>
   );

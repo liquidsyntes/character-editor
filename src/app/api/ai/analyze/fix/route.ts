@@ -8,13 +8,13 @@ export const maxDuration = 300;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { existingData, issues, provider = 'deepseek', model, temperature = 0.7, apiKey } = body;
+    const { existingData, issues, provider = 'deepseek', model, temperature = 0.7, apiKey, context } = body;
 
     if (!existingData || !issues || !Array.isArray(issues) || issues.length === 0) {
       return NextResponse.json({ error: 'Missing existingData or issues array' }, { status: 400 });
     }
 
-    const { system, user } = buildFixPrompt(issues, existingData);
+    const { system, user } = buildFixPrompt(issues, existingData, context);
 
     const messages = [
       { role: 'system' as const, content: system },
