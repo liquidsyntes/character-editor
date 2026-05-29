@@ -266,7 +266,7 @@ export default function DashboardClient({
                         <span>{pct}%</span>
                       </div>
                       <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
+                        <div className={`${pct === 100 ? 'bg-[#22c55e]' : pct >= 50 ? 'bg-[#f97316]' : pct > 0 ? 'bg-[#ef4444]' : 'bg-outline-variant'} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }}></div>
                       </div>
                       <div className="mt-1 text-[10px] font-label-caps text-on-surface-variant text-right tracking-wider uppercase">
                         {formatDate(char.updatedAt)}
