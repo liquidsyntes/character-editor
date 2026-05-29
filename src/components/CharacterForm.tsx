@@ -11,7 +11,7 @@ import AnalyzePanel from './AnalyzePanel';
 import AnalyzeHistorySidebar, { AnalysisRecord } from './AnalyzeHistorySidebar';
 import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
 import { useAiSettings, PROVIDER_MODELS, PROVIDER_LABELS } from '@/lib/ai/useAiSettings';
-import { buildFixContext } from '@/lib/ai/prompt';
+import { buildFillPrompt } from '@/lib/ai/prompt'; // Replaced just for completeness if unused
 import Link from 'next/link';
 
 export default function CharacterForm({
@@ -35,14 +35,12 @@ export default function CharacterForm({
   const [showExport, setShowExport] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showCharList, setShowCharList] = useState(false);
+  const [showAnalyzeHistory, setShowAnalyzeHistory] = useState(false);
   const [isPending, startTransition] = useTransition();
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
-  // ── AI settings ────────────────────────
   const { saved: aiSettings } = useAiSettings();
-
-  // ── AI Fill state ──────────────────────
   const [aiLoading, setAiLoading] = useState(false);
   const [aiProgress, setAiProgress] = useState<string>('');
   const [aiError, setAiError] = useState<string | null>(null);
@@ -51,6 +49,7 @@ export default function CharacterForm({
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [fixedFields, setFixedFields] = useState<string[]>([]);
   const [fixLoading, setFixLoading] = useState(false);
 
   const filled = getFilledFieldCount(data);
@@ -79,27 +78,15 @@ export default function CharacterForm({
     });
   }, [doSave]);
 
-  // ── AI Fill handler ────────────────────
   const aiAbortRef = useRef<AbortController | null>(null);
 
   const handleAiFill = useCallback(async () => {
-    // Cancel previous request if any
-    if (aiAbortRef.current) {
-      aiAbortRef.current.abort();
-    }
-
-    setAiLoading(true);
-    setAiError(null);
-    setAiProgress('Думаю над персонажем...');
-
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-
-    // Safety timeout — 90 seconds
+    if (aiAbortRef.current) aiAbortRef.current.abort();
+    setAiLoading(true); setAiError(null); setAiProgress('Думаю над персонажем...');
+    const controller = new AbortController(); aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-      // Collect context from already-filled fields
       const contextParts: string[] = [];
       if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
       if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
@@ -110,594 +97,358 @@ export default function CharacterForm({
 
       const context = contextParts.filter(Boolean).join('; ') || undefined;
 
-      console.log('[AI Fill] Starting with fields:', Object.keys(data).filter(k => data[k]?.trim()).length, 'filled');
-      setAiProgress('Отправляю запрос к AI...');
-
       const res = await fetch('/api/ai/fill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          existingData: data,
-          context,
-          provider: aiSettings.provider,
-          model: aiSettings.model,
-          temperature: aiSettings.temperature,
+          existingData: data, context, provider: aiSettings.provider,
+          model: aiSettings.model, temperature: aiSettings.temperature,
+          apiKey: aiSettings.apiKeys[aiSettings.provider],
         }),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
+        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        throw new Error(errMsg);
       }
-
-      setAiProgress('Получаю ответ...');
-
       const result = await res.json();
-      console.log('[AI Fill] Response:', { filledCount: result.filledCount, usage: result.usage, warning: result.warning });
+      if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
 
-      if (!result.data || Object.keys(result.data).length === 0) {
-        throw new Error('AI не вернул ни одного заполненного поля. Попробуйте добавить больше исходных данных (хотя бы имя и пол).');
-      }
-
-      // Merge AI results with current data
       setData(prev => {
         const next = { ...prev, ...result.data };
-        // Save immediately
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => doSave(next), 800);
         return next;
       });
 
-      const tokens = result.usage
-        ? ` · ${result.usage.promptTokens + result.usage.completionTokens} токенов`
-        : '';
-
-      const usedProvider = result.provider || aiSettings.provider;
-      setAiProgress(
-        `✓ Заполнено ${result.filledCount} полей${tokens} · ${usedProvider}` +
-        (result.warning ? ` (⚠ ${result.warning})` : '')
-      );
-
-      // Expand all sections
+      setAiProgress(`✓ Заполнено ${result.filledCount} полей`);
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-
-      setTimeout(() => {
-        setAiLoading(false);
-        setAiProgress('');
-      }, 4000);
-
-    } catch (err: unknown) {
+      setTimeout(() => { setAiLoading(false); setAiProgress(''); }, 4000);
+    } catch (err: any) {
       clearTimeout(timeoutId);
-
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        setAiError('Прервано по таймауту (90 секунд). DeepSeek не успел ответить — попробуйте ещё раз.');
-      } else if (err instanceof TypeError && err.message.includes('fetch')) {
-        setAiError('Ошибка сети — сервер не отвечает. Проверьте, запущен ли npm run dev.');
-      } else {
-        const msg = err instanceof Error ? err.message : 'Неизвестная ошибка';
-        setAiError(msg);
-        console.error('[AI Fill] Error:', err);
-      }
-      setAiLoading(false);
+      setAiError(err.message || 'Ошибка');
       setAiProgress('');
-      // Don't auto-dismiss errors — user should read them
+      setAiLoading(false);
     }
-  }, [data, doSave]);
+  }, [data, doSave, aiSettings]);
 
-  const handleAiCancel = useCallback(() => {
-    if (aiAbortRef.current) {
-      aiAbortRef.current.abort();
-    }
-    setAiLoading(false);
-    setAiProgress('');
-    setAiError(null);
-  }, []);
-
-  // ── AI Fill per-section handler ──────
   const handleAiFillSection = useCallback(async (sectionId: string) => {
-    if (aiSectionLoading) return; // one at a time
-
-    const section = CHARACTER_SCHEMA.find(s => s.id === sectionId);
-    if (!section) return;
-
+    if (aiSectionLoading) return;
     setAiSectionLoading(sectionId);
     setAiError(null);
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-      // Build context from key filled fields
-      const contextParts: string[] = [];
-      if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
-      if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
-      if (data.gender) contextParts.push(`Пол: ${data.gender}`);
-      if (data.age) contextParts.push(`Возраст: ${data.age}`);
-      if (data.oneLiner) contextParts.push(`Суть: ${data.oneLiner}`);
-      const context = contextParts.filter(Boolean).join('; ') || undefined;
-
       const res = await fetch('/api/ai/fill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data,
-          sectionIds: [sectionId],
-          context,
-          provider: aiSettings.provider,
-          model: aiSettings.model,
-          temperature: aiSettings.temperature,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ existingData: data, sectionIds: [sectionId], provider: aiSettings.provider, model: aiSettings.model, apiKey: aiSettings.apiKeys[aiSettings.provider] }),
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
-      }
-
       const result = await res.json();
-
-      if (!result.data || Object.keys(result.data).length === 0) {
-        throw new Error(`AI не заполнил ни одного поля в секции «${section.label}».`);
-      }
-
       setData(prev => {
         const next = { ...prev, ...result.data };
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => doSave(next), 800);
         return next;
       });
-
-      // Expand the filled section
       setOpenSections(prev => new Set(prev).add(sectionId));
-
-      // Brief success flash
       setTimeout(() => setAiSectionLoading(null), 2000);
-
-    } catch (err: unknown) {
-      clearTimeout(timeoutId);
-      const msg = err instanceof Error ? err.message : 'Ошибка';
-      setAiError(msg);
-      setAiSectionLoading(null);
+    } catch (err: any) {
+      clearTimeout(timeoutId); setAiSectionLoading(null);
     }
   }, [data, doSave, aiSectionLoading, aiSettings]);
 
-  // ── AI Analyze handler ─────────────────
   const handleAnalyze = useCallback(async () => {
-    setAnalyzeLoading(true);
-    setAnalyzeError(null);
-
+    setAnalyzeLoading(true); setAnalyzeError(null);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
-
     try {
       const res = await fetch('/api/ai/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data,
-          provider: aiSettings.provider,
-          model: aiSettings.model,
-          temperature: 0.7,
-          apiKey: aiSettings.apiKeys[aiSettings.provider] || undefined,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ existingData: data, provider: aiSettings.provider, model: aiSettings.model, temperature: 0.7, apiKey: aiSettings.apiKeys[aiSettings.provider] }),
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(err.error || `Сервер ответил ошибкой ${res.status}`);
-      }
-
       const result = await res.json();
-
       const now = new Date();
-      const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' +
-        now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-
+      const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('ru-RU');
       const record: AnalysisRecord = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        timestamp: ts,
-        result: {
-          categories: result.categories,
-          totalIssues: result.totalIssues,
-          summary: result.summary,
-        },
-        usage: result.usage,
-        provider: result.provider || aiSettings.provider,
+        id: Date.now().toString(36), timestamp: ts,
+        result: { categories: result.categories, totalIssues: result.totalIssues, summary: result.summary },
+        usage: result.usage, provider: result.provider || aiSettings.provider,
       };
-
       setAnalyses(prev => [record, ...prev]);
       setActiveAnalysisId(record.id);
-
-    } catch (err: unknown) {
-      clearTimeout(timeoutId);
-      const msg = err instanceof Error ? err.message : 'Ошибка';
-      setAnalyzeError(msg);
+    } catch (err: any) {
+      clearTimeout(timeoutId); setAnalyzeError(err.message);
     } finally {
       setAnalyzeLoading(false);
     }
   }, [data, aiSettings]);
 
-  // ── Jump to field ───────────────────────
+  const handleFixIssues = useCallback(async (fieldIds: string[]) => {
+    if (!activeAnalysisId) return;
+    const activeAnalysis = analyses.find(a => a.id === activeAnalysisId);
+    if (!activeAnalysis) return;
+    
+    const allIssues = activeAnalysis.result.categories.flatMap(c => c.issues || []);
+    
+    setFixLoading(true);
+    setAnalyzeError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    try {
+      const res = await fetch('/api/ai/analyze/fix', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          issues: allIssues,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          temperature: 0.7,
+          apiKey: aiSettings.apiKeys[aiSettings.provider]
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        throw new Error(errMsg);
+      }
+      const result = await res.json();
+      if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
+
+      setData(prev => {
+        const next = { ...prev, ...result.data };
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => doSave(next), 800);
+        return next;
+      });
+
+      setFixedFields(Object.keys(result.data));
+      setTimeout(() => setFixedFields([]), 5000);
+      
+    } catch (err: any) {
+      clearTimeout(timeoutId); setAnalyzeError(err.message || 'Ошибка авто-исправления');
+    } finally {
+      setFixLoading(false);
+    }
+  }, [data, doSave, aiSettings, activeAnalysisId, analyses]);
+
   const handleJumpToField = useCallback((fieldId: string, sectionId: string) => {
     setOpenSections(prev => new Set(prev).add(sectionId));
     setTimeout(() => {
       const el = document.getElementById(fieldId);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.focus();
-        el.classList.add('field-highlight');
-        setTimeout(() => el.classList.remove('field-highlight'), 2000);
+        el.classList.add('ring-2', 'ring-primary');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
       }
-    }, 200);
+    }, 150);
   }, []);
-
-  // ── AI Fix handler ─────────────────────
-  const handleFixIssues = useCallback(async (fieldIds: string[]) => {
-    const analysis = analyses.find(a => a.id === activeAnalysisId);
-    if (!analysis || fieldIds.length === 0) return;
-
-    // Collect all issues from the active analysis
-    const allIssues = analysis.result.categories.flatMap(c => c.issues);
-    // Filter to issues that involve the fields we're fixing
-    const relevantIssues = allIssues.filter(iss => iss.fields.some(fid => fieldIds.includes(fid)));
-    if (relevantIssues.length === 0) return;
-
-    // Find which sections contain the affected fields
-    const sectionIds = new Set<string>();
-    for (const section of CHARACTER_SCHEMA) {
-      if (section.fields.some(f => fieldIds.includes(f.id))) {
-        sectionIds.add(section.id);
-      }
-    }
-
-    const fixContext = buildFixContext(relevantIssues, data);
-
-    setFixLoading(true);
-    setAiError(null);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const res = await fetch('/api/ai/fill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data,
-          sectionIds: [...sectionIds],
-          context: fixContext,
-          provider: aiSettings.provider,
-          model: aiSettings.model,
-          temperature: aiSettings.temperature,
-          apiKey: aiSettings.apiKeys[aiSettings.provider] || undefined,
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(err.error || `Ошибка ${res.status}`);
-      }
-
-      const result = await res.json();
-
-      if (!result.data || Object.keys(result.data).length === 0) {
-        throw new Error('AI не вернул исправленных полей.');
-      }
-
-      setData(prev => {
-        const next = { ...prev, ...result.data };
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => doSave(next), 800);
-        return next;
-      });
-
-      // Expand affected sections
-      setOpenSections(prev => {
-        const next = new Set(prev);
-        sectionIds.forEach(id => next.add(id));
-        return next;
-      });
-
-    } catch (err: unknown) {
-      clearTimeout(timeoutId);
-      setAiError(err instanceof Error ? err.message : 'Ошибка исправления');
-    } finally {
-      setFixLoading(false);
-    }
-  }, [data, doSave, aiSettings, analyses, activeAnalysisId]);
-
-  const toggleSection = (id: string) => {
-    setOpenSections(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const expandAll = () => setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-  const collapseAll = () => setOpenSections(new Set());
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        doSave(data);
-      }
-      if (e.ctrlKey && e.key === 'e') {
-        e.preventDefault();
-        setShowExport(true);
-      }
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); doSave(data); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [data, doSave]);
 
+  const charName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Без имени';
+
   return (
-    <>
-      <div className="app-layout">
-        <AnalyzeHistorySidebar
-          records={analyses}
-          activeId={activeAnalysisId}
-          onSelect={setActiveAnalysisId}
-          onDelete={(id) => {
-            setAnalyses(prev => prev.filter(a => a.id !== id));
-            if (activeAnalysisId === id) setActiveAnalysisId(null);
-          }}
-          onNewAnalysis={handleAnalyze}
-          loading={analyzeLoading}
-        />
-        <div className="app-layout-main">
-      <header className="toolbar">
-        <div className="toolbar-left">
-          {siblings.length > 0 && (
-            <button
-              className={`btn btn-icon btn-sm ${showCharList ? 'active' : ''}`}
-              onClick={() => setShowCharList(!showCharList)}
-              title="Персонажи"
-            >📋</button>
-          )}
-          <Link href={backHref} className="btn btn-back btn-ghost btn-sm">
-            <span className="arrow">←</span> {backLabel}
+    <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full w-full">
+      
+      <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+        <div className="flex items-center gap-4">
+          <button className="md:hidden text-on-surface hover:text-primary transition-colors">
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 lowercase">Редактор персонажа</div>
+          {aiProgress && <span className="text-[12px] text-accent ml-4">{aiProgress}</span>}
+          {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
+        </div>
+        <nav className="hidden md:flex gap-8">
+          <span className="text-on-surface-variant font-label-caps text-label-caps py-2">
+            {saveStatus === 'saving' ? 'Сохраняю...' : saveStatus === 'saved' ? '✓ Сохранено' : ''}
+          </span>
+        </nav>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" title="История анализа">
+            <span className="material-symbols-outlined">history</span>
+          </button>
+          <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" title="Анализ">
+            <span className="material-symbols-outlined">{analyzeLoading ? 'hourglass_empty' : 'search'}</span>
+          </button>
+          <div className="h-6 w-px bg-outline-variant mx-2"></div>
+          <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
+            <span className="material-symbols-outlined">share</span>
+          </button>
+          <button onClick={handleAiFill} disabled={aiLoading} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
+             {aiLoading ? 'Заполняю...' : '✨ Автозаполнение'}
+          </button>
+          <button onClick={() => setShowTweaks(!showTweaks)} className="text-on-surface-variant hover:text-primary transition-colors" title="Настройки">
+            <span className="material-symbols-outlined">settings</span>
+          </button>
+          <Link href={`/character/${characterId}/preview`} className="text-on-surface-variant hover:text-primary transition-colors" title="Предпросмотр">
+            <span className="material-symbols-outlined">visibility</span>
           </Link>
-          <div className="toolbar-dot"></div>
-          <span className="toolbar-title">
-            {[data.firstName, data.lastName].filter(Boolean).join(' ') || 'Новый персонаж'}
-          </span>
-        </div>
-        <div className="toolbar-center">
-          <span className="toolbar-model">
-            {PROVIDER_LABELS[aiSettings.provider] !== undefined
-              ? `${PROVIDER_LABELS[aiSettings.provider]} · ${PROVIDER_MODELS[aiSettings.provider].find(m => m.id === aiSettings.model)?.label || aiSettings.model}`
-              : ''}
-          </span>
-        </div>
-        <div className="toolbar-right">
-          <div className={`save-status ${saveStatus}`}>
-            <span className="save-status-dot"></span>
-            {saveStatus === 'saving' ? 'Сохраняю...' : saveStatus === 'saved' ? 'Сохранено' : ''}
-          </div>
-          <div className="progress-group">
-            <div className="progress-bar">
-              <div className="progress-bar-fill" style={{ width: `${percent}%` }} />
-            </div>
-            <span className="progress-label">{filled}/{total}</span>
-          </div>
-
-          {/* ── AI Fill Button ── */}
-          <button
-            className={`btn btn-sm btn-ai ${aiLoading ? 'loading' : ''}`}
-            onClick={handleAiFill}
-            disabled={aiLoading}
-            title="AI заполнит все пустые поля на основе уже введённых данных"
-          >
-            {aiLoading ? (
-              <span className="ai-spinner" />
-            ) : (
-              '✨ AI Заполнить'
-            )}
-          </button>
-
-          <button
-            className={`btn btn-sm btn-analyze ${analyzeLoading ? 'loading' : ''}`}
-            onClick={handleAnalyze}
-            disabled={analyzeLoading || aiLoading}
-            title="AI проанализирует персонажа на противоречия, слепые зоны и клише"
-          >
-            {analyzeLoading ? <span className="ai-spinner" /> : '🔍 Анализ'}
-          </button>
-
-          <button className="btn btn-sm" onClick={expandAll}>Развернуть</button>
-          <button className="btn btn-sm" onClick={collapseAll}>Свернуть</button>
-          <button className="btn btn-sm btn-primary" onClick={() => setShowExport(true)}>📤 Экспорт</button>
-          <Link href={`/character/${characterId}/preview`} className="btn btn-sm">👁 Просмотр</Link>
-          <button
-            className={`btn btn-icon btn-sm ${showTweaks ? 'active' : ''}`}
-            onClick={() => setShowTweaks(!showTweaks)}
-            title="Настройки (Ctrl+.)"
-          >⚙</button>
         </div>
       </header>
 
-      {/* ── AI Status Bar ── */}
-      {analyzeError && (
-        <div className="ai-status ai-error">
-          <span>⚠ {analyzeError}</span>
-          <button className="btn btn-sm ai-retry-btn" onClick={() => { setAnalyzeError(null); handleAnalyze(); }}>Повторить</button>
-        </div>
-      )}
-      {(aiLoading || aiProgress || aiError) && !analyzeError && (
-        <div className={`ai-status ${aiError ? 'ai-error' : aiLoading ? 'ai-loading' : ''}`}>
-          {aiError ? (
-            <>
-              <span>⚠ {aiError}</span>
-              <button
-                className="btn btn-sm ai-retry-btn"
-                onClick={() => { setAiError(null); handleAiFill(); }}
-              >
-                Повторить
-              </button>
-            </>
-          ) : aiLoading ? (
-            <>{aiProgress}</>
-          ) : (
-            <>{aiProgress}</>
-          )}
-        </div>
-      )}
-
-      <main className="form-panel" id="formPanel">
-        {CHARACTER_SCHEMA.map(section => {
-          const isOpen = openSections.has(section.id);
-          const sectionFilled = getSectionFilledCount(section.id, data);
-
-          // Group fields by rows
-          const rows: { row: number; fields: typeof section.fields }[] = [];
-          let currentRow: typeof section.fields = [];
-          let currentRowNum = -1;
-
-          for (const field of section.fields) {
-            const r = field.row ?? -1;
-            if (r > 0 && r === currentRowNum) {
-              currentRow.push(field);
-            } else {
-              if (currentRow.length > 0) {
-                rows.push({ row: currentRowNum, fields: currentRow });
-              }
-              currentRow = [field];
-              currentRowNum = r;
-            }
-          }
-          if (currentRow.length > 0) {
-            rows.push({ row: currentRowNum, fields: currentRow });
-          }
-
-          return (
-            <div key={section.id} className={`section ${isOpen ? 'open' : ''}`}>
-              <button
-                className="section-toggle"
-                aria-expanded={isOpen}
-                onClick={() => toggleSection(section.id)}
-              >
-                <span className="section-icon">{section.icon}</span>
-                <span className="section-label">{section.label}</span>
-                <span className="section-count">
-                  {sectionFilled}/{section.fields.length}
-                </span>
-                <button
-                  className={`btn btn-icon btn-sm btn-ai-section ${aiSectionLoading === section.id ? 'loading' : ''}`}
-                  disabled={aiSectionLoading !== null || aiLoading}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAiFillSection(section.id);
-                  }}
-                  title={`AI заполнит пустые поля в секции «${section.label}»`}
-                >
-                  {aiSectionLoading === section.id ? '⏳' : '✨'}
-                </button>
-                <span className="section-chevron">▶</span>
-              </button>
-              <div className="section-body">
-                <div className="section-body-inner">
-                  {rows.map((row, rowIdx) => {
-                    const renderField = (field: typeof section.fields[number]) => (
-                      <div key={field.id} className="field">
-                        <label className="field-label" htmlFor={field.id}>{field.label}</label>
-                        {field.type === 'select' ? (
-                          <select
-                            className="field-select"
-                            id={field.id}
-                            value={data[field.id] || ''}
-                            onChange={e => handleChange(field.id, e.target.value)}
-                          >
-                            <option value="" disabled>Выберите…</option>
-                            {field.options?.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                        ) : field.type === 'textarea' ? (
-                          <textarea
-                            className="field-input field-textarea"
-                            id={field.id}
-                            placeholder={field.placeholder}
-                            value={data[field.id] || ''}
-                            onChange={e => handleChange(field.id, e.target.value)}
-                            rows={3}
-                          />
-                        ) : (
-                          <input
-                            className="field-input"
-                            id={field.id}
-                            type="text"
-                            placeholder={field.placeholder}
-                            value={data[field.id] || ''}
-                            onChange={e => handleChange(field.id, e.target.value)}
-                            autoComplete="off"
-                          />
-                        )}
-                      </div>
-                    );
-
-                    if (row.row > 0 && row.fields.length > 1) {
-                      const cls = row.fields.length === 3 ? 'field-row field-row-3' : 'field-row';
-                      return (
-                        <div key={rowIdx} className={cls}>
-                          {row.fields.map(renderField)}
-                        </div>
-                      );
-                    }
-                    return row.fields.map(renderField);
-                  })}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32">
+          <div className="max-w-[800px] mx-auto space-y-stack-lg">
+            
+            {/* Header Identity */}
+            <section className="flex flex-col md:flex-row gap-gutter items-start">
+              <div className="shrink-0 group cursor-pointer">
+                <div className="w-32 h-40 bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors relative overflow-hidden">
+                  <span className="material-symbols-outlined text-[32px] mb-2 opacity-50">add_a_photo</span>
+                  <span className="font-label-caps text-[10px] uppercase tracking-widest opacity-50">Фото</span>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </main>
+              <div className="flex-1 w-full space-y-4 pt-2">
+                <div>
+                  <input 
+                    className="w-full text-display-lg font-display-lg text-primary bg-transparent input-underline placeholder:text-outline focus:ring-0 px-0 focus:outline-none uppercase" 
+                    placeholder="ИМЯ ПЕРСОНАЖА" 
+                    type="text" 
+                    value={charName}
+                    readOnly
+                  />
+                  <div className="text-[12px] text-outline mt-1 font-label-caps">Чтобы изменить имя, заполните Имя и Фамилию в Досье</div>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
+                    {data.roleInStory || 'Роль не указана'}
+                  </span>
+                  <span className="bg-primary/10 text-primary font-mono-data text-[12px] px-2 py-1 rounded">
+                    Прогресс: {filled}/{total} ({percent}%)
+                  </span>
+                </div>
+              </div>
+            </section>
 
-      {showExport && (
-        <ExportModal
-          data={data}
-          name={[data.firstName, data.lastName].filter(Boolean).join(' ')}
-          onClose={() => setShowExport(false)}
-        />
-      )}
+            <hr className="border-outline-variant" />
 
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+            {CHARACTER_SCHEMA.map(section => {
+              const isOpen = openSections.has(section.id);
+              const sectionFilled = getSectionFilledCount(section.id, data);
+              
+              return (
+                <section key={section.id} id={section.id} className="scroll-mt-20">
+                  <h2 
+                    className="font-label-caps text-label-caps text-on-surface-variant mb-stack-md uppercase tracking-widest flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => setOpenSections(prev => { const n = new Set(prev); n.has(section.id) ? n.delete(section.id) : n.add(section.id); return n;})}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_more' : 'chevron_right'}</span>
+                    {section.label}
+                    <span className="ml-auto text-[10px] bg-surface-variant px-2 py-1 rounded">
+                      {sectionFilled} / {section.fields.length}
+                    </span>
+                    <button 
+                      className="ml-2 bg-surface-container hover:bg-primary hover:text-on-primary transition-colors p-1 rounded"
+                      onClick={e => { e.stopPropagation(); handleAiFillSection(section.id); }}
+                      title="Автозаполнить секцию"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">magic_button</span>
+                    </button>
+                  </h2>
+                  
+                  {isOpen && (
+                    <div className="flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                        {section.fields.map(field => {
+                          const spanClass = field.span === 2 ? 'md:col-span-2' : 
+                                            field.span === 3 ? 'md:col-span-3' : 
+                                            'md:col-span-6';
+                          const isFixed = fixedFields.includes(field.id);
+                          return (
+                          <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'}`}>
+                            <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
+                              {field.label}
+                            </label>
+                            {field.type === 'select' ? (
+                              <select
+                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none"
+                                value={data[field.id] || ''}
+                                onChange={e => handleChange(field.id, e.target.value)}
+                              >
+                                <option value="" disabled>Выберите...</option>
+                                {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            ) : field.type === 'textarea' ? (
+                              <textarea
+                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none resize-y min-h-[60px]"
+                                placeholder={field.placeholder}
+                                value={data[field.id] || ''}
+                                onChange={e => handleChange(field.id, e.target.value)}
+                                rows={3}
+                                autoComplete="off"
+                              />
+                            ) : (
+                              <input
+                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none"
+                                type="text"
+                                placeholder={field.placeholder}
+                                value={data[field.id] || ''}
+                                onChange={e => handleChange(field.id, e.target.value)}
+                                autoComplete="off"
+                              />
+                            )}
+                          </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+        
+        {activeAnalysisId && (() => {
+          const a = analyses.find(r => r.id === activeAnalysisId);
+          return a ? (
+            <AnalyzePanel
+              result={a.result}
+              usage={a.usage}
+              provider={a.provider}
+              timestamp={a.timestamp}
+              fixing={fixLoading}
+              onClose={() => setActiveAnalysisId(null)}
+              onJumpToField={handleJumpToField}
+              onFixIssues={handleFixIssues}
+            />
+          ) : null;
+        })()}
+      </div>
 
-        </div>{/* app-layout-main */}
-        {(() => { const a = analyses.find(r => r.id === activeAnalysisId); return a ? (
-          <AnalyzePanel
-            result={a.result}
-            usage={a.usage}
-            provider={a.provider}
-            timestamp={a.timestamp}
-            fixing={fixLoading}
-            onClose={() => setActiveAnalysisId(null)}
-            onJumpToField={handleJumpToField}
-            onFixIssues={handleFixIssues}
-          />
-        ) : null; })()}
-      </div>{/* app-layout */}
-
-      <CharacterListPanel
-        isOpen={showCharList}
-        onClose={() => setShowCharList(false)}
-        characters={siblings}
-        currentId={characterId}
-        backHref={backHref}
+      <AnalyzeHistorySidebar
+        records={analyses}
+        activeId={activeAnalysisId}
+        onSelect={setActiveAnalysisId}
+        onDelete={(id) => {
+          setAnalyses(prev => prev.filter(a => a.id !== id));
+          if (activeAnalysisId === id) setActiveAnalysisId(null);
+        }}
+        onNewAnalysis={handleAnalyze}
+        loading={analyzeLoading}
+        isOpen={showAnalyzeHistory}
+        onClose={() => setShowAnalyzeHistory(false)}
       />
-    </>
+
+      {showExport && <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />}
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+    </div>
   );
 }

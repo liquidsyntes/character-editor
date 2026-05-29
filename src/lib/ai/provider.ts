@@ -2,6 +2,9 @@
  * AI Provider abstraction — OpenAI-compatible chat completions.
  */
 
+import { createXai } from '@ai-sdk/xai';
+import { generateText, streamText } from 'ai';
+
 export type ProviderName = 'deepseek' | 'xai' | 'openai';
 
 interface ProviderConfig {
@@ -85,6 +88,28 @@ export async function chatCompletion(
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI) или в .env как ${provider.toUpperCase()}_API_KEY`);
   }
 
+  if (provider === 'xai') {
+    const xai = createXai({ apiKey });
+    const systemMsg = messages.find(m => m.role === 'system')?.content;
+    const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    
+    const { text, usage } = await generateText({
+      model: xai(model),
+      system: systemMsg,
+      messages: coreMessages,
+      temperature: options.temperature ?? 0.8,
+      maxOutputTokens: options.maxTokens ?? 4096,
+      providerOptions: {
+        xai: { reasoningEffort: "low" },
+      },
+    });
+
+    return {
+      content: text,
+      usage: usage ? { promptTokens: usage.inputTokens || 0, completionTokens: usage.outputTokens || 0 } : undefined,
+    };
+  }
+
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
@@ -128,6 +153,39 @@ export async function chatCompletionStream(
 
   if (!apiKey) {
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI)`);
+  }
+
+  if (provider === 'xai') {
+    const xai = createXai({ apiKey });
+    const systemMsg = messages.find(m => m.role === 'system')?.content;
+    const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+    
+    const { textStream } = streamText({
+      model: xai(model),
+      system: systemMsg,
+      messages: coreMessages,
+      temperature: options.temperature ?? 0.8,
+      maxOutputTokens: options.maxTokens ?? 4096,
+      providerOptions: {
+        xai: { reasoningEffort: "low" },
+      },
+    });
+
+    const encoder = new TextEncoder();
+    return new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of textStream) {
+            controller.enqueue(encoder.encode(JSON.stringify({ delta: chunk }) + '\n'));
+          }
+          controller.enqueue(encoder.encode(JSON.stringify({ done: true }) + '\n'));
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
+        }
+      }
+    });
   }
 
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {

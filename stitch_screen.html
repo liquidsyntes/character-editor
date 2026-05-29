@@ -1,0 +1,288 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Character Editor - ScriptScribe</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Source+Sans+3:wght@400;600&amp;family=Source+Serif+4:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c5c6cd",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#bcc7de",
+                        "background": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#8590a6",
+                        "on-secondary-fixed-variant": "#474743",
+                        "on-tertiary-fixed": "#23005c",
+                        "on-tertiary-fixed-variant": "#5516be",
+                        "on-secondary-container": "#656461",
+                        "on-tertiary-container": "#9f77ff",
+                        "tertiary-fixed-dim": "#d0bcff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#bcc7de",
+                        "surface-tint": "#545f73",
+                        "tertiary-fixed": "#e9ddff",
+                        "primary-container": "#1e293b",
+                        "primary-fixed": "#d8e3fb",
+                        "on-background": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "tertiary": "#1a0049",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "secondary-fixed": "#e5e2dd",
+                        "secondary": "#5f5e5b",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container": "#e5eeff",
+                        "secondary-fixed-dim": "#c8c6c2",
+                        "surface": "#f8f9ff",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#45474c",
+                        "outline": "#75777d",
+                        "tertiary-container": "#32007d",
+                        "secondary-container": "#e5e2dd",
+                        "surface-container-high": "#dce9ff",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary-fixed": "#1c1c19",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#213145",
+                        "primary": "#091426",
+                        "on-primary-fixed": "#111c2d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "unit": "4px",
+                        "stack-sm": "8px",
+                        "gutter": "24px",
+                        "stack-md": "16px",
+                        "container-padding": "32px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Source Sans 3"],
+                        "body-md": ["Source Sans 3"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-sm": ["Source Serif 4"],
+                        "display-lg": ["Source Serif 4"],
+                        "mono-data": ["JetBrains Mono"],
+                        "headline-md": ["Source Serif 4"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #c5c6cd;
+            border-radius: 4px;
+        }
+        /* Custom input styles */
+        .input-underline {
+            border: none;
+            border-bottom: 2px solid #75777d;
+            border-radius: 0;
+            padding: 8px 0;
+            background: transparent;
+        }
+        .input-underline:focus {
+            box-shadow: none;
+            border-bottom-color: #091426;
+        }
+        
+        /* Layout Grid */
+        .editor-grid {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+            }
+            .sidebar-mobile-hidden {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<div class="editor-grid">
+<!-- SideNavBar (JSON Context: Dossier Active) -->
+<aside class="sidebar-mobile-hidden fixed left-0 top-0 h-full flex flex-col w-sidebar-width z-30 bg-primary-container">
+<!-- Brand/Header -->
+<div class="p-container-padding pb-6 border-b border-white/10">
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-primary">ScriptScribe</h1>
+<p class="font-body-md text-body-md mt-1 text-on-primary-container">Без названия</p>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 py-4 custom-scrollbar overflow-y-auto">
+<ul class="space-y-1">
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary font-bold border-l-4 border-primary bg-white/10 transition-all duration-150" href="#"><span class="material-symbols-outlined mr-4" style="font-variation-settings: &quot;FILL&quot; 1;">person_book</span><span class="font-label-caps text-label-caps tracking-wider">Досье</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">psychology</span><span class="font-label-caps text-label-caps tracking-wider">Психология</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">track_changes</span><span class="font-label-caps text-label-caps tracking-wider">Цели и мотивы</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">hub</span><span class="font-label-caps text-label-caps tracking-wider">Отношения</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">routine</span><span class="font-label-caps text-label-caps tracking-wider">Привычки</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">history</span><span class="font-label-caps text-label-caps tracking-wider">Предыстория</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">key</span><span class="font-label-caps text-label-caps tracking-wider">Секреты</span></a></li>
+<li class=""><a class="flex items-center px-6 py-3 text-on-primary-container hover:text-on-primary hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined mr-4">movie</span><span class="font-label-caps text-label-caps tracking-wider">Роль в истории</span></a></li>
+</ul>
+</nav>
+<!-- Footer / CTA -->
+<div class="p-6 border-t space-y-4 border-white/10">
+<button class="w-full flex items-center justify-center gap-2 bg-surface-container-highest text-primary py-3 px-4 rounded font-label-caps text-label-caps hover:bg-white transition-colors"><span class="material-symbols-outlined text-[18px]">add</span>Новый персонаж</button>
+<ul class="space-y-2 mt-4"><li class=""><a class="flex items-center text-on-primary-container hover:text-on-primary hover:bg-white/5 py-2 px-3 rounded transition-colors" href="#"><span class="material-symbols-outlined mr-3 text-[20px]">settings</span><span class="font-label-caps text-label-caps">Settings</span></a></li><li class=""><a class="flex items-center text-on-primary-container hover:text-on-primary hover:bg-white/5 py-2 px-3 rounded transition-colors" href="#"><span class="material-symbols-outlined mr-3 text-[20px]">download</span><span class="font-label-caps text-label-caps">Export</span></a></li></ul>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-[280px] flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface">
+<!-- Left: Mobile Menu Toggle / Product Name -->
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="font-label-caps text-[14px] font-medium text-on-surface-variant/70 lowercase">Редактор персонажа</div>
+</div>
+<!-- Center: Navigation Links -->
+<nav class="hidden md:flex gap-8">
+<a class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors py-2" href="#">Черновики</a>
+<a class="text-primary font-label-caps text-label-caps border-b-2 border-primary pb-1 py-2" href="#">Архетипы</a>
+<a class="text-on-surface-variant font-label-caps text-label-caps hover:text-primary transition-colors py-2" href="#">Хронология</a>
+</nav>
+<!-- Right: Actions & Search -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
+                    Сохранить сценарий
+                </button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<img alt="Writer profile" class="w-8 h-8 rounded-full border border-outline-variant object-cover ml-2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmO8owp0OqyIlgnWVctY1SsjYMh9je4wK1NksjhnQp_lSuF7Q4_wCjKIqnAPX4yxsw3onUXFlV8cpViCKuN-YTBmnI3__LsoQ0VLCptvxHvA0iApli6O9cjZYuSun-ZGYiwmZo6VYgiGb0YRWC-4QGFE_4RSR5TRWtgeHMAszfF9v2UOu5O-DUoVn5TgxgZ9yQR9EvnUPHnSTnJBHM5bF9fMPXqMrGQLCWIzq9Nx-TO6JiyIGchhtd4oDSSPMY2Yjk1yPfSEIIkPZO">
+</div>
+</header>
+<!-- Editor Canvas -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-container-padding bg-background pb-32">
+<div class="max-w-[800px] mx-auto space-y-stack-lg">
+<!-- Character Header: Identity -->
+<section class="flex flex-col md:flex-row gap-gutter items-start">
+<!-- Photo Upload Placeholder -->
+<div class="shrink-0 group cursor-pointer">
+<div class="w-32 h-40 bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors relative overflow-hidden">
+<span class="material-symbols-outlined text-[32px] mb-2 opacity-50">add_a_photo</span>
+<span class="font-label-caps text-[10px] uppercase tracking-widest opacity-50">Upload</span>
+</div>
+</div>
+<div class="flex-1 w-full space-y-4 pt-2">
+<!-- Name Input -->
+<div>
+<input class="w-full text-display-lg font-display-lg text-primary bg-transparent input-underline placeholder:text-outline focus:ring-0 px-0 focus:outline-none uppercase" placeholder="CHARACTER NAME" type="text" value="Эстебан Амарильо">
+</div>
+<!-- Role / Archetype Chips -->
+<div class="flex flex-wrap gap-2 items-center">
+<select class="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded focus:ring-primary focus:border-primary uppercase appearance-none pr-8 relative">
+<option>Antagonist</option>
+<option>Protagonist</option>
+<option>Mentor</option>
+<option>Reluctant Hero</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute ml-32 pointer-events-none text-[16px]">expand_more</span>
+<span class="bg-primary/10 text-primary font-mono-data text-[12px] px-2 py-1 rounded">INTJ</span>
+<span class="bg-tertiary-container/10 text-tertiary-container font-mono-data text-[12px] px-2 py-1 rounded">Lawful Evil</span>
+</div>
+</div>
+</section>
+<hr class="border-outline-variant">
+<!-- Section 1: Basic Dossier -->
+<section>
+<h2 class="font-label-caps text-label-caps text-on-surface-variant mb-stack-md uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                        ОСНОВНОЕ ДОСЬЕ
+                    </h2>
+<div class="flex flex-col gap-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ВОЗРАСТ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="57">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">РОСТ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="178">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ПОЛ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="мужчина">
+</div>
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ТЕЛОСЛОЖЕНИЕ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="Среднее. Выглядит органично без перекосов">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ОСАНКА</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="В целом военная, но более раслабленный">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ЦВЕТ ВОЛОС/ГЛАЗ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="Темно каштановые / Карие">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">НИКОГДА НЕ СНИМАЕТ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="Старый серебряный медальон с координатами порта Кальяо">
+</div>
+<div class="bg-surface p-4 border border-outline-variant rounded w-full">
+<label class="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">ОСОБЫЕ ПРИМЕТЫ</label>
+<input class="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0" type="text" value="Татуировка на плече 'за свободу Лимы'">
+</div>
+</div>
+</section>
+<!-- Add more sections based on document... -->
+<!-- This is a placeholder for the rest of the sections to keep the output concise for the 0.25 effort level. -->
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

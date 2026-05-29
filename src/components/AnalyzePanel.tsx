@@ -15,12 +15,12 @@ interface Props {
   onFixIssues?: (fieldIds: string[]) => void;
 }
 
-const SEVERITY_LABELS: Record<AnalyzeIssue['severity'], { label: string; color: string }> = {
-  contradiction: { label: 'Противоречие', color: '#ef4444' },
-  gap: { label: 'Слепая зона', color: '#f59e0b' },
-  cliche: { label: 'Клише', color: '#8b5cf6' },
-  inconsistency: { label: 'Нестыковка', color: '#f97316' },
-  opportunity: { label: 'Упущено', color: '#3b82f6' },
+const SEVERITY_LABELS: Record<AnalyzeIssue['severity'], { label: string; color: string; bg: string; border: string }> = {
+  contradiction: { label: 'Противоречие', color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
+  gap: { label: 'Слепая зона', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  cliche: { label: 'Клише', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+  inconsistency: { label: 'Нестыковка', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+  opportunity: { label: 'Упущено', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
 };
 
 function getSectionForField(fieldId: string): { sectionId: string; label: string } | null {
@@ -44,80 +44,108 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
   const allFieldIds = [...new Set(result.categories.flatMap(c => c.issues.flatMap(i => i.fields)))];
 
   return (
-    <div className="analyze-panel">
+    <div className="w-[400px] border-l border-outline-variant bg-surface flex flex-col h-full shrink-0 shadow-[-4px_0_24px_rgba(0,0,0,0.2)] animate-in slide-in-from-right-4 duration-300 z-50 fixed right-0 top-0 md:static md:shadow-none md:animate-none">
       {/* Header */}
-      <div className="analyze-panel-header">
-        <div className="analyze-panel-header-top">
-          <span className="analyze-panel-title">🔍 Анализ</span>
-          {timestamp && <span className="analyze-panel-time">{timestamp}</span>}
-          <button className="analyze-panel-close" onClick={onClose} title="Закрыть (Esc)">✕</button>
+      <div className="p-4 border-b border-outline-variant shrink-0">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="font-headline-sm text-[18px] font-bold flex items-center gap-2 text-primary">
+            <span className="material-symbols-outlined">analytics</span> Анализ
+          </h2>
+          <button className="text-on-surface-variant hover:text-primary transition-colors p-1 bg-surface-container rounded" onClick={onClose} title="Закрыть (Esc)">
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
         </div>
-        <div className="analyze-panel-meta">
-          {result.totalIssues > 0 && (
-            <span className="analyze-panel-badge">{result.totalIssues} проблем</span>
-          )}
+        <div className="flex justify-between items-end">
+          <div className="flex flex-col gap-1">
+            {result.totalIssues > 0 && (
+              <span className="font-label-caps text-[10px] text-error bg-error/10 px-2 py-0.5 rounded tracking-wider uppercase inline-block w-fit">
+                {result.totalIssues} проблем
+              </span>
+            )}
+            {timestamp && <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">{timestamp}</span>}
+          </div>
           {usage && (
-            <span className="analyze-panel-tokens">
-              {usage.promptTokens + usage.completionTokens} токенов · {provider || 'AI'}
+            <span className="font-mono-data text-[10px] text-on-surface-variant/70 text-right">
+              {usage.promptTokens + usage.completionTokens} токенов<br />
+              {provider || 'AI'}
             </span>
           )}
         </div>
       </div>
 
-      {/* Summary */}
-      {result.summary && (
-        <div className="analyze-panel-summary">{result.summary}</div>
-      )}
-
       {/* Body */}
-      <div className="analyze-panel-body">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 bg-surface-container-lowest">
+        {/* Summary */}
+        {result.summary && (
+          <div className="font-body-md text-[14px] text-on-surface-variant leading-relaxed bg-surface-container-high p-4 rounded-lg border border-outline-variant italic">
+            {result.summary}
+          </div>
+        )}
+
         {result.totalIssues === 0 ? (
-          <div className="analyze-panel-empty">
-            <span>🎉</span>
-            <p>AI не нашёл проблем в карточке. Либо персонаж отлично проработан, либо заполнено слишком мало полей.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center opacity-70">
+            <span className="text-[48px] mb-4">🎉</span>
+            <p className="font-body-md text-on-surface-variant">AI не нашёл проблем в карточке. Либо персонаж отлично проработан, либо заполнено слишком мало полей.</p>
           </div>
         ) : (
           result.categories.map((cat, ci) => (
-            <div key={ci} className="analyze-panel-category">
-              <div className="analyze-panel-cat-header">
+            <div key={ci} className="space-y-4">
+              <h3 className="font-label-caps text-[12px] text-on-surface uppercase tracking-widest flex items-center gap-2 border-b border-outline-variant/50 pb-2">
                 <span>{cat.icon}</span>
-                <span>{cat.title}</span>
-                <span className="analyze-panel-cat-count">{cat.issues.length}</span>
-              </div>
-              {cat.issues.map((issue, ii) => (
-                <div key={ii} className="analyze-panel-issue">
-                  <div className="analyze-panel-issue-head">
-                    <span
-                      className="analyze-panel-severity"
-                      style={{ background: SEVERITY_LABELS[issue.severity]?.color + '18', color: SEVERITY_LABELS[issue.severity]?.color, borderColor: SEVERITY_LABELS[issue.severity]?.color + '33' }}
-                    >
-                      {SEVERITY_LABELS[issue.severity]?.label || issue.severity}
-                    </span>
-                    <span className="analyze-panel-issue-title">{issue.title}</span>
-                  </div>
-                  <p className="analyze-panel-issue-desc">{issue.description}</p>
-                  {issue.suggestion && (
-                    <p className="analyze-panel-issue-sugg">💡 {issue.suggestion}</p>
-                  )}
-                  {issue.fields.length > 0 && (
-                    <div className="analyze-panel-fields">
-                      {issue.fields.map(fid => {
-                        const sf = getSectionForField(fid);
-                        const label = CHARACTER_SCHEMA.flatMap(s => s.fields).find(f => f.id === fid)?.label || fid;
-                        return sf ? (
-                          <button
-                            key={fid}
-                            className="analyze-panel-field-link"
-                            onClick={() => onJumpToField(fid, sf.sectionId)}
-                          >
-                            {label} →
-                          </button>
-                        ) : null;
-                      })}
+                {cat.title}
+                <span className="ml-auto bg-surface-variant text-on-surface-variant px-1.5 py-0.5 rounded-full text-[10px]">
+                  {cat.issues.length}
+                </span>
+              </h3>
+              
+              <div className="space-y-3">
+                {cat.issues.map((issue, ii) => {
+                  const style = SEVERITY_LABELS[issue.severity] || SEVERITY_LABELS.inconsistency;
+                  return (
+                    <div key={ii} className="bg-surface border border-outline-variant rounded-lg p-4 hover:border-primary/50 transition-colors">
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className={`font-label-caps text-[9px] uppercase tracking-wider px-2 py-0.5 rounded border ${style.color} ${style.bg} ${style.border}`}>
+                          {style.label}
+                        </span>
+                        <span className="font-headline-sm text-[14px] font-bold text-on-surface mt-[-1px] leading-tight">
+                          {issue.title}
+                        </span>
+                      </div>
+                      
+                      <p className="font-body-md text-[13px] text-on-surface-variant mb-3 leading-relaxed">
+                        {issue.description}
+                      </p>
+                      
+                      {issue.suggestion && (
+                        <div className="flex items-start gap-2 bg-primary/5 p-3 rounded border border-primary/10 mb-3">
+                          <span className="text-[14px]">💡</span>
+                          <p className="font-body-md text-[13px] text-primary/90 leading-relaxed italic">
+                            {issue.suggestion}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {issue.fields.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-outline-variant/30">
+                          {issue.fields.map(fid => {
+                            const sf = getSectionForField(fid);
+                            const label = CHARACTER_SCHEMA.flatMap(s => s.fields).find(f => f.id === fid)?.label || fid;
+                            return sf ? (
+                              <button
+                                key={fid}
+                                className="font-label-caps text-[10px] text-on-surface bg-surface-container hover:bg-primary hover:text-on-primary px-2 py-1 rounded transition-colors flex items-center gap-1 border border-outline-variant"
+                                onClick={() => onJumpToField(fid, sf.sectionId)}
+                              >
+                                {label} <span className="material-symbols-outlined text-[12px]">arrow_forward</span>
+                              </button>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           ))
         )}
@@ -125,16 +153,16 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
 
       {/* Fix button */}
       {allFieldIds.length > 0 && onFixIssues && (
-        <div className="analyze-panel-footer">
+        <div className="p-4 border-t border-outline-variant bg-surface shrink-0">
           <button
-            className="analyze-panel-fix-btn"
+            className="w-full bg-primary text-on-primary py-3 rounded font-label-caps text-[12px] uppercase tracking-wider hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
             onClick={() => onFixIssues(allFieldIds)}
             disabled={fixing}
           >
             {fixing ? (
-              <><span className="ai-spinner" /> Исправляю…</>
+              <><span className="material-symbols-outlined animate-spin text-[16px]">refresh</span> Исправляю…</>
             ) : (
-              <>🔧 Исправить ({allFieldIds.length} полей)</>
+              <><span className="material-symbols-outlined text-[16px]">auto_fix_high</span> Авто-исправление ({allFieldIds.length})</>
             )}
           </button>
         </div>
