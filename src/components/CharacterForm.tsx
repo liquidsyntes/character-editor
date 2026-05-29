@@ -10,6 +10,7 @@ import TweaksPanel from './TweaksPanel';
 import AnalyzePanel from './AnalyzePanel';
 import AnalyzeHistorySidebar, { AnalysisRecord } from './AnalyzeHistorySidebar';
 import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
+import { DiffModal } from './DiffModal';
 import { useAiSettings, PROVIDER_MODELS, PROVIDER_LABELS } from '@/lib/ai/useAiSettings';
 import { buildFillPrompt } from '@/lib/ai/prompt'; // Replaced just for completeness if unused
 import Link from 'next/link';
@@ -54,6 +55,7 @@ export default function CharacterForm({
   const [fixedFields, setFixedFields] = useState<string[]>([]);
   const [fixLoading, setFixLoading] = useState(false);
   const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
+  const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
 
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
@@ -83,6 +85,37 @@ export default function CharacterForm({
     setData(previous);
     doSave(previous);
   }, [aiUndoStack, doSave]);
+
+  const handleAcceptDiff = useCallback((acceptedData: Record<string, string>) => {
+    setData(prev => {
+      pushUndo(prev);
+      const next = { ...prev, ...acceptedData };
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => doSave(next), 800);
+      return next;
+    });
+    setFixedFields(Object.keys(acceptedData));
+    setTimeout(() => setFixedFields([]), 5000);
+    setPendingDiff(null);
+  }, [pushUndo, doSave]);
+
+  const handleRejectDiff = useCallback(() => {
+    setPendingDiff(null);
+  }, []);
+
+  const parsePartialJson = (raw: string): Record<string, string> => {
+    const result: Record<string, string> = {};
+    const kvPattern = /"([^"]+)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/g;
+    let match;
+    while ((match = kvPattern.exec(raw)) !== null) {
+      if (match[1] && match[2] !== undefined) {
+        try {
+          result[match[1]] = match[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+        } catch {}
+      }
+    }
+    return result;
+  };
 
   const handleChange = useCallback((fieldId: string, value: string) => {
     setData(prev => {
@@ -118,6 +151,7 @@ export default function CharacterForm({
         body: JSON.stringify({
           existingData: data, 
           context: projectContext,
+          stream: true,
           provider: aiSettings.provider,
           model: aiSettings.model, 
           temperature: aiSettings.temperature,
@@ -132,26 +166,63 @@ export default function CharacterForm({
         try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
         throw new Error(errMsg);
       }
-      const result = await res.json();
-      if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
-
-      setData(prev => {
-        pushUndo(prev);
-        const next = { ...prev, ...result.data };
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => doSave(next), 800);
-        return next;
-      });
-
-      if (result.data) {
-        const filledKeys = Object.keys(result.data);
-        if (filledKeys.length > 0) {
-          setFixedFields(filledKeys);
-          setTimeout(() => setFixedFields([]), 5000);
+      if (!res.body) throw new Error('No body');
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let rawJson = '';
+      let finalParsed: Record<string, string> = {};
+      let pushedUndo = false;
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const line = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.error) throw new Error(parsedChunk.error);
+              if (parsedChunk.text) {
+                rawJson += parsedChunk.text;
+                const partial = parsePartialJson(rawJson);
+                finalParsed = partial;
+                setData(prev => {
+                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+                  return { ...prev, ...partial };
+                });
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+                 console.error(e);
+              }
+            }
+          }
+          boundary = buffer.indexOf('\n\n');
         }
       }
 
-      setAiProgress(`✓ Заполнено ${result.filledCount} полей`);
+      // Finalize save
+      setData(prev => {
+         if (saveTimer.current) clearTimeout(saveTimer.current);
+         saveTimer.current = setTimeout(() => doSave(prev), 800);
+         return prev;
+      });
+
+      if (Object.keys(finalParsed).length > 0) {
+        setFixedFields(Object.keys(finalParsed));
+        setTimeout(() => setFixedFields([]), 5000);
+      }
+
+      setAiProgress(`✓ Заполнено ${Object.keys(finalParsed).length} полей`);
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
       setTimeout(() => { setAiLoading(false); setAiProgress(''); }, 4000);
     } catch (err: any) {
@@ -160,7 +231,7 @@ export default function CharacterForm({
       setAiProgress('');
       setAiLoading(false);
     }
-  }, [data, doSave, aiSettings, projectContext]);
+  }, [data, doSave, aiSettings, projectContext, pushUndo]);
 
   const handleAiFillSection = useCallback(async (sectionId: string) => {
     if (aiSectionLoading) return;
@@ -176,6 +247,7 @@ export default function CharacterForm({
           existingData: data, 
           sectionIds: [sectionId], 
           context: projectContext,
+          stream: true,
           provider: aiSettings.provider, 
           model: aiSettings.model, 
           apiKey: aiSettings.apiKeys[aiSettings.provider] 
@@ -183,24 +255,56 @@ export default function CharacterForm({
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Ошибка сервера');
+      if (!res.ok) throw new Error('Ошибка сервера');
+      if (!res.body) throw new Error('No body');
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let rawJson = '';
+      let finalParsed: Record<string, string> = {};
+      let pushedUndo = false;
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const line = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.error) throw new Error(parsedChunk.error);
+              if (parsedChunk.text) {
+                rawJson += parsedChunk.text;
+                const partial = parsePartialJson(rawJson);
+                finalParsed = partial;
+                setData(prev => {
+                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+                  return { ...prev, ...partial };
+                });
+              }
+            } catch (e) {}
+          }
+          boundary = buffer.indexOf('\n\n');
+        }
+      }
       
       setData(prev => {
-        pushUndo(prev);
-        const next = { ...prev, ...result.data };
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => doSave(next), 800);
-        return next;
+         if (saveTimer.current) clearTimeout(saveTimer.current);
+         saveTimer.current = setTimeout(() => doSave(prev), 800);
+         return prev;
       });
       
-      // Highlight newly filled fields
-      if (result.data) {
-        const filledKeys = Object.keys(result.data);
-        if (filledKeys.length > 0) {
-          setFixedFields(filledKeys);
-          setTimeout(() => setFixedFields([]), 5000);
-        }
+      if (Object.keys(finalParsed).length > 0) {
+        setFixedFields(Object.keys(finalParsed));
+        setTimeout(() => setFixedFields([]), 5000);
       }
       
       setOpenSections(prev => new Set(prev).add(sectionId));
@@ -210,7 +314,7 @@ export default function CharacterForm({
       setAiSectionLoading(null);
       setAiError(err.message || 'Ошибка при заполнении секции');
     }
-  }, [data, doSave, aiSectionLoading, aiSettings, projectContext]);
+  }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo]);
 
   const handleAnalyze = useCallback(async () => {
     setAnalyzeLoading(true); setAnalyzeError(null);
@@ -281,16 +385,7 @@ export default function CharacterForm({
       const result = await res.json();
       if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
 
-      setData(prev => {
-        pushUndo(prev);
-        const next = { ...prev, ...result.data };
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => doSave(next), 800);
-        return next;
-      });
-
-      setFixedFields(Object.keys(result.data));
-      setTimeout(() => setFixedFields([]), 5000);
+      setPendingDiff(result.data);
       
     } catch (err: any) {
       clearTimeout(timeoutId); setAnalyzeError(err.message || 'Ошибка авто-исправления');
@@ -342,11 +437,11 @@ export default function CharacterForm({
               <span className="material-symbols-outlined text-[16px]">undo</span> Отменить
             </button>
           )}
-          <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" title="История анализа">
-            <span className="material-symbols-outlined">history</span>
+          <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="История анализов">
+            <span className="material-symbols-outlined text-[16px]">history</span> История анализов
           </button>
-          <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1" title="Анализ">
-            <span className="material-symbols-outlined">{analyzeLoading ? 'hourglass_empty' : 'search'}</span>
+          <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="Анализ">
+            <span className="material-symbols-outlined text-[16px]">{analyzeLoading ? 'hourglass_empty' : 'psychology'}</span> Анализ карточки
           </button>
           <div className="h-6 w-px bg-outline-variant mx-2"></div>
           <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
@@ -388,17 +483,39 @@ export default function CharacterForm({
                   <div className="text-[12px] text-outline mt-1 font-label-caps">Чтобы изменить имя, заполните Имя и Фамилию в Досье</div>
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
-                  <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
-                    {data.roleInStory || 'Роль не указана'}
-                  </span>
-                  <span className="bg-primary/10 text-primary font-mono-data text-[12px] px-2 py-1 rounded">
+                  {data.characterFunction && (
+                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
+                      {data.characterFunction}
+                    </span>
+                  )}
+                  {data.plotSignificance && (
+                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
+                      {data.plotSignificance}
+                    </span>
+                  )}
+                  {!data.characterFunction && !data.plotSignificance && (
+                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase opacity-50">
+                      Роль не указана
+                    </span>
+                  )}
+                  <span className={`${percent === 100 ? 'bg-[#22c55e]/10 text-[#22c55e]' : percent >= 50 ? 'bg-[#f97316]/10 text-[#f97316]' : percent > 0 ? 'bg-[#ef4444]/10 text-[#ef4444]' : 'bg-surface-variant text-on-surface-variant'} font-mono-data text-[12px] px-2 py-1 rounded transition-colors duration-300`}>
                     Прогресс: {filled}/{total} ({percent}%)
                   </span>
                 </div>
               </div>
             </section>
 
-            <hr className="border-outline-variant" />
+            <div className="flex items-center">
+              <hr className="flex-1 border-outline-variant" />
+              <div className="flex gap-2 ml-4">
+                 <button onClick={() => setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)))} className="text-on-surface-variant hover:text-primary transition-colors p-1.5 bg-surface-container rounded" title="Развернуть все категории">
+                   <span className="material-symbols-outlined text-[18px]">unfold_more</span>
+                 </button>
+                 <button onClick={() => setOpenSections(new Set())} className="text-on-surface-variant hover:text-primary transition-colors p-1.5 bg-surface-container rounded" title="Свернуть все категории">
+                   <span className="material-symbols-outlined text-[18px]">unfold_less</span>
+                 </button>
+              </div>
+            </div>
 
             {CHARACTER_SCHEMA.map(section => {
               const isOpen = openSections.has(section.id);
@@ -513,6 +630,15 @@ export default function CharacterForm({
         onClose={() => setShowAnalyzeHistory(false)}
       />
 
+      {pendingDiff && (
+        <DiffModal
+          originalData={data}
+          proposedData={pendingDiff}
+          onAccept={handleAcceptDiff}
+          onReject={handleRejectDiff}
+        />
+      )}
+c:\WINDOWS\TEMP\streamdeck_tmp.md
       {showExport && (
         <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />
       )}
