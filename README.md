@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Character Card Editor
+
+A robust, full-stack Next.js web application designed for writers, role-players, and game designers to create, edit, and AI-auto-fill detailed character cards.
+
+## Features
+
+- **Comprehensive Character Schema**: 145 distinct fields categorized into 24 sections, ensuring deep and nuanced character profiles.
+- **AI-Powered Generation**: Automatically fill specific sections or entire character cards using LLMs.
+- **Deep Character Analysis**: AI assistant analyzes characters for contradictions, clichés, or gaps and suggests actionable fixes.
+- **Word-Level Diffing**: Review AI-suggested changes visually before applying them to your character data.
+- **Project Organization**: Group characters by project for better structure.
+- **Markdown Export**: Export character profiles into readable Markdown format.
+- **Rate Limiting & Streaming**: Built-in SSE streaming for real-time AI responses and rate limiting to prevent API abuse.
+
+## Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **UI**: React 19, [Tailwind CSS](https://tailwindcss.com/)
+- **Database**: SQLite (via `@libsql/client`)
+- **ORM**: [Prisma 7](https://www.prisma.io/)
+- **AI Integration**: [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- **AI Providers**: DeepSeek (Primary), xAI (Grok), OpenAI
+- **Testing**: Vitest
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js (v18+ recommended)
+- npm or yarn
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repository** (or navigate to the project directory):
+   ```bash
+   cd character-editor
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-## Learn More
+   > **⚠️ Important note for WSL / Linux users:**
+   > If you are running this project on WSL (Windows Subsystem for Linux) или a native Linux environment, you must install the platform-specific `libsql` package to avoid database connectivity errors during Prisma operations:
+   > ```bash
+   > npm install @libsql/linux-x64-gnu
+   > ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Set up Environment Variables**:
+   Copy the example environment file and fill in your API keys:
+   ```bash
+   cp .env.example .env
+   ```
+   *Edit `.env` to add your `DEEPSEEK_API_KEY` (or keys for xAI/OpenAI).*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Initialize the Database**:
+   Apply Prisma migrations to create the local SQLite database (`dev.db`):
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. **Run the Development Server**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser to start building characters.
 
-## Deploy on Vercel
+## Architecture Highlights
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Server Actions**: All CRUD operations for Characters and Projects are handled securely via Next.js Server Actions (`src/lib/actions.ts`).
+- **Provider Abstraction**: Easily switch or add new AI providers in `src/lib/ai/provider.ts`.
+- **Staged AI Settings**: AI configurations (models, temperatures) use a staged/apply pattern stored locally to prevent accidental misconfigurations.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` - Starts the development server.
+- `npm run build` - Builds the application for production.
+- `npm start` - Starts the production server.
+- `npm run lint` - Runs ESLint.
+- `npm test` - Runs the Vitest test suite.

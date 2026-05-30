@@ -1,0 +1,74 @@
+# Current State
+
+## Что уже сделано
+
+- [x] CRUD персонажей (createCharacter, updateCharacter, deleteCharacter, duplicateCharacter, archiveCharacter)
+- [x] CRUD проектов (createProject, updateProject, deleteProject, archiveProject)
+- [x] 145 полей персонажа в 24 секциях (схема: `src/lib/schema.ts`)
+- [x] AI-заполнение всей формы и посекционно (кнопка ✨ на каждой секции)
+- [x] AI-анализ персонажа на противоречия/клише/пробелы
+- [x] AI-исправление найденных проблем (индивидуально/скопом)
+- [x] Word-level diff перед применением AI-изменений (DiffModal)
+- [x] SSE-стриминг в fill и analyze API-роутах
+- [x] Staged/Apply паттерн для AI-настроек
+- [x] Rate limiting (in-memory) на analyze и fix роутах
+- [x] Экспорт в Markdown (ExportModal)
+- [x] Предпросмотр карточки (character/[id]/preview)
+- [x] История AI-анализов (AnalyzeHistorySidebar)
+- [x] Редактор системных промптов (SystemPromptsEditor — задекларирован)
+- [x] 3 unit-теста: prompt.test.ts, fill/route.test.ts, analyze/route.test.ts
+- [x] ESLint strict + TypeScript strict
+- [x] Tailwind с кастомной Material Design цветовой схемой
+- [x] Material Symbols иконки
+- [x] 2 миграции Prisma (init + add_projects)
+
+## Что не сделано / отсутствует
+
+- [ ] Аутентификация — любой с доступом к localhost может всё
+- [ ] Валидация .env-переменных при старте
+- [ ] Docker / docker-compose
+- [ ] CI/CD (GitHub Actions, Vercel-деплой)
+- [ ] `.env.example` — только `.env` с реальным ключом
+- [ ] Тесты для `/api/ai/analyze/fix`
+- [ ] Тесты для Server Actions
+- [ ] Тесты компонентов
+- [ ] Транзакционная целостность (одиночные Prisma-запросы)
+- [ ] Механизм очистки старых записей rate-limit Map'а (утечка памяти при множестве IP)
+
+## Риски и проблемные места
+
+### 🔴 Критичные
+- Нет активных критических проблем на данный момент.
+
+### 🟡 Значимые
+- **CharacterForm.tsx** (~37K символов) — God Component, нужна декомпозиция на хуки
+- **Дублирование SSE-логики** — `fill/route.ts` и `analyze/route.ts` содержат почти идентичный код
+- **API-ключи в localStorage** — потенциальная XSS-поверхность
+- **Rate limiter in-memory** — сбрасывается при рестарте, не чистит старые записи
+- **Prisma 7.8.0** и **Vercel AI SDK 6** — свежие мажорные версии, риск breaking changes
+
+### 🟢 Некритичные
+- **AppSetting** в Prisma не используется в коде
+- **xAI и OpenAI** задекларированы но нет ключей в .env — не тестировались
+- **Отсутствует CORS** в API-роутах (для локального использования ок)
+- **SystemPromptsEditor** — неясно, сохраняются ли промпты между сессиями
+
+## Покрытие тестами
+
+| Файл | Что тестирует |
+|------|--------------|
+| `src/lib/ai/prompt.test.ts` | parseFillResponse, parseAnalyzeResponse (4 теста) |
+| `src/app/api/ai/fill/route.test.ts` | Валидация, non-stream, stream (3 теста) |
+| `src/app/api/ai/analyze/route.test.ts` | Валидация, rate limit, stream (3 теста) |
+
+**Не покрыто:** fix-роут, Server Actions, компоненты, provider.ts.
+
+## Состояние зависимостей
+
+Все зависимости актуальны (май 2026), но мажорные версии свежие:
+- Prisma 7 (вышла ~апрель 2026)
+- Vercel AI SDK 6
+- Next.js 16
+- React 19
+
+При обновлении любой из них — высокая вероятность breaking changes.

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.yarn/
+
+# Build output
+.next/
+out/
+build/
+dist/
+
+# Database
+dev.db
+*.db-journal
+
+# Generated
+src/generated/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env (real keys)
+.env
+.env.local
+
+# Test artifacts
+coverage/
+
+# Vercel
+.vercel/
+
+# TypeScript cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Git
+.git/
