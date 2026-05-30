@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { system, user } = buildFillPrompt({
+    const { system, user } = await buildFillPrompt({
       existingData,
       sectionIds,
       context,

@@ -53,16 +53,10 @@ export default function CharacterLayout({ children }: { children: React.ReactNod
             })}
           </ul>
         </nav>
-        {/* Footer / CTA */}
-        <div className="p-6 border-t space-y-4 border-white/10">
-          <Link href="/" className="w-full flex items-center justify-center gap-2 bg-surface-container-highest text-primary py-3 px-4 rounded font-label-caps text-label-caps hover:bg-white transition-colors">
-            <span className="material-symbols-outlined text-[18px]">home</span>На главную
-          </Link>
-        </div>
       </aside>
       
       {/* Main Content Area */}
-      <main className="md:ml-[345px] flex flex-col h-screen overflow-hidden relative">
+      <main className="md:ml-[375px] flex flex-col h-screen overflow-hidden relative">
         {children}
       </main>
     </div>

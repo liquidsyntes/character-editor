@@ -3,6 +3,22 @@
 import { useEffect, useRef } from 'react';
 import { AnalyzeResult, AnalyzeIssue } from '@/types/character';
 import { CHARACTER_SCHEMA } from '@/lib/schema';
+import { SEVERITY_LABELS } from '@/lib/constants';
+
+const FormattedText = ({ text }: { text: string }) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} style={{ fontWeight: 'bold' }}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+};
 
 interface Props {
   result: AnalyzeResult;
@@ -12,13 +28,6 @@ interface Props {
   onJumpToField: (fieldId: string, sectionId: string) => void;
 }
 
-const SEVERITY_LABELS: Record<AnalyzeIssue['severity'], { label: string; color: string }> = {
-  contradiction: { label: 'Противоречие', color: '#ef4444' },
-  gap: { label: 'Слепая зона', color: '#f59e0b' },
-  cliche: { label: 'Клише', color: '#8b5cf6' },
-  inconsistency: { label: 'Нестыковка', color: '#f97316' },
-  opportunity: { label: 'Упущено', color: '#3b82f6' },
-};
 
 function getSectionForField(fieldId: string): { sectionId: string; label: string } | null {
   for (const section of CHARACTER_SCHEMA) {
@@ -95,15 +104,15 @@ export default function AnalyzeModal({ result, usage, provider, onClose, onJumpT
                       <div className="analyze-issue-header">
                         <span
                           className="analyze-severity-badge"
-                          style={{ background: SEVERITY_LABELS[issue.severity]?.color + '22', color: SEVERITY_LABELS[issue.severity]?.color, borderColor: SEVERITY_LABELS[issue.severity]?.color + '44' }}
+                          style={{ background: SEVERITY_LABELS[issue.severity]?.hexColor + '22', color: SEVERITY_LABELS[issue.severity]?.hexColor, borderColor: SEVERITY_LABELS[issue.severity]?.hexColor + '44' }}
                         >
                           {SEVERITY_LABELS[issue.severity]?.label || issue.severity}
                         </span>
                         <span className="analyze-issue-title">{issue.title}</span>
                       </div>
-                      <p className="analyze-issue-desc">{issue.description}</p>
+                      <p className="analyze-issue-desc"><FormattedText text={issue.description} /></p>
                       {issue.suggestion && (
-                        <p className="analyze-issue-suggestion">💡 {issue.suggestion}</p>
+                        <p className="analyze-issue-suggestion">💡 <FormattedText text={issue.suggestion} /></p>
                       )}
                       {issue.fields.length > 0 && (
                         <div className="analyze-issue-fields">

@@ -2,11 +2,18 @@ import { NextResponse } from 'next/server';
 import { chatCompletion } from '@/lib/ai/provider';
 import { buildFixPrompt, parseFillResponse } from '@/lib/ai/prompt';
 import { ProviderName } from '@/lib/ai/provider';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const { success } = checkRateLimit(ip, 10, 60000);
+    if (!success) {
+      return NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 });
+    }
+
     const body = await req.json();
     const { existingData, issues, provider = 'deepseek', model, temperature = 0.7, apiKey, context } = body;
 
@@ -14,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing existingData or issues array' }, { status: 400 });
     }
 
-    const { system, user } = buildFixPrompt(issues, existingData, context);
+    const { system, user } = await buildFixPrompt(issues, existingData, context);
 
     const messages = [
       { role: 'system' as const, content: system },

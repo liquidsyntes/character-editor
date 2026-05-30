@@ -3,6 +3,22 @@
 import { useEffect } from 'react';
 import { AnalyzeResult, AnalyzeIssue } from '@/types/character';
 import { CHARACTER_SCHEMA } from '@/lib/schema';
+import { SEVERITY_LABELS } from '@/lib/constants';
+
+const FormattedText = ({ text }: { text: string }) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} className="font-bold text-on-surface">{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+};
 
 interface Props {
   result: AnalyzeResult;
@@ -12,16 +28,10 @@ interface Props {
   fixing?: boolean;
   onClose: () => void;
   onJumpToField: (fieldId: string, sectionId: string) => void;
-  onFixIssues?: (fieldIds: string[]) => void;
+  onFixIssues?: (issues: AnalyzeIssue[]) => void;
 }
 
-const SEVERITY_LABELS: Record<AnalyzeIssue['severity'], { label: string; color: string; bg: string; border: string }> = {
-  contradiction: { label: 'Противоречие', color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
-  gap: { label: 'Слепая зона', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-  cliche: { label: 'Клише', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
-  inconsistency: { label: 'Нестыковка', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-  opportunity: { label: 'Упущено', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-};
+
 
 function getSectionForField(fieldId: string): { sectionId: string; label: string } | null {
   for (const section of CHARACTER_SCHEMA) {
@@ -104,7 +114,7 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
                   return (
                     <div key={ii} className="bg-surface border border-outline-variant rounded-lg p-4 hover:border-primary/50 transition-colors">
                       <div className="flex items-start gap-2 mb-2">
-                        <span className={`font-label-caps text-[9px] uppercase tracking-wider px-2 py-0.5 rounded border ${style.color} ${style.bg} ${style.border}`}>
+                        <span className={`font-label-caps text-[9px] uppercase tracking-wider px-2 py-0.5 rounded border ${style.twColor} ${style.bg} ${style.border}`}>
                           {style.label}
                         </span>
                         <span className="font-headline-sm text-[14px] font-bold text-on-surface mt-[-1px] leading-tight">
@@ -113,20 +123,20 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
                       </div>
                       
                       <p className="font-body-md text-[13px] text-on-surface-variant mb-3 leading-relaxed">
-                        {issue.description}
+                        <FormattedText text={issue.description} />
                       </p>
                       
                       {issue.suggestion && (
                         <div className="flex items-start gap-2 bg-primary/5 p-3 rounded border border-primary/10 mb-3">
                           <span className="text-[14px]">💡</span>
                           <p className="font-body-md text-[13px] text-primary/90 leading-relaxed italic">
-                            {issue.suggestion}
+                            <FormattedText text={issue.suggestion} />
                           </p>
                         </div>
                       )}
                       
                       {issue.fields.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-outline-variant/30">
+                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-outline-variant/30">
                           {issue.fields.map(fid => {
                             const sf = getSectionForField(fid);
                             const label = CHARACTER_SCHEMA.flatMap(s => s.fields).find(f => f.id === fid)?.label || fid;
@@ -140,6 +150,16 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
                               </button>
                             ) : null;
                           })}
+                          <div className="flex-1" />
+                          {onFixIssues && (
+                            <button
+                              className="font-label-caps text-[10px] text-primary bg-primary/10 hover:bg-primary hover:text-on-primary px-2 py-1 rounded transition-colors flex items-center gap-1 border border-primary/20"
+                              onClick={() => onFixIssues([issue])}
+                            >
+                              <span className="material-symbols-outlined text-[12px]">auto_fix_high</span>
+                              Исправить
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -156,7 +176,7 @@ export default function AnalyzePanel({ result, usage, provider, timestamp, fixin
         <div className="p-4 border-t border-outline-variant bg-surface shrink-0">
           <button
             className="w-full bg-primary text-on-primary py-3 rounded font-label-caps text-[12px] uppercase tracking-wider hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-            onClick={() => onFixIssues(allFieldIds)}
+            onClick={() => onFixIssues(result.categories.flatMap(c => c.issues))}
             disabled={fixing}
           >
             {fixing ? (

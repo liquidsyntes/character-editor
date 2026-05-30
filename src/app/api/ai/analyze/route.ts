@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chatCompletion, ProviderName } from '@/lib/ai/provider';
-import { buildAnalyzePrompt, parseAnalyzeResponse } from '@/lib/ai/prompt';
+import { chatCompletionStream, ProviderName } from '@/lib/ai/provider';
+import { buildAnalyzePrompt } from '@/lib/ai/prompt';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,12 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const { success } = checkRateLimit(ip, 10, 60000);
+    if (!success) {
+      return NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 });
+    }
+
     const body = await req.json();
     const {
       existingData,
@@ -25,14 +32,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { system, user } = buildAnalyzePrompt(existingData, context);
+    const { system, user } = await buildAnalyzePrompt(existingData, context);
 
     const messages = [
       { role: 'system' as const, content: system },
       { role: 'user' as const, content: user },
     ];
 
-    const result = await chatCompletion(messages, {
+    const aiStream = await chatCompletionStream(messages, {
       provider: provider as ProviderName,
       model,
       temperature: typeof temperature === 'number' ? temperature : 0.7,
@@ -40,27 +47,55 @@ export async function POST(req: NextRequest) {
       apiKey: typeof apiKey === 'string' ? apiKey : undefined,
     });
 
-    console.log(`[AI Analyze] Provider: ${provider}, model: ${model || 'default'}, tokens: ${result.usage?.promptTokens}+${result.usage?.completionTokens}`);
+    const encoder = new TextEncoder();
+    const sseStream = new ReadableStream({
+      async start(controller) {
+        const reader = aiStream.getReader();
+        let buffer = '';
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              if (buffer.trim()) {
+                try {
+                  const parsed = JSON.parse(buffer);
+                  if (parsed.delta) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: parsed.delta })}\n\n`));
+                } catch (e) {}
+              }
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              break;
+            }
+            
+            buffer += new TextDecoder().decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.delta) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: parsed.delta })}\n\n`));
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (err) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: String(err) })}\n\n`)
+          );
+        } finally {
+          controller.close();
+        }
+      },
+    });
 
-    let analysis;
-    try {
-      analysis = parseAnalyzeResponse(result.content);
-    } catch (parseErr) {
-      console.error('Analyze parse error:', parseErr);
-      return NextResponse.json(
-        {
-          error: 'Не удалось разобрать ответ AI. Попробуйте ещё раз.',
-          rawPreview: result.content.slice(0, 500),
-        },
-        { status: 422 }
-      );
-    }
-
-    return NextResponse.json({
-      ...analysis,
-      usage: result.usage,
-      provider,
-      model: model || 'default',
+    return new Response(sseStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
   } catch (err) {
     console.error('AI analyze error:', err);
@@ -79,3 +114,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

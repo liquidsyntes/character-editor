@@ -6,6 +6,7 @@ import { CharacterData } from '@/types/character';
 import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { archiveCharacter, deleteCharacter, duplicateCharacter, updateProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
+import PromptsPanel from '@/components/PromptsPanel';
 
 interface CharacterItem {
   id: string;
@@ -44,7 +45,25 @@ export default function DashboardClient({
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'drafts' | 'archived'>('all');
   const [showTweaks, setShowTweaks] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(24);
   const total = getTotalFieldCount();
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => prev + 24);
+      }
+    });
+    observerRef.current.observe(node);
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [search, filter]);
 
   const [pName, setPName] = useState(initialName || '');
   const [pDesc, setPDesc] = useState(initialDesc || '');
@@ -76,10 +95,15 @@ export default function DashboardClient({
     if (filter === 'all' && c.isArchived) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
-      return (c.name?.toLowerCase().includes(q)) || (c.summary?.toLowerCase().includes(q));
+      // data - это JSON строка, так что мы можем искать прямо по ней (это охватит значения всех полей)
+      return (c.name?.toLowerCase().includes(q)) || 
+             (c.summary?.toLowerCase().includes(q)) ||
+             (c.data?.toLowerCase().includes(q));
     }
     return true;
   });
+
+  const visibleCharacters = filtered.slice(0, visibleCount);
 
   const handleArchive = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -125,13 +149,22 @@ export default function DashboardClient({
         </div>
         <div className="flex items-center gap-6">
           <span className="text-on-surface-variant font-label-caps text-[12px] tracking-widest">{characters.filter(c => !c.isArchived).length} персонажей</span>
-          <button
-            className={`text-on-surface-variant hover:text-primary transition-colors ${showTweaks ? 'text-primary' : ''}`}
-            onClick={() => setShowTweaks(!showTweaks)}
-            title="Настройки"
-          >
-            <span className="material-symbols-outlined text-[20px]">settings</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              className={`text-on-surface-variant hover:text-primary transition-colors ${showPrompts ? 'text-primary' : ''}`}
+              onClick={() => setShowPrompts(!showPrompts)}
+              title="Системные промпты"
+            >
+              <span className="material-symbols-outlined text-[20px]">code_blocks</span>
+            </button>
+            <button
+              className={`text-on-surface-variant hover:text-primary transition-colors ${showTweaks ? 'text-primary' : ''}`}
+              onClick={() => setShowTweaks(!showTweaks)}
+              title="Настройки"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -220,8 +253,9 @@ export default function DashboardClient({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((char, i) => {
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {visibleCharacters.map((char, i) => {
               let parsed: CharacterData = {};
               try { parsed = JSON.parse(char.data); } catch {}
               const filled = getFilledFieldCount(parsed);
@@ -276,10 +310,17 @@ export default function DashboardClient({
                 </Link>
               );
             })}
-          </div>
+            </div>
+            {visibleCount < filtered.length && (
+              <div ref={loadMoreRef} className="py-8 flex justify-center">
+                <span className="material-symbols-outlined animate-spin text-primary">refresh</span>
+              </div>
+            )}
+          </>
         )}
       </main>
 
+      <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
     </div>
   );
