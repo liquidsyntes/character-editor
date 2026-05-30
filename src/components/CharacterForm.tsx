@@ -1,20 +1,23 @@
 'use client';
 
-import { useState, useCallback, useRef, useTransition, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+
 import { CHARACTER_SCHEMA, getFilledFieldCount, getTotalFieldCount, getSectionFilledCount } from '@/lib/schema';
-import { updateCharacter } from '@/lib/actions';
 import { CharacterData } from '@/types/character';
+import { useAiSettings } from '@/lib/ai/useAiSettings';
+
 import ExportModal from './ExportModal';
 import TweaksPanel from './TweaksPanel';
 import PromptsPanel from './PromptsPanel';
 import AnalyzePanel from './AnalyzePanel';
-import AnalyzeHistorySidebar, { AnalysisRecord } from './AnalyzeHistorySidebar';
-import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
+import AnalyzeHistorySidebar from './AnalyzeHistorySidebar';
+import { SiblingCharacter } from './CharacterListPanel';
 import { DiffModal } from './DiffModal';
-import { useAiSettings, PROVIDER_MODELS, PROVIDER_LABELS } from '@/lib/ai/useAiSettings';
-import { buildFillPrompt } from '@/lib/ai/prompt'; // Replaced just for completeness if unused
-import Link from 'next/link';
+
+import { useCharacterFormState } from '@/hooks/useCharacterFormState';
+import { useAiFill } from '@/hooks/useAiFill';
+import { useCharacterAnalysis } from '@/hooks/useCharacterAnalysis';
 
 export default function CharacterForm({
   characterId,
@@ -31,34 +34,58 @@ export default function CharacterForm({
   projectName?: string;
   projectContext?: string;
 }) {
-  const backHref = projectId ? `/project/${projectId}` : '/project/unassigned';
-  const backLabel = projectName || 'Без проекта';
-  const [data, setData] = useState<CharacterData>(initialData);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['basic']));
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showExport, setShowExport] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
-  const [showCharList, setShowCharList] = useState(false);
   const [showAnalyzeHistory, setShowAnalyzeHistory] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const router = useRouter();
-
-  const { saved: aiSettings } = useAiSettings();
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiProgress, setAiProgress] = useState<string>('');
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
-  const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
-  const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
-  const [fixedFields, setFixedFields] = useState<string[]>([]);
-  const [fixLoading, setFixLoading] = useState(false);
-  const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
-  const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const { saved: aiSettings } = useAiSettings();
+
+  const {
+    data,
+    setData,
+    saveStatus,
+    doSave,
+    aiUndoStack,
+    pushUndo,
+    handleUndo,
+    handleChange,
+    handleImport,
+    fixedFields,
+    setFixedFields,
+    saveTimer,
+  } = useCharacterFormState(characterId, initialData);
+
+  const {
+    aiLoading,
+    aiProgress,
+    aiError,
+    aiSectionLoading,
+    aiAbortRef,
+    handleAiFill,
+    handleAiFillSection,
+  } = useAiFill({
+    data, setData, doSave, pushUndo, setFixedFields, setOpenSections, aiSettings, projectContext, saveTimer
+  });
+
+  const {
+    analyzeLoading,
+    analyses,
+    setAnalyses,
+    activeAnalysisId,
+    setActiveAnalysisId,
+    analyzeError,
+    fixLoading,
+    pendingDiff,
+    handleAnalyze,
+    handleFixIssues,
+    handleAcceptDiff,
+    handleRejectDiff,
+  } = useCharacterAnalysis({
+    data, setData, doSave, pushUndo, setFixedFields, aiSettings, projectContext, saveTimer
+  });
 
   useEffect(() => {
     try {
@@ -87,445 +114,7 @@ export default function CharacterForm({
     sessionStorage.setItem(`scroll_${characterId}`, e.currentTarget.scrollTop.toString());
   };
 
-  const filled = getFilledFieldCount(data);
-  const total = getTotalFieldCount();
-  const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
-
-  const pushUndo = useCallback((stateToSave: CharacterData) => {
-    setAiUndoStack(prev => [...prev, stateToSave].slice(-10)); // Keep last 10 states
-  }, []);
-
-  const doSave = useCallback((newData: CharacterData) => {
-    setSaveStatus('saving');
-    startTransition(async () => {
-      try {
-        await updateCharacter(characterId, newData);
-        setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch {
-        setSaveStatus('idle');
-      }
-    });
-  }, [characterId]);
-
-  const handleUndo = useCallback(() => {
-    if (aiUndoStack.length === 0) return;
-    const previous = aiUndoStack[aiUndoStack.length - 1];
-    setAiUndoStack(prev => prev.slice(0, -1));
-    setData(previous);
-    doSave(previous);
-  }, [aiUndoStack, doSave]);
-
-  const handleAcceptDiff = useCallback((acceptedData: Record<string, string>) => {
-    setData(prev => {
-      pushUndo(prev);
-      const next = { ...prev, ...acceptedData };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doSave(next), 800);
-      return next;
-    });
-    setFixedFields(Object.keys(acceptedData));
-    setTimeout(() => setFixedFields([]), 5000);
-    setPendingDiff(null);
-  }, [pushUndo, doSave]);
-
-  const handleRejectDiff = useCallback(() => {
-    setPendingDiff(null);
-  }, []);
-
-  const parsePartialJson = (raw: string): Record<string, string> => {
-    const result: Record<string, string> = {};
-    const kvPattern = /"([^"]+)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/g;
-    let match;
-    while ((match = kvPattern.exec(raw)) !== null) {
-      if (match[1] && match[2] !== undefined) {
-        try {
-          result[match[1]] = match[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-        } catch {}
-      }
-    }
-    return result;
-  };
-
-  const handleChange = useCallback((fieldId: string, value: string) => {
-    setData(prev => {
-      const next = { ...prev, [fieldId]: value };
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => doSave(next), 1500);
-      return next;
-    });
-  }, [doSave]);
-
-  const aiAbortRef = useRef<AbortController | null>(null);
-
-  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const text = evt.target?.result as string;
-        const importedData = JSON.parse(text);
-        if (typeof importedData !== 'object' || !importedData) throw new Error("Неверный формат JSON");
-        
-        const newRecord: Record<string, string> = {};
-        for (const [k, v] of Object.entries(importedData)) {
-          if (typeof v === 'string' && v.trim() && k !== 'characterId' && k !== 'projectId') {
-            newRecord[k] = v.trim();
-          }
-        }
-        
-        setData(prev => {
-          const next = { ...prev, ...newRecord };
-          doSave(next);
-          return next;
-        });
-        
-        e.target.value = '';
-      } catch (err) {
-        alert("Ошибка импорта: " + (err as Error).message);
-      }
-    };
-    reader.readAsText(file);
-  }, [doSave]);
-
-  const handleAiFill = useCallback(async () => {
-    if (aiAbortRef.current) aiAbortRef.current.abort();
-    setAiLoading(true); setAiError(null); setAiProgress('Думаю над персонажем...');
-    const controller = new AbortController(); aiAbortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const contextParts: string[] = [];
-      if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
-      if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
-      if (data.gender) contextParts.push(`Пол: ${data.gender}`);
-      if (data.age) contextParts.push(`Возраст: ${data.age}`);
-      if (data.oneLiner) contextParts.push(`Суть: ${data.oneLiner}`);
-      if (data.characterFunction) contextParts.push(`Функция: ${data.characterFunction}`);
-
-      const context = contextParts.filter(Boolean).join('; ') || undefined;
-
-      const res = await fetch('/api/ai/fill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data, 
-          context: projectContext,
-          stream: true,
-          provider: aiSettings.provider,
-          model: aiSettings.model, 
-          temperature: aiSettings.temperature,
-          apiKey: aiSettings.apiKeys[aiSettings.provider],
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
-        throw new Error(errMsg);
-      }
-      if (!res.body) throw new Error('No body');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let rawJson = '';
-      let finalParsed: Record<string, string> = {};
-      let pushedUndo = false;
-      let buffer = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                const partial = parsePartialJson(rawJson);
-                finalParsed = partial;
-                setData(prev => {
-                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-                  return { ...prev, ...partial };
-                });
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
-      }
-
-      // Finalize save
-      setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
-      });
-
-      if (Object.keys(finalParsed).length > 0) {
-        setFixedFields(Object.keys(finalParsed));
-        setTimeout(() => setFixedFields([]), 5000);
-      }
-
-      setAiProgress(`✓ Заполнено ${Object.keys(finalParsed).length} полей`);
-      setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-      setTimeout(() => { setAiLoading(false); setAiProgress(''); }, 4000);
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        setAiError('Запрос отменён');
-      } else {
-        setAiError(err.message || 'Ошибка');
-      }
-      setAiProgress('');
-      setAiLoading(false);
-    }
-  }, [data, doSave, aiSettings, projectContext, pushUndo]);
-
-  const handleAiFillSection = useCallback(async (sectionId: string) => {
-    if (aiSectionLoading) return;
-    setAiSectionLoading(sectionId);
-    setAiError(null);
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const res = await fetch('/api/ai/fill', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          existingData: data, 
-          sectionIds: [sectionId], 
-          context: projectContext,
-          stream: true,
-          provider: aiSettings.provider, 
-          model: aiSettings.model, 
-          apiKey: aiSettings.apiKeys[aiSettings.provider] 
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error('Ошибка сервера');
-      if (!res.body) throw new Error('No body');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let rawJson = '';
-      let finalParsed: Record<string, string> = {};
-      let pushedUndo = false;
-      let buffer = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                const partial = parsePartialJson(rawJson);
-                finalParsed = partial;
-                setData(prev => {
-                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-                  return { ...prev, ...partial };
-                });
-              }
-            } catch (e) {}
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
-      }
-      
-      setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
-      });
-      
-      if (Object.keys(finalParsed).length > 0) {
-        setFixedFields(Object.keys(finalParsed));
-        setTimeout(() => setFixedFields([]), 5000);
-      }
-      
-      setOpenSections(prev => new Set(prev).add(sectionId));
-      setTimeout(() => setAiSectionLoading(null), 2000);
-    } catch (err: any) {
-      clearTimeout(timeoutId); 
-      setAiSectionLoading(null);
-      if (err.name === 'AbortError') {
-        setAiError('Запрос отменён');
-      } else {
-        setAiError(err.message || 'Ошибка при заполнении секции');
-      }
-    }
-  }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo]);
-
-  const handleAnalyze = useCallback(async () => {
-    // Simple caching: don't analyze if we already have an analysis for this exact data and provider
-    const existingRecord = analyses.find(a => 
-      a.provider === aiSettings.provider && 
-      JSON.stringify(a.dataSnapshot) === JSON.stringify(data)
-    );
-
-    if (existingRecord) {
-      setActiveAnalysisId(existingRecord.id);
-      setShowAnalyzeHistory(true);
-      return;
-    }
-
-    setAnalyzeLoading(true); setAnalyzeError(null);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-    try {
-      const res = await fetch('/api/ai/analyze', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          existingData: data, 
-          context: projectContext,
-          provider: aiSettings.provider, 
-          model: aiSettings.model, 
-          temperature: 0.7, 
-          apiKey: aiSettings.apiKeys[aiSettings.provider] 
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
-        throw new Error(errMsg);
-      }
-      if (!res.body) throw new Error('No body in response');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let rawJson = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
-          }
-        }
-      }
-
-      // Try to parse the complete JSON response
-      let result;
-      try {
-        const { parseAnalyzeResponse } = await import('@/lib/ai/prompt');
-        result = parseAnalyzeResponse(rawJson);
-      } catch (parseErr) {
-        console.error('Analyze parse error:', parseErr);
-        throw new Error('Не удалось разобрать ответ AI. Попробуйте ещё раз.');
-      }
-
-      const now = new Date();
-      const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('ru-RU');
-      const record: AnalysisRecord = {
-        id: Date.now().toString(36), timestamp: ts,
-        result: { categories: result.categories, totalIssues: result.totalIssues, summary: result.summary },
-        provider: aiSettings.provider,
-        dataSnapshot: { ...data }
-      };
-      setAnalyses(prev => [record, ...prev]);
-      setActiveAnalysisId(record.id);
-    } catch (err: any) {
-      clearTimeout(timeoutId); 
-      if (err.name === 'AbortError') {
-        setAnalyzeError('Запрос отменён');
-      } else {
-        setAnalyzeError(err.message);
-      }
-    } finally {
-      setAnalyzeLoading(false);
-    }
-  }, [data, aiSettings, projectContext]);
-
-  const handleFixIssues = useCallback(async (issuesToFix: import('@/types/character').AnalyzeIssue[]) => {
-    if (!issuesToFix || issuesToFix.length === 0) return;
-    
-    setFixLoading(true);
-    setAnalyzeError(null);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-    try {
-      const res = await fetch('/api/ai/analyze/fix', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data,
-          issues: issuesToFix,
-          provider: aiSettings.provider,
-          model: aiSettings.model,
-          temperature: 0.7,
-          apiKey: aiSettings.apiKeys[aiSettings.provider],
-          context: projectContext
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
-        throw new Error(errMsg);
-      }
-      const result = await res.json();
-      if (!result.data || Object.keys(result.data).length === 0) throw new Error('Нейросеть не вернула данные');
-
-      setPendingDiff(result.data);
-      
-    } catch (err: any) {
-      clearTimeout(timeoutId); setAnalyzeError(err.message || 'Ошибка авто-исправления');
-    } finally {
-      setFixLoading(false);
-    }
-  }, [data, doSave, aiSettings, activeAnalysisId, analyses]);
-
-  const handleJumpToField = useCallback((fieldId: string, sectionId: string) => {
+  const handleJumpToField = (fieldId: string, sectionId: string) => {
     setOpenSections(prev => new Set(prev).add(sectionId));
     setTimeout(() => {
       const el = document.getElementById(fieldId);
@@ -535,7 +124,7 @@ export default function CharacterForm({
         setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
       }
     }, 150);
-  }, []);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -545,11 +134,13 @@ export default function CharacterForm({
     return () => document.removeEventListener('keydown', handler);
   }, [data, doSave]);
 
+  const filled = getFilledFieldCount(data);
+  const total = getTotalFieldCount();
+  const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
   const charName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Без имени';
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full w-full">
-      
       <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
         <div className="flex items-center gap-4">
           <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
@@ -564,7 +155,6 @@ export default function CharacterForm({
           {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
         </div>
         <nav className="hidden md:flex gap-8">
-          {/* Removed text save indicator */}
         </nav>
         <div className="flex items-center gap-4">
           {aiUndoStack.length > 0 && (
@@ -615,7 +205,6 @@ export default function CharacterForm({
         >
           <div className="max-w-[800px] mx-auto space-y-stack-lg">
             
-            {/* Header Identity */}
             <section className="flex flex-col md:flex-row gap-gutter items-start">
               <div className="shrink-0 group cursor-pointer">
                 <div className="w-32 h-40 bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors relative overflow-hidden">
@@ -818,7 +407,7 @@ export default function CharacterForm({
           )}
         </div>
       )}
-      {/* Side Panels */}
+      
       <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
     </div>

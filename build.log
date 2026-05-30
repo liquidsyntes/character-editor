@@ -1,0 +1,62 @@
+﻿
+> character-editor@0.1.0 build
+> next build
+
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.2s
+  Running TypeScript ...
+  Finished TypeScript in 3.4s ...
+  Collecting page data using 7 workers ...
+node.exe : Error: Failed to collect configuration for /character/[id]/preview
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Administrator\AppData\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error: Failed t...er/[id]/preview:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    at ignore-listed frames {
+  [cause]: Error [PrismaClientInitializationError]: `PrismaClient` needs to be constructed with a non-empty, valid 
+`PrismaClientOptions`:
+  
+  ```
+  new PrismaClient({
+    ...
+  })
+  ```
+  
+  or
+  
+  ```
+  constructor() {
+    super({ ... });
+  }
+  ```
+            
+      at module evaluation 
+(C:\Screen\character-editor\.next\server\chunks\ssr\[root-of-the-server]__0uxqmh7._.js:1:651)
+      at instantiateModule (C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:853:9)
+      at getOrInstantiateModuleFromParent 
+(C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:877:12)
+      at Context.esmImport [as i] (C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:281:20)
+      at module evaluation 
+(C:\Screen\character-editor\.next\server\chunks\ssr\[root-of-the-server]__0uxqmh7._.js:1:937)
+      at instantiateModule (C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:853:9)
+      at getOrInstantiateModuleFromParent 
+(C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:877:12)
+      at Context.esmImport [as i] (C:\Screen\character-editor\.next\server\chunks\ssr\[turbopack]_runtime.js:281:20)
+      at module evaluation 
+(C:\Screen\character-editor\.next\server\chunks\ssr\[root-of-the-server]__0uxqmh7._.js:1:5671) {
+    clientVersion: '7.8.0',
+    errorCode: undefined,
+    retryable: undefined
+  }
+}
+
+> Build error occurred
+Error: Failed to collect page data for /character/[id]/preview
+    at ignore-listed frames {
+  type: 'Error'
+}

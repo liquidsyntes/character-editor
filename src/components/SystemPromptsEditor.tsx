@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAppSetting, setAppSetting } from '@/app/actions/settings';
-import { DEFAULT_FILL_SYSTEM_PROMPT, DEFAULT_ANALYZE_SYSTEM_PROMPT, DEFAULT_FIX_SYSTEM_PROMPT } from '@/lib/ai/prompt';
+import { DEFAULT_FILL_SYSTEM_PROMPT, DEFAULT_ANALYZE_SYSTEM_PROMPT, DEFAULT_FIX_SYSTEM_PROMPT } from '@/lib/ai/prompt-constants';
 
 export default function SystemPromptsEditor() {
   const [fillPrompt, setFillPrompt] = useState(DEFAULT_FILL_SYSTEM_PROMPT);

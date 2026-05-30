@@ -12,7 +12,6 @@
   "dependencies": {
     "@ai-sdk/xai": "^3.0.92",
     "@libsql/client": "^0.17.3",
-    "@libsql/linux-x64-gnu": "^0.5.29",
     "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "ai": "^6.0.193",
@@ -20,7 +19,11 @@
     "dotenv": "^17.4.2",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
+  },
+  "optionalDependencies": {
+    "@libsql/linux-x64-gnu": "^0.5.29"
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",

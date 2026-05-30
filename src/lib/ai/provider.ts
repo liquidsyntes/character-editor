@@ -4,6 +4,7 @@
 
 import { createXai } from '@ai-sdk/xai';
 import { generateText, streamText } from 'ai';
+import { env } from '../env';
 
 export type ProviderName = 'deepseek' | 'xai' | 'openai';
 
@@ -17,8 +18,8 @@ interface ProviderConfig {
 
 export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
   deepseek: {
-    apiKey: process.env.DEEPSEEK_API_KEY || '',
-    baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
+    apiKey: env.DEEPSEEK_API_KEY || '',
+    baseUrl: env.DEEPSEEK_BASE_URL,
     defaultModel: 'deepseek-chat',
     models: [
       { id: 'deepseek-chat', label: 'DeepSeek Chat' },
@@ -28,7 +29,7 @@ export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
     ],
   },
   xai: {
-    apiKey: process.env.XAI_API_KEY || '',
+    apiKey: env.XAI_API_KEY || '',
     baseUrl: 'https://api.x.ai',
     defaultModel: 'grok-4.3',
     models: [
@@ -38,7 +39,7 @@ export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
     ],
   },
   openai: {
-    apiKey: process.env.OPENAI_API_KEY || '',
+    apiKey: env.OPENAI_API_KEY || '',
     baseUrl: 'https://api.openai.com',
     defaultModel: 'gpt-4o',
     models: [
@@ -277,7 +278,7 @@ export async function chatCompletionStream(
 }
 
 export function getDefaultProvider(): ProviderName {
-  if (process.env.OPENAI_API_KEY) return 'openai';
-  if (process.env.XAI_API_KEY) return 'xai';
+  if (env.OPENAI_API_KEY) return 'openai';
+  if (env.XAI_API_KEY) return 'xai';
   return 'deepseek';
 }

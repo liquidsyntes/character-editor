@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { chatCompletion } from '@/lib/ai/provider';
-import { buildFixPrompt, parseFillResponse } from '@/lib/ai/prompt';
+import { buildFixPrompt } from '@/lib/ai/prompt';
+import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { ProviderName } from '@/lib/ai/provider';
 import { checkRateLimit } from '@/lib/rateLimit';
 

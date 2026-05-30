@@ -6,51 +6,11 @@
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
 import { prisma } from '@/lib/prisma';
-
-export const DEFAULT_FILL_SYSTEM_PROMPT = `Ты опытный сценарист и писатель, специализирующийся на разработке глубоких, многогранных персонажей для кино, сериалов и литературы.
-
-Твоя задача заполнить карточку персонажа. Ты получишь:
-1. JSON-схему с секциями и полями
-2. Уже заполненные поля персонажа
-
-Ты должен вернуть ТОЛЬКО отсутствующие (пустые) поля в формате строгого JSON: {"fieldId": "значение", ...}.
-
-## Жесткие правила формата:
-- Верни только один валидный JSON-объект верхнего уровня.
-- Никакого markdown, никаких пояснений, никакого текста до или после JSON.
-- Не оборачивай ответ в \` \`\`\`json\` или другие кодовые блоки.
-- Не добавляй комментарии в JSON.
-- Не возвращай уже заполненные поля.
-- Если поле невозможно логично заполнить по текущему контексту, просто не включай его в JSON.
-- Все значения полей по умолчанию строки (если явно не указано иное в схеме).
-- Отвечай строго на русском языке.
-- Приоритет: сначала строгий формат и валидный JSON, потом креатив.
-
-## Принципы заполнения:
-- Не делай персонажа идеальным, противоречия, слепые зоны, парадоксы обязательны.
-- Показывай через действия и детали, а не через абстрактные утверждения.
-- Вместо "он боится предательства" лучше "по привычке проверяет телефоны близких после того, как друг однажды украл деньги и исчез".
-- Добавляй сенсорные детали: запахи, звуки, пластика тела, тембр голоса, манера походки.
-- Думай о противоречиях: внешность может конфликтовать с внутренним миром, поведение с желаниями, слова с поступками.
-- Используй конкретику: не "любит музыку", а "засыпает под джаз 50-х, потому что так засыпал его отец".
-- Сохраняй психологическую целостность: прошлое объясняет мотивы, слабости порождают конфликты, привычки отражают характер.
-- Все новые поля должны логично соотноситься друг с другом и с уже существующими полями, усиливая общую драматургию персонажа.
-- На одно поле 1–3 коротких, емких предложения без воды и общих фраз.
-
-## Если информации недостаточно:
-- Достраивай логически исходя из уже известных деталей и жанрового ощущения персонажа.
-- Если значение поля принципиально непонятно без дополнительного контекста, не выдумывай абстракцию, просто не включай это поле в JSON.
-
-## Формат ответа строго:
-Верни ТОЛЬКО валидный JSON-объект верхнего уровня. Начни ответ сразу с символа { и закончи }. Никакого текста до или после JSON.
-
-Пример правильного ответа:
-{"weakness":"Не умеет отказывать, автоматически говорит «да» даже в ущерб себе","strength":"В кризисе становится холодным и сосредоточенным, словно переключает режим","angers":"Резко злится, когда его перебивают на полуслове"}
-
-Неправильно:
-- Не пиши "Вот заполненная карточка:" перед JSON.
-- Не оборачивай JSON в \`\`\`json ... \`\`\`.
-- Не добавляй комментарии или пояснения внутрь JSON.`;
+import { 
+  DEFAULT_FILL_SYSTEM_PROMPT, 
+  DEFAULT_ANALYZE_SYSTEM_PROMPT, 
+  DEFAULT_FIX_SYSTEM_PROMPT 
+} from './prompt-constants';
 
 interface FillRequest {
   existingData: CharacterData;
@@ -102,7 +62,12 @@ export async function buildFillPrompt(
     }
   }
 
-  const userPrompt = `Заполни ВСЕ пустые поля (null) в карточке персонажа ниже.
+  const gender = existingData.gender?.trim();
+  const genderInstruction = gender 
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
+    : '';
+
+  const userPrompt = `Заполни ВСЕ пустые поля (null) в карточке персонажа ниже.${genderInstruction}
 
 ${context ? `Дополнительный контекст от автора: ${context}\n` : ''}
 
@@ -136,7 +101,12 @@ export async function buildRegeneratePrompt(
     })
     .join('\n\n');
 
-  const userPrompt = `Пересоздай этого персонажа с нуля, углубив и усилив его. Можешь менять любые поля, включая уже заполненные. Сохрани общее направление и базовую концепцию, но сделай персонажа более живым, противоречивым и конкретным.
+  const gender = data.gender?.trim();
+  const genderInstruction = gender 
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
+    : '';
+
+  const userPrompt = `Пересоздай этого персонажа с нуля, углубив и усилив его. Можешь менять любые поля, включая уже заполненные. Сохрани общее направление и базовую концепцию, но сделай персонажа более живым, противоречивым и конкретным.${genderInstruction}
 
 ${context ? `Контекст от автора: ${context}\n` : ''}
 
@@ -153,50 +123,6 @@ ${schemaDesc}
 }
 
 // ── AI Character Analysis ────────────────────────────────────────
-
-export const DEFAULT_ANALYZE_SYSTEM_PROMPT = `Ты опытный редактор и драматург. Ты анализируешь карточки персонажей на русском языке и отвечаешь только на русском.
-
-Найди все проблемы в заполненных полях:
-1. Противоречия, когда одно поле расходится по смыслу с другим.
-2. Слепые зоны, когда важный аспект упомянут, но не раскрыт.
-3. Клише, когда формулировка шаблонная и без конкретики.
-4. Психологические нестыковки, когда поведение противоречит заявленной мотивации или прошлому.
-5. Упущенные возможности, когда напрашивающиеся связи между полями не раскрыты.
-
-## Жесткие правила:
-- Строго ЗАПРЕЩАЕТСЯ использовать английские названия полей (valuesInPeople, hypocrisy, strength и т.д.) в тексте (summary, title, description, suggestion). Всегда переводи их на русский язык в соответствии с описанием полей!
-- Все упоминания названий полей в тексте обязательно оборачивай в двойные звездочки, чтобы они были жирными: **Русское название**.
-  Плохо: "В valuesInPeople заявлен профессионализм, но hypocrisy показывает..."
-  Хорошо: "В поле **Ценности в людях** заявлен профессионализм, но **Склонность к лицемерию** показывает..."
-- Поле severity служебное, его значения только английские: "contradiction", "gap", "cliche", "inconsistency", "opportunity".
-- В массиве fields указывай fieldId (английские ключи) это нужно системе.
-- Анализируй только заполненные поля. Не комментируй пустые.
-- Каждая проблема должна ссылаться на конкретные поля в массиве fields.
-- Пиши конкретно: 2–4 предложения на одну проблему, без общей воды.
-- Если в какой-то категории нет проблем, эту категорию в ответ не включай.
-
-## Формат ответа строго JSON (без markdown-оберток):
-{
-  "summary": "Краткое общее резюме на русском, 1–2 предложения",
-  "categories": [
-    {
-      "title": "Название категории на русском",
-      "icon": "🔴",
-      "severity": "contradiction",
-      "issues": [
-        {
-          "title": "Краткий заголовок проблемы на русском",
-          "fields": ["fieldId1", "fieldId2"],
-          "severity": "contradiction",
-          "description": "Подробное объяснение на русском, 2–4 предложения",
-          "suggestion": "Совет по исправлению на русском (опционально)"
-        }
-      ]
-    }
-  ]
-}
-
-Начни ответ сразу с символа { и закончи }. Никакого текста до или после.`;
 
 export async function buildAnalyzePrompt(
   data: import('@/types/character').CharacterData,
@@ -229,217 +155,9 @@ ${filledFields.join('\n')}
   return { system, user: userPrompt };
 }
 
-export function parseAnalyzeResponse(
-  raw: string
-): import('@/types/character').AnalyzeResult {
-  const json = raw.trim();
 
-  // Strategy 1: direct parse
-  try {
-    const parsed = JSON.parse(json);
-    if (parsed.categories && Array.isArray(parsed.categories)) {
-      return validateAnalyzeResult(parsed);
-    }
-  } catch {}
-
-  // Strategy 2: remove code fences
-  const fenceMatch = json.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (fenceMatch) {
-    try {
-      const parsed = JSON.parse(fenceMatch[1].trim());
-      if (parsed.categories && Array.isArray(parsed.categories)) {
-        return validateAnalyzeResult(parsed);
-      }
-    } catch {}
-  }
-
-  // Strategy 3: find JSON object
-  const objStart = json.indexOf('{');
-  if (objStart >= 0) {
-    let depth = 0;
-    let objEnd = -1;
-    for (let i = objStart; i < json.length; i++) {
-      if (json[i] === '{') depth++;
-      if (json[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          objEnd = i;
-          break;
-        }
-      }
-    }
-    if (objEnd > objStart) {
-      try {
-        const parsed = JSON.parse(json.slice(objStart, objEnd + 1));
-        if (parsed.categories && Array.isArray(parsed.categories)) {
-          return validateAnalyzeResult(parsed);
-        }
-      } catch {}
-    }
-  }
-
-  throw new Error('Не удалось разобрать ответ AI — невалидный JSON');
-}
-
-function validateAnalyzeResult(
-  raw: Record<string, any>
-): import('@/types/character').AnalyzeResult {
-  const severities = [
-    'contradiction',
-    'gap',
-    'cliche',
-    'inconsistency',
-    'opportunity'
-  ];
-
-  const replaceEnglishFields = (text: string): string => {
-    if (!text) return text;
-    let res = text;
-    for (const section of CHARACTER_SCHEMA) {
-      for (const field of section.fields) {
-        const regex = new RegExp(`\\b${field.id}\\b`, 'g');
-        res = res.replace(regex, `**${field.label}**`);
-      }
-    }
-    return res;
-  };
-
-  const categories =
-    (raw.categories as any[])?.map((cat: any) => ({
-      title: String(cat.title || ''),
-      icon: String(cat.icon || ''),
-      severity: (severities.includes(cat.severity)
-        ? cat.severity
-        : 'gap') as import('@/types/character').AnalyzeIssue['severity'],
-      issues:
-        (cat.issues as any[])?.map((iss: any) => ({
-          title: String(iss.title || ''),
-          fields: Array.isArray(iss.fields)
-            ? iss.fields.map(String)
-            : [],
-          severity: (severities.includes(iss.severity)
-            ? iss.severity
-            : (severities.includes(cat.severity) ? cat.severity : 'gap')) as import('@/types/character').AnalyzeIssue['severity'],
-          description: replaceEnglishFields(String(iss.description || '')),
-          suggestion: iss.suggestion ? replaceEnglishFields(String(iss.suggestion)) : undefined
-        })) || []
-    })) || [];
-
-  const totalIssues = categories.reduce(
-    (sum, c) => sum + c.issues.length,
-    0
-  );
-
-  return {
-    categories,
-    totalIssues,
-    summary: String(raw.summary || '')
-  };
-}
-
-/**
- * Parse LLM JSON response with multiple fallback strategies.
- */
-export function parseFillResponse(raw: string): CharacterData {
-  let json = raw.trim();
-
-  // Strategy 1: Direct JSON parse
-  try {
-    const parsed = JSON.parse(json);
-    if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return validateAndClean(parsed);
-    }
-  } catch {
-    // continue to next strategy
-  }
-
-  // Strategy 2: Remove markdown code fences
-  let cleaned = json;
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (fenceMatch) {
-    cleaned = fenceMatch[1].trim();
-    try {
-      const parsed = JSON.parse(cleaned);
-      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return validateAndClean(parsed);
-      }
-    } catch {
-      // continue
-    }
-  }
-
-  // Strategy 3: Find JSON object by scanning for { } boundaries
-  const objStart = cleaned.indexOf('{');
-  if (objStart >= 0) {
-    let depth = 0;
-    let objEnd = -1;
-    for (let i = objStart; i < cleaned.length; i++) {
-      if (cleaned[i] === '{') depth++;
-      if (cleaned[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          objEnd = i;
-          break;
-        }
-      }
-    }
-
-    if (objEnd > objStart) {
-      const extracted = cleaned.slice(objStart, objEnd + 1);
-      try {
-        const parsed = JSON.parse(extracted);
-        if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-          return validateAndClean(parsed);
-        }
-      } catch {
-        // last resort below
-      }
-    }
-  }
-
-  // Strategy 4: Try to fix common JSON issues and retry
-  const fixed = cleaned
-    .replace(/[“”«»]/g, '"')
-    .replace(/\n/g, '\\n');
-
-  try {
-    const parsed = JSON.parse(fixed);
-    if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return validateAndClean(parsed);
-    }
-  } catch {
-    // give up
-  }
-
-  throw new Error('No JSON object found in AI response');
-}
-
-function validateAndClean(parsed: Record<string, any>): CharacterData {
-  const validIds = new Set<string>();
-  for (const section of CHARACTER_SCHEMA) {
-    for (const field of section.fields) {
-      validIds.add(field.id);
-    }
-  }
-
-  const result: CharacterData = {};
-  for (const [key, value] of Object.entries(parsed)) {
-    if (!validIds.has(key)) {
-      console.warn(`Unknown field ID in AI response: "${key}", skipping`);
-      continue;
-    }
-    if (typeof value === 'string' && value.trim()) {
-      result[key] = value.trim();
-    }
-  }
-
-  return result;
-}
 
 // ── AI Fix Issues Prompt ────────────────────────────────────────
-
-export const DEFAULT_FIX_SYSTEM_PROMPT = `Ты — опытный сценарист-редактор. Твоя задача — исправить указанные проблемы в карточке персонажа, переписав конкретные поля.
-Верни ТОЛЬКО валидный JSON-объект, содержащий исправленные значения полей. Ключами должны быть ID полей, значениями — новый текст. Никакого markdown, никаких комментариев до или после JSON. Начинай ответ сразу с { и заканчивай }.`;
 
 export async function buildFixPrompt(
   issues: import('@/types/character').AnalyzeIssue[],
@@ -482,7 +200,12 @@ ${iss.description}
 
   const uniqueFieldIds = [...new Set(issues.flatMap((i) => i.fields))];
 
-  const userPrompt = `Инструкция по исправлению противоречий и проблем в карточке персонажа.
+  const gender = data.gender?.trim();
+  const genderInstruction = gender 
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) при переписывании полей.`
+    : '';
+
+  const userPrompt = `Инструкция по исправлению противоречий и проблем в карточке персонажа.${genderInstruction}
 
 ${context ? `Контекст проекта (лор, жанр, сеттинг): ${context}\n` : ''}
 Ниже перечислены проблемы, найденные в описании. Перепиши только указанные поля так, чтобы устранить эти проблемы. Остальные поля не трогай.
