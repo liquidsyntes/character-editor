@@ -21,8 +21,10 @@ export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
     baseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
     defaultModel: 'deepseek-chat',
     models: [
-      { id: 'deepseek-chat', label: 'DeepSeek V3 (быстрый)' },
-      { id: 'deepseek-reasoner', label: 'DeepSeek R1 (думающий)' },
+      { id: 'deepseek-chat', label: 'DeepSeek Chat' },
+      { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+      { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (R1)' },
+      { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
     ],
   },
   xai: {
@@ -110,19 +112,26 @@ export async function chatCompletion(
     };
   }
 
+  const requestBody: any = {
+    model,
+    messages,
+    temperature: options.temperature ?? 0.8,
+    max_tokens: options.maxTokens ?? 4096,
+    stream: false,
+  };
+
+  if (provider === 'deepseek' && (model.includes('pro') || model.includes('reasoner'))) {
+    requestBody.thinking = { type: 'enabled' };
+    requestBody.reasoning_effort = 'high';
+  }
+
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: options.temperature ?? 0.8,
-      max_tokens: options.maxTokens ?? 4096,
-      stream: false,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!res.ok) {
@@ -188,19 +197,26 @@ export async function chatCompletionStream(
     });
   }
 
+  const requestBody: any = {
+    model,
+    messages,
+    temperature: options.temperature ?? 0.8,
+    max_tokens: options.maxTokens ?? 4096,
+    stream: true,
+  };
+
+  if (provider === 'deepseek' && (model.includes('pro') || model.includes('reasoner'))) {
+    requestBody.thinking = { type: 'enabled' };
+    requestBody.reasoning_effort = 'high';
+  }
+
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: options.temperature ?? 0.8,
-      max_tokens: options.maxTokens ?? 4096,
-      stream: true,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!res.ok) {

@@ -8,6 +8,7 @@ export interface AnalysisRecord {
   result: AnalyzeResult;
   usage?: { promptTokens: number; completionTokens: number };
   provider?: string;
+  dataSnapshot?: Record<string, string>;
 }
 
 interface Props {

@@ -71,7 +71,7 @@ const config: Config = {
         gutter: "24px",
         "stack-md": "16px",
         "container-padding": "32px",
-        "sidebar-width": "345px",
+        "sidebar-width": "375px",
       },
       fontFamily: {
         "body-lg": ["Source Sans 3"],

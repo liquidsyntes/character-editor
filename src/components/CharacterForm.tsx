@@ -7,6 +7,7 @@ import { updateCharacter } from '@/lib/actions';
 import { CharacterData } from '@/types/character';
 import ExportModal from './ExportModal';
 import TweaksPanel from './TweaksPanel';
+import PromptsPanel from './PromptsPanel';
 import AnalyzePanel from './AnalyzePanel';
 import AnalyzeHistorySidebar, { AnalysisRecord } from './AnalyzeHistorySidebar';
 import CharacterListPanel, { SiblingCharacter } from './CharacterListPanel';
@@ -37,6 +38,7 @@ export default function CharacterForm({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showExport, setShowExport] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
   const [showCharList, setShowCharList] = useState(false);
   const [showAnalyzeHistory, setShowAnalyzeHistory] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -56,6 +58,34 @@ export default function CharacterForm({
   const [fixLoading, setFixLoading] = useState(false);
   const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
   const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('character_editor_open_sections');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setOpenSections(new Set(parsed));
+        }
+      }
+    } catch (e) {}
+
+    const savedScroll = sessionStorage.getItem(`scroll_${characterId}`);
+    if (savedScroll && scrollRef.current) {
+      scrollRef.current.scrollTop = parseInt(savedScroll, 10);
+    }
+  }, [characterId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('character_editor_open_sections', JSON.stringify(Array.from(openSections)));
+    } catch (e) {}
+  }, [openSections]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    sessionStorage.setItem(`scroll_${characterId}`, e.currentTarget.scrollTop.toString());
+  };
 
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
@@ -127,6 +157,37 @@ export default function CharacterForm({
   }, [doSave]);
 
   const aiAbortRef = useRef<AbortController | null>(null);
+
+  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target?.result as string;
+        const importedData = JSON.parse(text);
+        if (typeof importedData !== 'object' || !importedData) throw new Error("Неверный формат JSON");
+        
+        const newRecord: Record<string, string> = {};
+        for (const [k, v] of Object.entries(importedData)) {
+          if (typeof v === 'string' && v.trim() && k !== 'characterId' && k !== 'projectId') {
+            newRecord[k] = v.trim();
+          }
+        }
+        
+        setData(prev => {
+          const next = { ...prev, ...newRecord };
+          doSave(next);
+          return next;
+        });
+        
+        e.target.value = '';
+      } catch (err) {
+        alert("Ошибка импорта: " + (err as Error).message);
+      }
+    };
+    reader.readAsText(file);
+  }, [doSave]);
 
   const handleAiFill = useCallback(async () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
@@ -227,7 +288,11 @@ export default function CharacterForm({
       setTimeout(() => { setAiLoading(false); setAiProgress(''); }, 4000);
     } catch (err: any) {
       clearTimeout(timeoutId);
-      setAiError(err.message || 'Ошибка');
+      if (err.name === 'AbortError') {
+        setAiError('Запрос отменён');
+      } else {
+        setAiError(err.message || 'Ошибка');
+      }
       setAiProgress('');
       setAiLoading(false);
     }
@@ -238,6 +303,7 @@ export default function CharacterForm({
     setAiSectionLoading(sectionId);
     setAiError(null);
     const controller = new AbortController();
+    aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
@@ -312,11 +378,27 @@ export default function CharacterForm({
     } catch (err: any) {
       clearTimeout(timeoutId); 
       setAiSectionLoading(null);
-      setAiError(err.message || 'Ошибка при заполнении секции');
+      if (err.name === 'AbortError') {
+        setAiError('Запрос отменён');
+      } else {
+        setAiError(err.message || 'Ошибка при заполнении секции');
+      }
     }
   }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo]);
 
   const handleAnalyze = useCallback(async () => {
+    // Simple caching: don't analyze if we already have an analysis for this exact data and provider
+    const existingRecord = analyses.find(a => 
+      a.provider === aiSettings.provider && 
+      JSON.stringify(a.dataSnapshot) === JSON.stringify(data)
+    );
+
+    if (existingRecord) {
+      setActiveAnalysisId(existingRecord.id);
+      setShowAnalyzeHistory(true);
+      return;
+    }
+
     setAnalyzeLoading(true); setAnalyzeError(null);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
@@ -334,29 +416,78 @@ export default function CharacterForm({
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-      const result = await res.json();
+
+      if (!res.ok) {
+        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        throw new Error(errMsg);
+      }
+      if (!res.body) throw new Error('No body in response');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let rawJson = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.error) throw new Error(parsedChunk.error);
+              if (parsedChunk.text) {
+                rawJson += parsedChunk.text;
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+                 console.error(e);
+              }
+            }
+          }
+        }
+      }
+
+      // Try to parse the complete JSON response
+      let result;
+      try {
+        const { parseAnalyzeResponse } = await import('@/lib/ai/prompt');
+        result = parseAnalyzeResponse(rawJson);
+      } catch (parseErr) {
+        console.error('Analyze parse error:', parseErr);
+        throw new Error('Не удалось разобрать ответ AI. Попробуйте ещё раз.');
+      }
+
       const now = new Date();
       const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('ru-RU');
       const record: AnalysisRecord = {
         id: Date.now().toString(36), timestamp: ts,
         result: { categories: result.categories, totalIssues: result.totalIssues, summary: result.summary },
-        usage: result.usage, provider: result.provider || aiSettings.provider,
+        provider: aiSettings.provider,
+        dataSnapshot: { ...data }
       };
       setAnalyses(prev => [record, ...prev]);
       setActiveAnalysisId(record.id);
     } catch (err: any) {
-      clearTimeout(timeoutId); setAnalyzeError(err.message);
+      clearTimeout(timeoutId); 
+      if (err.name === 'AbortError') {
+        setAnalyzeError('Запрос отменён');
+      } else {
+        setAnalyzeError(err.message);
+      }
     } finally {
       setAnalyzeLoading(false);
     }
   }, [data, aiSettings, projectContext]);
 
-  const handleFixIssues = useCallback(async (fieldIds: string[]) => {
-    if (!activeAnalysisId) return;
-    const activeAnalysis = analyses.find(a => a.id === activeAnalysisId);
-    if (!activeAnalysis) return;
-    
-    const allIssues = activeAnalysis.result.categories.flatMap(c => c.issues || []);
+  const handleFixIssues = useCallback(async (issuesToFix: import('@/types/character').AnalyzeIssue[]) => {
+    if (!issuesToFix || issuesToFix.length === 0) return;
     
     setFixLoading(true);
     setAnalyzeError(null);
@@ -367,7 +498,7 @@ export default function CharacterForm({
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           existingData: data,
-          issues: allIssues,
+          issues: issuesToFix,
           provider: aiSettings.provider,
           model: aiSettings.model,
           temperature: 0.7,
@@ -421,10 +552,14 @@ export default function CharacterForm({
       
       <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
         <div className="flex items-center gap-4">
+          <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
+            <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
+            <span className="font-label-caps text-[12px] hidden sm:inline">На главную</span>
+          </Link>
           <button className="md:hidden text-on-surface hover:text-primary transition-colors">
             <span className="material-symbols-outlined">menu</span>
           </button>
-          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 lowercase">Редактор персонажа</div>
+          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
           {aiProgress && <span className="text-[12px] text-accent ml-4">{aiProgress}</span>}
           {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
         </div>
@@ -444,11 +579,24 @@ export default function CharacterForm({
             <span className="material-symbols-outlined text-[16px]">{analyzeLoading ? 'hourglass_empty' : 'psychology'}</span> Анализ карточки
           </button>
           <div className="h-6 w-px bg-outline-variant mx-2"></div>
+          <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт JSON">
+            <span className="material-symbols-outlined">upload_file</span>
+            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+          </label>
           <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
             <span className="material-symbols-outlined">share</span>
           </button>
-          <button onClick={handleAiFill} disabled={aiLoading} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
-             {aiLoading ? 'Заполняю...' : '✨ Автозаполнение'}
+          {aiLoading ? (
+            <button onClick={() => aiAbortRef.current?.abort()} className="bg-error text-on-error px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+               <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить
+            </button>
+          ) : (
+            <button onClick={handleAiFill} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
+               ✨ Автозаполнение
+            </button>
+          )}
+          <button onClick={() => setShowPrompts(!showPrompts)} className="text-on-surface-variant hover:text-primary transition-colors" title="Системные промпты">
+            <span className="material-symbols-outlined">code_blocks</span>
           </button>
           <button onClick={() => setShowTweaks(!showTweaks)} className="text-on-surface-variant hover:text-primary transition-colors" title="Настройки">
             <span className="material-symbols-outlined">settings</span>
@@ -460,7 +608,11 @@ export default function CharacterForm({
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32">
+        <div 
+          className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32"
+          ref={scrollRef}
+          onScroll={handleScroll}
+        >
           <div className="max-w-[800px] mx-auto space-y-stack-lg">
             
             {/* Header Identity */}
@@ -533,13 +685,20 @@ export default function CharacterForm({
                       {sectionFilled} / {section.fields.length}
                     </span>
                     <button 
-                      className={`ml-2 transition-colors p-1 rounded ${aiSectionLoading === section.id ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-primary hover:text-on-primary'}`}
-                      onClick={e => { e.stopPropagation(); handleAiFillSection(section.id); }}
-                      title="Автозаполнить секцию"
-                      disabled={aiSectionLoading !== null}
+                      className={`ml-2 transition-colors p-1 rounded ${aiSectionLoading === section.id ? 'bg-error text-on-error' : 'bg-surface-container hover:bg-primary hover:text-on-primary'}`}
+                      onClick={e => { 
+                        e.stopPropagation(); 
+                        if (aiSectionLoading === section.id) {
+                          aiAbortRef.current?.abort();
+                        } else {
+                          handleAiFillSection(section.id);
+                        }
+                      }}
+                      title={aiSectionLoading === section.id ? "Отменить запрос" : "Автозаполнить секцию"}
+                      disabled={aiSectionLoading !== null && aiSectionLoading !== section.id}
                     >
                       {aiSectionLoading === section.id ? (
-                        <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
+                        <span className="material-symbols-outlined text-[16px]">close</span>
                       ) : (
                         <span className="material-symbols-outlined text-[16px]">magic_button</span>
                       )}
@@ -554,8 +713,9 @@ export default function CharacterForm({
                                             field.span === 3 ? 'md:col-span-3' : 
                                             'md:col-span-6';
                           const isFixed = fixedFields.includes(field.id);
+                          const isSectionLoading = aiLoading || aiSectionLoading === section.id;
                           return (
-                          <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'}`}>
+                          <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
                             <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
                               {field.label}
                             </label>
@@ -638,7 +798,7 @@ export default function CharacterForm({
           onReject={handleRejectDiff}
         />
       )}
-c:\WINDOWS\TEMP\streamdeck_tmp.md
+
       {showExport && (
         <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />
       )}
@@ -658,6 +818,8 @@ c:\WINDOWS\TEMP\streamdeck_tmp.md
           )}
         </div>
       )}
+      {/* Side Panels */}
+      <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
     </div>
   );
