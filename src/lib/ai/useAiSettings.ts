@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { getMaskedApiKeysFromCookie, saveApiKeysToCookie } from '../settingsActions';
 
 export type AiProvider = 'deepseek' | 'xai' | 'openai';
 
@@ -56,7 +57,7 @@ function loadSettings(): AiSettings {
           provider: parsed.provider as AiProvider,
           model: parsed.model || PROVIDER_MODELS[parsed.provider as AiProvider]?.[0]?.id || DEFAULTS.model,
           temperature: typeof parsed.temperature === 'number' ? parsed.temperature : DEFAULTS.temperature,
-          apiKeys: parsed.apiKeys && typeof parsed.apiKeys === 'object' ? parsed.apiKeys : {},
+          apiKeys: {}, // always empty from localstorage now
         };
       }
     }
@@ -64,7 +65,7 @@ function loadSettings(): AiSettings {
   return DEFAULTS;
 }
 
-function saveSettings(settings: AiSettings) {
+function saveSettings(settings: Omit<AiSettings, 'apiKeys'>) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
@@ -80,7 +81,7 @@ interface Return {
   updateModel: (model: string) => void;
   updateTemperature: (temperature: number) => void;
   updateApiKey: (provider: AiProvider, key: string) => void;
-  /** Commit staged → saved + localStorage */
+  /** Commit staged → saved + localStorage + cookies */
   apply: () => void;
   /** Reset staged to saved */
   revert: () => void;
@@ -96,6 +97,12 @@ export function useAiSettings(): Return {
     const loaded = loadSettings();
     setSaved(loaded);
     setStaged(loaded);
+    
+    // Asynchronously load masked API keys from HTTP-only cookies
+    getMaskedApiKeysFromCookie().then(maskedKeys => {
+      setSaved(prev => ({ ...prev, apiKeys: maskedKeys }));
+      setStaged(prev => ({ ...prev, apiKeys: maskedKeys }));
+    }).catch(err => console.error('Failed to load masked keys', err));
   }, []);
 
   const hasChanges = useMemo(() => {
@@ -130,8 +137,21 @@ export function useAiSettings(): Return {
   }, []);
 
   const apply = useCallback(() => {
+    // Optimistic update
     setSaved(staged);
-    saveSettings(staged);
+    
+    const { apiKeys, ...localSettings } = staged;
+    saveSettings(localSettings);
+    
+    // Save to HTTP-only cookies in background
+    saveApiKeysToCookie(apiKeys).then(() => {
+      return getMaskedApiKeysFromCookie();
+    }).then(maskedKeys => {
+      // Replace with masked versions so actual keys aren't hanging in memory
+      setSaved(prev => ({ ...prev, apiKeys: maskedKeys }));
+      setStaged(prev => ({ ...prev, apiKeys: maskedKeys }));
+    }).catch(err => console.error('Failed to save API keys to cookie', err));
+    
   }, [staged]);
 
   const revert = useCallback(() => {

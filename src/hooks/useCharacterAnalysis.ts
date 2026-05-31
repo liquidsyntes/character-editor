@@ -28,6 +28,7 @@ export function useCharacterAnalysis({
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [analyzeProgress, setAnalyzeProgress] = useState<string>('');
   const [fixLoading, setFixLoading] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
 
@@ -43,7 +44,7 @@ export function useCharacterAnalysis({
       return;
     }
 
-    setAnalyzeLoading(true); setAnalyzeError(null);
+    setAnalyzeLoading(true); setAnalyzeError(null); setAnalyzeProgress('');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
     try {
@@ -71,15 +72,19 @@ export function useCharacterAnalysis({
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let rawJson = '';
+      let buffer = '';
       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
         
-        for (const line of lines) {
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const line = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6);
             if (dataStr === '[DONE]') break;
@@ -88,6 +93,8 @@ export function useCharacterAnalysis({
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 rawJson += parsedChunk.text;
+                // Optional: update some UI loading state here if desired
+                setAnalyzeProgress(prev => (prev + parsedChunk.text).slice(-150));
               }
             } catch (e) {
               if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
@@ -95,17 +102,19 @@ export function useCharacterAnalysis({
               }
             }
           }
+          boundary = buffer.indexOf('\n\n');
         }
       }
 
       // Try to parse the complete JSON response
       let result;
       try {
+        console.log('RAW JSON BEFORE PARSE:', rawJson);
         const { parseAnalyzeResponse } = await import('@/lib/ai/prompt-parser');
         result = parseAnalyzeResponse(rawJson);
-      } catch (parseErr) {
+      } catch (parseErr: any) {
         console.error('Analyze parse error:', parseErr);
-        throw new Error('Не удалось разобрать ответ AI. Попробуйте ещё раз.');
+        throw new Error(parseErr.message || 'Не удалось разобрать ответ AI. Попробуйте ещё раз.');
       }
 
       const now = new Date();
@@ -193,6 +202,7 @@ export function useCharacterAnalysis({
     activeAnalysisId,
     setActiveAnalysisId,
     analyzeError,
+    analyzeProgress,
     fixLoading,
     pendingDiff,
     handleAnalyze,

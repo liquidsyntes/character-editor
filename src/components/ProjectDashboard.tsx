@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { deleteProject, archiveProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
+import { useAiSettings } from '@/lib/ai/useAiSettings';
 
 interface ProjectItem {
   id: string;
@@ -33,6 +34,7 @@ export default function ProjectDashboard({
   const [projects, setProjects] = useState(initial);
   const [search, setSearch] = useState('');
   const [showTweaks, setShowTweaks] = useState(false);
+  const aiState = useAiSettings();
 
   useEffect(() => { setProjects(initial); }, [initial]);
 
@@ -188,7 +190,7 @@ export default function ProjectDashboard({
         )}
       </main>
 
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
     </div>
   );
 }

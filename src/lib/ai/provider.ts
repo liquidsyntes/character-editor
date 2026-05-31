@@ -5,6 +5,7 @@
 import { createXai } from '@ai-sdk/xai';
 import { generateText, streamText } from 'ai';
 import { env } from '../env';
+import { getServerSideApiKeys } from '../settingsActions';
 
 export type ProviderName = 'deepseek' | 'xai' | 'openai';
 
@@ -85,7 +86,15 @@ export async function chatCompletion(
   const provider: ProviderName = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
-  const apiKey = options.apiKey || cfg.apiKey;
+  
+  const cookieKeys = await getServerSideApiKeys();
+  let apiKey = options.apiKey;
+  if (!apiKey || apiKey === '********') {
+    apiKey = cookieKeys[provider];
+  }
+  if (!apiKey) {
+    apiKey = cfg.apiKey;
+  }
 
   if (!apiKey) {
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI) или в .env как ${provider.toUpperCase()}_API_KEY`);
@@ -159,7 +168,15 @@ export async function chatCompletionStream(
   const provider: ProviderName = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
-  const apiKey = options.apiKey || cfg.apiKey;
+  
+  const cookieKeys = await getServerSideApiKeys();
+  let apiKey = options.apiKey;
+  if (!apiKey || apiKey === '********') {
+    apiKey = cookieKeys[provider];
+  }
+  if (!apiKey) {
+    apiKey = cfg.apiKey;
+  }
 
   if (!apiKey) {
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI)`);
@@ -233,6 +250,8 @@ export async function chatCompletionStream(
   return new ReadableStream({
     async start(controller) {
       let buffer = '';
+      let isThinking = false;
+      let chunkCounter = 0;
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -250,9 +269,30 @@ export async function chatCompletionStream(
 
             try {
               const json = JSON.parse(data);
-              const delta = json.choices?.[0]?.delta?.content;
+              const delta = json.choices?.[0]?.delta;
               if (delta) {
-                controller.enqueue(new TextEncoder().encode(JSON.stringify({ delta }) + '\n'));
+                let outStr = '';
+                
+                if (delta.reasoning_content) {
+                  if (!isThinking) {
+                    outStr += '<think>\n';
+                    isThinking = true;
+                  }
+                  outStr += delta.reasoning_content;
+                }
+                
+                if (delta.content !== undefined && delta.content !== null && delta.content !== '') {
+                  if (isThinking) {
+                    outStr += '\n</think>\n';
+                    isThinking = false;
+                  }
+                  outStr += delta.content;
+                }
+                
+                if (outStr) {
+                  chunkCounter++;
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify({ delta: outStr }) + '\n'));
+                }
               }
               if (json.usage) {
                 controller.enqueue(new TextEncoder().encode(JSON.stringify({
@@ -271,6 +311,7 @@ export async function chatCompletionStream(
       } catch (err) {
         controller.error(err);
       } finally {
+        console.log(`[Stream] Finished yielding ${chunkCounter} chunks.`);
         controller.close();
       }
     },

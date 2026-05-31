@@ -1,8 +1,16 @@
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { CharacterData, AnalyzeResult, AnalyzeIssue } from '@/types/character';
 
+export function removeThinking(text: string): string {
+  // First remove all closed <think> blocks
+  let result = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+  // Then remove any unclosed <think> block at the end (e.g. if generation hit max tokens)
+  result = result.replace(/<think>[\s\S]*$/g, '');
+  return result.trim();
+}
+
 export function parseAnalyzeResponse(raw: string): AnalyzeResult {
-  const json = raw.trim();
+  const json = removeThinking(raw);
 
   // Strategy 1: direct parse
   try {
@@ -23,21 +31,44 @@ export function parseAnalyzeResponse(raw: string): AnalyzeResult {
     } catch {}
   }
 
-  // Strategy 3: find JSON object
+  // Strategy 3: find JSON object (ignoring braces inside strings)
   const objStart = json.indexOf('{');
   if (objStart >= 0) {
     let depth = 0;
     let objEnd = -1;
+    let inString = false;
+    let escapeNext = false;
+    
     for (let i = objStart; i < json.length; i++) {
-      if (json[i] === '{') depth++;
-      if (json[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          objEnd = i;
-          break;
+      const char = json[i];
+      
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      
+      if (!inString) {
+        if (char === '{') depth++;
+        if (char === '}') {
+          depth--;
+          if (depth === 0) {
+            objEnd = i;
+            break;
+          }
         }
       }
     }
+    
     if (objEnd > objStart) {
       try {
         const parsed = JSON.parse(json.slice(objStart, objEnd + 1));
@@ -48,7 +79,7 @@ export function parseAnalyzeResponse(raw: string): AnalyzeResult {
     }
   }
 
-  throw new Error('Не удалось разобрать ответ AI — невалидный JSON');
+  throw new Error(`Не удалось разобрать ответ AI — невалидный JSON. Вывод: ${json.slice(0, 100)}...`);
 }
 
 function validateAnalyzeResult(raw: Record<string, any>): AnalyzeResult {
@@ -101,7 +132,7 @@ function validateAnalyzeResult(raw: Record<string, any>): AnalyzeResult {
 }
 
 export function parseFillResponse(raw: string): CharacterData {
-  let json = raw.trim();
+  let json = removeThinking(raw);
 
   // Strategy 1: Direct JSON parse
   try {
@@ -128,18 +159,37 @@ export function parseFillResponse(raw: string): CharacterData {
     }
   }
 
-  // Strategy 3: Find JSON object by scanning for { } boundaries
+  // Strategy 3: Find JSON object by scanning for { } boundaries (ignoring braces inside strings)
   const objStart = cleaned.indexOf('{');
   if (objStart >= 0) {
     let depth = 0;
     let objEnd = -1;
+    let inString = false;
+    let escapeNext = false;
+    
     for (let i = objStart; i < cleaned.length; i++) {
-      if (cleaned[i] === '{') depth++;
-      if (cleaned[i] === '}') {
-        depth--;
-        if (depth === 0) {
-          objEnd = i;
-          break;
+      const char = cleaned[i];
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      if (char === '\\') {
+        escapeNext = true;
+        continue;
+      }
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      
+      if (!inString) {
+        if (char === '{') depth++;
+        if (char === '}') {
+          depth--;
+          if (depth === 0) {
+            objEnd = i;
+            break;
+          }
         }
       }
     }

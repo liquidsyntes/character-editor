@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAiSettings, AiProvider } from '@/lib/ai/useAiSettings';
+import { AiProvider } from '@/lib/ai/useAiSettings';
 
 export default function TweaksPanel({
   isOpen,
   onClose,
+  aiState,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  aiState: ReturnType<typeof import('@/lib/ai/useAiSettings').useAiSettings>;
 }) {
   const [theme, setTheme] = useState('dark');
   const [density, setDensity] = useState('normal');
@@ -24,7 +26,7 @@ export default function TweaksPanel({
     updateApiKey,
     PROVIDER_MODELS,
     PROVIDER_LABELS,
-  } = useAiSettings();
+  } = aiState;
 
   const [visibleKeys, setVisibleKeys] = useState<Partial<Record<AiProvider, boolean>>>({});
 
@@ -196,7 +198,7 @@ export default function TweaksPanel({
                 })}
               </div>
               <p className="font-label-caps text-[10px] text-on-surface-variant/70 mt-3 leading-relaxed">
-                Ключи хранятся локально в localStorage вашего браузера и не сохраняются в базе данных.
+                Ключи безопасно хранятся в зашифрованных HttpOnly куках вашего браузера (защита от XSS) и не сохраняются в базе данных.
               </p>
             </div>
 

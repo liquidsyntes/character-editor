@@ -41,7 +41,8 @@ export default function CharacterForm({
   const [showAnalyzeHistory, setShowAnalyzeHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  const { saved: aiSettings } = useAiSettings();
+  const aiState = useAiSettings();
+  const aiSettings = aiState.saved;
 
   const {
     data,
@@ -77,6 +78,7 @@ export default function CharacterForm({
     activeAnalysisId,
     setActiveAnalysisId,
     analyzeError,
+    analyzeProgress,
     fixLoading,
     pendingDiff,
     handleAnalyze,
@@ -151,8 +153,10 @@ export default function CharacterForm({
             <span className="material-symbols-outlined">menu</span>
           </button>
           <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
-          {aiProgress && <span className="text-[12px] text-accent ml-4">{aiProgress}</span>}
+          {aiProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{aiProgress}</span>}
+          {analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}
           {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
+          {analyzeError && <span className="text-[12px] text-error ml-4">{analyzeError}</span>}
         </div>
         <nav className="hidden md:flex gap-8">
         </nav>
@@ -409,7 +413,7 @@ export default function CharacterForm({
       )}
       
       <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
     </div>
   );
 }

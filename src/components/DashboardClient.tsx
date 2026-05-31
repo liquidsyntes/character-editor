@@ -7,6 +7,7 @@ import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { archiveCharacter, deleteCharacter, duplicateCharacter, updateProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
 import PromptsPanel from '@/components/PromptsPanel';
+import { useAiSettings } from '@/lib/ai/useAiSettings';
 
 interface CharacterItem {
   id: string;
@@ -46,6 +47,7 @@ export default function DashboardClient({
   const [filter, setFilter] = useState<'all' | 'drafts' | 'archived'>('all');
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
+  const aiState = useAiSettings();
   const [visibleCount, setVisibleCount] = useState(24);
   const total = getTotalFieldCount();
 
@@ -321,7 +323,7 @@ export default function DashboardClient({
       </main>
 
       <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
-      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} />
+      <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
     </div>
   );
 }
