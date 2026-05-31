@@ -21,6 +21,8 @@
 - [x] Tailwind с кастомной Material Design цветовой схемой
 - [x] Material Symbols иконки
 - [x] 2 миграции Prisma (init + add_projects)
+- [x] Безопасное хранение API-ключей в HttpOnly cookies
+- [x] Поддержка reasoning-моделей (стриминг мыслей, защита от таймаутов)
 
 ## Что не сделано / отсутствует
 
@@ -28,7 +30,7 @@
 - [x] Валидация .env-переменных при старте
 - [ ] Docker / docker-compose
 - [ ] CI/CD (GitHub Actions, Vercel-деплой)
-- [ ] `.env.example` — только `.env` с реальным ключом
+- [x] `.env.example` — добавлен как шаблон
 - [ ] Тесты для `/api/ai/analyze/fix`
 - [ ] Тесты для Server Actions
 - [ ] Тесты компонентов
