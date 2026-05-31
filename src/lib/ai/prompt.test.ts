@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseFillResponse, parseAnalyzeResponse } from './prompt';
+import { parseFillResponse, parseAnalyzeResponse } from './prompt-parser';
 
 describe('AI Parsing Logic', () => {
   describe('parseFillResponse', () => {
