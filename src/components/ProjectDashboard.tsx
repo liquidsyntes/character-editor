@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { deleteProject, archiveProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
@@ -77,6 +78,13 @@ export default function ProjectDashboard({
             title="Настройки"
           >
             <span className="material-symbols-outlined text-[20px]">settings</span>
+          </button>
+          <button
+            className="text-on-surface-variant hover:text-error transition-colors"
+            onClick={() => signOut()}
+            title="Выйти"
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
           </button>
         </div>
       </header>

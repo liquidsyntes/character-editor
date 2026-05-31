@@ -4,17 +4,32 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { CharacterData } from '@/types/character';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+
+async function getUserId() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  return session.user.id;
+}
 
 // ── Project Actions ──────────────────────
 
 export async function createProject() {
+  const userId = await getUserId();
   const project = await prisma.project.create({
-    data: {},
+    data: { userId },
   });
   redirect(`/project/${project.id}`);
 }
 
 export async function updateProject(id: string, data: { name?: string; description?: string; emoji?: string; color?: string }) {
+  const userId = await getUserId();
+  const project = await prisma.project.findUnique({ where: { id } });
+  if (project?.userId !== userId) throw new Error('Unauthorized');
+
   await prisma.project.update({
     where: { id },
     data,
@@ -24,10 +39,13 @@ export async function updateProject(id: string, data: { name?: string; descripti
 }
 
 export async function deleteProject(id: string) {
-  // Unassign all characters from this project (don't delete them) and delete the project in one transaction
+  const userId = await getUserId();
+  const project = await prisma.project.findUnique({ where: { id } });
+  if (project?.userId !== userId) throw new Error('Unauthorized');
+
   await prisma.$transaction([
     prisma.character.updateMany({
-      where: { projectId: id },
+      where: { projectId: id, userId },
       data: { projectId: null },
     }),
     prisma.project.delete({
@@ -39,8 +57,9 @@ export async function deleteProject(id: string) {
 }
 
 export async function archiveProject(id: string) {
+  const userId = await getUserId();
   const project = await prisma.project.findUnique({ where: { id } });
-  if (!project) return;
+  if (project?.userId !== userId) return;
 
   await prisma.project.update({
     where: { id },
@@ -50,8 +69,9 @@ export async function archiveProject(id: string) {
 }
 
 export async function listProjects() {
+  const userId = await getUserId();
   return prisma.project.findMany({
-    where: { isArchived: false },
+    where: { isArchived: false, userId },
     orderBy: { updatedAt: 'desc' },
     include: {
       _count: {
@@ -64,15 +84,27 @@ export async function listProjects() {
 // ── Character Actions ────────────────────
 
 export async function createCharacter(projectId?: string | null) {
+  const userId = await getUserId();
+  
+  if (projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (project?.userId !== userId) throw new Error('Unauthorized');
+  }
+
   const character = await prisma.character.create({
     data: {
       projectId: projectId || null,
+      userId,
     },
   });
   redirect(`/character/${character.id}`);
 }
 
 export async function updateCharacter(id: string, formData: CharacterData) {
+  const userId = await getUserId();
+  const character = await prisma.character.findUnique({ where: { id } });
+  if (character?.userId !== userId) throw new Error('Unauthorized');
+
   const firstName = formData.firstName || '';
   const lastName = formData.lastName || '';
   const name = [firstName, lastName].filter(Boolean).join(' ');
@@ -93,6 +125,10 @@ export async function updateCharacter(id: string, formData: CharacterData) {
 }
 
 export async function updateCharacterMeta(id: string, meta: { emoji?: string; color?: string }) {
+  const userId = await getUserId();
+  const character = await prisma.character.findUnique({ where: { id } });
+  if (character?.userId !== userId) throw new Error('Unauthorized');
+
   await prisma.character.update({
     where: { id },
     data: meta,
@@ -102,7 +138,10 @@ export async function updateCharacterMeta(id: string, meta: { emoji?: string; co
 }
 
 export async function deleteCharacter(id: string) {
+  const userId = await getUserId();
   const char = await prisma.character.findUnique({ where: { id } });
+  if (char?.userId !== userId) throw new Error('Unauthorized');
+
   await prisma.character.delete({
     where: { id },
   });
@@ -111,8 +150,9 @@ export async function deleteCharacter(id: string) {
 }
 
 export async function archiveCharacter(id: string) {
+  const userId = await getUserId();
   const character = await prisma.character.findUnique({ where: { id } });
-  if (!character) return;
+  if (character?.userId !== userId) return;
 
   await prisma.character.update({
     where: { id },
@@ -123,8 +163,9 @@ export async function archiveCharacter(id: string) {
 }
 
 export async function duplicateCharacter(id: string) {
+  const userId = await getUserId();
   const original = await prisma.character.findUnique({ where: { id } });
-  if (!original) return;
+  if (original?.userId !== userId) return;
 
   const copy = await prisma.character.create({
     data: {
@@ -135,6 +176,7 @@ export async function duplicateCharacter(id: string) {
       summary: original.summary,
       isDraft: true,
       projectId: original.projectId,
+      userId,
     },
   });
 
@@ -142,7 +184,8 @@ export async function duplicateCharacter(id: string) {
 }
 
 export async function listCharacters(query?: string, filter?: 'all' | 'drafts' | 'archived') {
-  const where: Record<string, unknown> = {};
+  const userId = await getUserId();
+  const where: Record<string, unknown> = { userId };
 
   if (filter === 'archived') {
     where.isArchived = true;
@@ -168,10 +211,12 @@ export async function listCharacters(query?: string, filter?: 'all' | 'drafts' |
 }
 
 export async function getSiblingCharacters(projectId?: string | null) {
+  const userId = await getUserId();
   return prisma.character.findMany({
     where: {
       isArchived: false,
       projectId: projectId || null,
+      userId,
     },
     orderBy: { updatedAt: 'desc' },
     select: {
@@ -184,10 +229,12 @@ export async function getSiblingCharacters(projectId?: string | null) {
 }
 
 export async function getUnassignedCharacterCount() {
+  const userId = await getUserId();
   return prisma.character.count({
     where: {
       projectId: null,
       isArchived: false,
+      userId,
     },
   });
 }

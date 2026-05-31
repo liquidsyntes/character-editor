@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletionStream, ProviderName } from '@/lib/ai/provider';
 import { buildAnalyzePrompt } from '@/lib/ai/prompt';
 import { sseResponse } from '@/lib/ai/streamUtils';
-import { handleAiError, validateExistingData, checkApiRateLimit } from '@/lib/ai/routeUtils';
+import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,6 +10,9 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
+    const authError = await requireAuth();
+    if (authError) return authError;
+
     const rateLimitError = checkApiRateLimit(req, 10);
     if (rateLimitError) return rateLimitError;
 

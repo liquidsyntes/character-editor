@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSiblingCharacters } from '@/lib/actions';
 import CharacterForm from '@/components/CharacterForm';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export default async function CharacterEditorPage({
   params,
@@ -9,8 +11,14 @@ export default async function CharacterEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    redirect('/login');
+  }
+
   const character = await prisma.character.findUnique({ where: { id } });
-  if (!character) notFound();
+  if (!character || character.userId !== session.user.id) notFound();
 
   let data = {};
   try { data = JSON.parse(character.data); } catch {}

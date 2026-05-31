@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 /**
  * Checks rate limits for the given request.
@@ -46,6 +48,17 @@ export function validateExistingData(body: any): NextResponse | null {
       { error: 'existingData is required and must be an object' },
       { status: 400 }
     );
+  }
+  return null;
+}
+
+/**
+ * Validates that the request has a valid NextAuth session.
+ */
+export async function requireAuth(): Promise<NextResponse | null> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   return null;
 }
