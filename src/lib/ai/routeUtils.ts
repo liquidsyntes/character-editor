@@ -1,0 +1,51 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
+
+/**
+ * Checks rate limits for the given request.
+ * Returns a NextResponse with 429 status if limit exceeded, otherwise null.
+ */
+export function checkApiRateLimit(req: Request | NextRequest, limit = 10, windowMs = 60000): NextResponse | null {
+  const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+  const { success } = checkRateLimit(ip, limit, windowMs);
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Слишком много запросов. Подождите немного.' },
+      { status: 429 }
+    );
+  }
+  return null;
+}
+
+/**
+ * Common error handler for AI routes (timeouts, general errors).
+ */
+export function handleAiError(err: unknown, context: string): NextResponse {
+  console.error(`[${context}] Error:`, err);
+  const message = err instanceof Error ? err.message : 'Unknown error';
+
+  if (message.includes('timeout') || message.includes('abort')) {
+    return NextResponse.json(
+      { error: 'AI не успел ответить (таймаут). Попробуйте ещё раз.' },
+      { status: 504 }
+    );
+  }
+
+  return NextResponse.json(
+    { error: message },
+    { status: 500 }
+  );
+}
+
+/**
+ * Validates that existingData is present and is an object.
+ */
+export function validateExistingData(body: any): NextResponse | null {
+  if (!body?.existingData || typeof body.existingData !== 'object') {
+    return NextResponse.json(
+      { error: 'existingData is required and must be an object' },
+      { status: 400 }
+    );
+  }
+  return null;
+}

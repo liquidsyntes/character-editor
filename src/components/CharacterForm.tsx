@@ -14,6 +14,7 @@ import AnalyzePanel from './AnalyzePanel';
 import AnalyzeHistorySidebar from './AnalyzeHistorySidebar';
 import { SiblingCharacter } from './CharacterListPanel';
 import { DiffModal } from './DiffModal';
+import { CharacterSection } from './CharacterSection';
 
 import { useCharacterFormState } from '@/hooks/useCharacterFormState';
 import { useAiFill } from '@/hooks/useAiFill';
@@ -262,93 +263,25 @@ export default function CharacterForm({
               </div>
             </div>
 
-            {CHARACTER_SCHEMA.map(section => {
-              const isOpen = openSections.has(section.id);
-              const sectionFilled = getSectionFilledCount(section.id, data);
-              
-              return (
-                <section key={section.id} id={section.id} className="scroll-mt-20">
-                  <h2 
-                    className="font-label-caps text-label-caps text-on-surface-variant mb-stack-md uppercase tracking-widest flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => setOpenSections(prev => { const n = new Set(prev); n.has(section.id) ? n.delete(section.id) : n.add(section.id); return n;})}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">{isOpen ? 'expand_more' : 'chevron_right'}</span>
-                    {section.label}
-                    <span className="ml-auto text-[10px] bg-surface-variant px-2 py-1 rounded">
-                      {sectionFilled} / {section.fields.length}
-                    </span>
-                    <button 
-                      className={`ml-2 transition-colors p-1 rounded ${aiSectionLoading === section.id ? 'bg-error text-on-error' : 'bg-surface-container hover:bg-primary hover:text-on-primary'}`}
-                      onClick={e => { 
-                        e.stopPropagation(); 
-                        if (aiSectionLoading === section.id) {
-                          aiAbortRef.current?.abort();
-                        } else {
-                          handleAiFillSection(section.id);
-                        }
-                      }}
-                      title={aiSectionLoading === section.id ? "Отменить запрос" : "Автозаполнить секцию"}
-                      disabled={aiSectionLoading !== null && aiSectionLoading !== section.id}
-                    >
-                      {aiSectionLoading === section.id ? (
-                        <span className="material-symbols-outlined text-[16px]">close</span>
-                      ) : (
-                        <span className="material-symbols-outlined text-[16px]">magic_button</span>
-                      )}
-                    </button>
-                  </h2>
-                  
-                  {isOpen && (
-                    <div className="flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                        {section.fields.map(field => {
-                          const spanClass = field.span === 2 ? 'md:col-span-2' : 
-                                            field.span === 3 ? 'md:col-span-3' : 
-                                            'md:col-span-6';
-                          const isFixed = fixedFields.includes(field.id);
-                          const isSectionLoading = aiLoading || aiSectionLoading === section.id;
-                          return (
-                          <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
-                            <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
-                              {field.label}
-                            </label>
-                            {field.type === 'select' ? (
-                              <select
-                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none"
-                                value={data[field.id] || ''}
-                                onChange={e => handleChange(field.id, e.target.value)}
-                              >
-                                <option value="" disabled>Выберите...</option>
-                                {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
-                              </select>
-                            ) : field.type === 'textarea' ? (
-                              <textarea
-                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none resize-y min-h-[60px]"
-                                placeholder={field.placeholder}
-                                value={data[field.id] || ''}
-                                onChange={e => handleChange(field.id, e.target.value)}
-                                rows={3}
-                                autoComplete="off"
-                              />
-                            ) : (
-                              <input
-                                className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none"
-                                type="text"
-                                placeholder={field.placeholder}
-                                value={data[field.id] || ''}
-                                onChange={e => handleChange(field.id, e.target.value)}
-                                autoComplete="off"
-                              />
-                            )}
-                          </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </section>
-              );
-            })}
+            {CHARACTER_SCHEMA.map(section => (
+              <CharacterSection
+                key={section.id}
+                section={section}
+                isOpen={openSections.has(section.id)}
+                data={data}
+                fixedFields={fixedFields}
+                aiLoading={aiLoading}
+                aiSectionLoading={aiSectionLoading}
+                aiAbortRef={aiAbortRef}
+                handleAiFillSection={handleAiFillSection}
+                handleChange={handleChange}
+                toggleSection={() => setOpenSections(prev => { 
+                  const n = new Set(prev); 
+                  n.has(section.id) ? n.delete(section.id) : n.add(section.id); 
+                  return n;
+                })}
+              />
+            ))}
           </div>
         </div>
         

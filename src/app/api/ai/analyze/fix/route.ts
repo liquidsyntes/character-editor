@@ -1,25 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion } from '@/lib/ai/provider';
 import { buildFixPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { ProviderName } from '@/lib/ai/provider';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { handleAiError, validateExistingData, checkApiRateLimit } from '@/lib/ai/routeUtils';
 
 export const maxDuration = 300;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-    const { success } = checkRateLimit(ip, 10, 60000);
-    if (!success) {
-      return NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 });
-    }
+    const rateLimitError = checkApiRateLimit(req, 10);
+    if (rateLimitError) return rateLimitError;
 
     const body = await req.json();
+    const validationError = validateExistingData(body);
+    if (validationError) return validationError;
+    
     const { existingData, issues, provider = 'deepseek', model, temperature = 0.7, apiKey, context } = body;
 
-    if (!existingData || !issues || !Array.isArray(issues) || issues.length === 0) {
-      return NextResponse.json({ error: 'Missing existingData or issues array' }, { status: 400 });
+    if (!issues || !Array.isArray(issues) || issues.length === 0) {
+      return NextResponse.json({ error: 'Missing issues array' }, { status: 400 });
     }
 
     const { system, user } = await buildFixPrompt(issues, existingData, context);
@@ -48,8 +48,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ data: parsed, usage: aiRes.usage });
-  } catch (error: any) {
-    console.error('AI Fix Error:', error);
-    return NextResponse.json({ error: error.message || 'Unknown error' }, { status: 500 });
+  } catch (err) {
+    return handleAiError(err, 'AI Fix');
   }
 }
