@@ -24,14 +24,17 @@ export async function updateProject(id: string, data: { name?: string; descripti
 }
 
 export async function deleteProject(id: string) {
-  // Unassign all characters from this project (don't delete them)
-  await prisma.character.updateMany({
-    where: { projectId: id },
-    data: { projectId: null },
-  });
-  await prisma.project.delete({
-    where: { id },
-  });
+  // Unassign all characters from this project (don't delete them) and delete the project in one transaction
+  await prisma.$transaction([
+    prisma.character.updateMany({
+      where: { projectId: id },
+      data: { projectId: null },
+    }),
+    prisma.project.delete({
+      where: { id },
+    })
+  ]);
+  
   revalidatePath('/');
 }
 
