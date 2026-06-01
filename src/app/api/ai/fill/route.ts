@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     const {
       existingData,
       sectionIds,
+      fieldIds,
       context,
       stream = false,
       provider = 'deepseek',
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     const { system, user } = await buildFillPrompt({
       existingData,
       sectionIds,
+      fieldIds,
       context,
     });
 

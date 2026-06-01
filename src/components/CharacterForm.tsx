@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
 import { CHARACTER_SCHEMA, getFilledFieldCount, getTotalFieldCount, getSectionFilledCount } from '@/lib/schema';
@@ -60,16 +60,32 @@ export default function CharacterForm({
     saveTimer,
   } = useCharacterFormState(characterId, initialData);
 
+  const enrichedContext = useMemo(() => {
+    let ctx = projectContext ? `Описание проекта/мира: ${projectContext}` : '';
+    if (siblings && siblings.length > 0) {
+      const others = siblings.filter(s => s.id !== characterId && s.summary && s.summary.trim() !== '');
+      if (others.length > 0) {
+        ctx += '\n\nУже существующие персонажи в этом проекте (используй их при генерации связей, фракций, союзников и врагов, чтобы вплести нового персонажа в сюжет):\n';
+        others.forEach(s => {
+          ctx += `- ${s.name || 'Неизвестный'}: ${s.summary}\n`;
+        });
+      }
+    }
+    return ctx;
+  }, [projectContext, siblings, characterId]);
+
   const {
     aiLoading,
     aiProgress,
     aiError,
     aiSectionLoading,
+    aiFieldLoading,
     aiAbortRef,
     handleAiFill,
     handleAiFillSection,
+    handleAiFillField,
   } = useAiFill({
-    data, setData, doSave, pushUndo, setFixedFields, setOpenSections, aiSettings, projectContext, saveTimer
+    data, setData, doSave, pushUndo, setFixedFields, setOpenSections, aiSettings, projectContext: enrichedContext, saveTimer
   });
 
   const {
@@ -87,7 +103,7 @@ export default function CharacterForm({
     handleAcceptDiff,
     handleRejectDiff,
   } = useCharacterAnalysis({
-    data, setData, doSave, pushUndo, setFixedFields, aiSettings, projectContext, saveTimer
+    data, setData, doSave, pushUndo, setFixedFields, aiSettings, projectContext: enrichedContext, saveTimer
   });
 
   useEffect(() => {
@@ -272,8 +288,10 @@ export default function CharacterForm({
                 fixedFields={fixedFields}
                 aiLoading={aiLoading}
                 aiSectionLoading={aiSectionLoading}
+                aiFieldLoading={aiFieldLoading}
                 aiAbortRef={aiAbortRef}
                 handleAiFillSection={handleAiFillSection}
+                handleAiFillField={handleAiFillField}
                 handleChange={handleChange}
                 toggleSection={() => setOpenSections(prev => { 
                   const n = new Set(prev); 

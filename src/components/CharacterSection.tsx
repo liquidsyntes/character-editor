@@ -9,8 +9,10 @@ interface CharacterSectionProps {
   fixedFields: string[];
   aiLoading: boolean;
   aiSectionLoading: string | null;
+  aiFieldLoading: string | null;
   aiAbortRef: React.MutableRefObject<AbortController | null>;
   handleAiFillSection: (sectionId: string) => void;
+  handleAiFillField: (fieldId: string) => void;
   handleChange: (fieldId: string, value: string) => void;
   toggleSection: () => void;
 }
@@ -22,8 +24,10 @@ export function CharacterSection({
   fixedFields,
   aiLoading,
   aiSectionLoading,
+  aiFieldLoading,
   aiAbortRef,
   handleAiFillSection,
+  handleAiFillField,
   handleChange,
   toggleSection,
 }: CharacterSectionProps) {
@@ -70,12 +74,33 @@ export function CharacterSection({
                                 'md:col-span-6';
               const isFixed = fixedFields.includes(field.id);
               const isSectionLoading = aiLoading || aiSectionLoading === section.id;
+              const isFieldLoading = aiFieldLoading === field.id;
               
               return (
-                <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
-                  <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
-                    {field.label}
-                  </label>
+                <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading || isFieldLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                      {field.label}
+                    </label>
+                    <button
+                      type="button"
+                      className={`text-[12px] p-0.5 rounded transition-colors ${isFieldLoading ? 'bg-error text-on-error' : 'text-on-surface-variant/50 hover:bg-primary/10 hover:text-primary'} ${isSectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={isSectionLoading || (aiFieldLoading !== null && !isFieldLoading)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isFieldLoading) {
+                           aiAbortRef.current?.abort();
+                        } else {
+                           handleAiFillField(field.id);
+                        }
+                      }}
+                      title={isFieldLoading ? "Отменить генерацию поля" : "Сгенерировать/расширить это поле (Magic Wand)"}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {isFieldLoading ? 'close' : 'magic_button'}
+                      </span>
+                    </button>
+                  </div>
                   {field.type === 'select' ? (
                     <select
                       className="w-full bg-transparent border-none p-0 font-body-md text-on-surface focus:ring-0 outline-none"

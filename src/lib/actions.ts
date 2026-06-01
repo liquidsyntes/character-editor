@@ -224,6 +224,7 @@ export async function getSiblingCharacters(projectId?: string | null) {
       name: true,
       emoji: true,
       color: true,
+      summary: true,
     },
   });
 }

@@ -30,6 +30,7 @@ export function useAiFill({
   const [aiProgress, setAiProgress] = useState<string>('');
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
+  const [aiFieldLoading, setAiFieldLoading] = useState<string | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
 
   const parsePartialJson = (raw: string): Record<string, string> => {
@@ -242,13 +243,102 @@ export function useAiFill({
     }
   }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, setOpenSections, saveTimer]);
 
+  const handleAiFillField = useCallback(async (fieldId: string) => {
+    if (aiFieldLoading || aiSectionLoading || aiLoading) return;
+    setAiFieldLoading(fieldId);
+    setAiError(null);
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          existingData: data, 
+          fieldIds: [fieldId], 
+          context: projectContext,
+          stream: true,
+          provider: aiSettings.provider, 
+          model: aiSettings.model, 
+          apiKey: aiSettings.apiKeys[aiSettings.provider] 
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error('Ошибка сервера');
+      if (!res.body) throw new Error('No body');
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let rawJson = '';
+      let finalParsed: Record<string, string> = {};
+      let pushedUndo = false;
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const line = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.error) throw new Error(parsedChunk.error);
+              if (parsedChunk.text) {
+                rawJson += parsedChunk.text;
+                const partial = parsePartialJson(rawJson);
+                finalParsed = partial;
+                setData(prev => {
+                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+                  return { ...prev, ...partial };
+                });
+              }
+            } catch (e) {}
+          }
+          boundary = buffer.indexOf('\n\n');
+        }
+      }
+      
+      setData(prev => {
+         if (saveTimer.current) clearTimeout(saveTimer.current);
+         saveTimer.current = setTimeout(() => doSave(prev), 800);
+         return prev;
+      });
+      
+      if (Object.keys(finalParsed).length > 0) {
+        setFixedFields(Object.keys(finalParsed));
+        setTimeout(() => setFixedFields([]), 5000);
+      }
+      
+      setTimeout(() => setAiFieldLoading(null), 1000);
+    } catch (err: any) {
+      clearTimeout(timeoutId); 
+      setAiFieldLoading(null);
+      if (err.name === 'AbortError') {
+        setAiError('Запрос отменён');
+      } else {
+        setAiError(err.message || 'Ошибка при заполнении поля');
+      }
+    }
+  }, [data, doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, saveTimer]);
+
   return {
     aiLoading,
     aiProgress,
     aiError,
     aiSectionLoading,
+    aiFieldLoading,
     aiAbortRef,
     handleAiFill,
     handleAiFillSection,
+    handleAiFillField,
   };
 }

@@ -15,6 +15,7 @@ import {
 interface FillRequest {
   existingData: CharacterData;
   sectionIds?: string[];
+  fieldIds?: string[];
   context?: string;
 }
 
@@ -33,10 +34,10 @@ export async function getSystemPrompt(key: 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'F
 export async function buildFillPrompt(
   request: FillRequest
 ): Promise<{ system: string; user: string }> {
-  const { existingData, sectionIds, context } = request;
+  const { existingData, sectionIds, fieldIds, context } = request;
 
+  // Always show the whole schema so the AI has full context of the character
   const schemaDesc = CHARACTER_SCHEMA
-    .filter((s) => !sectionIds || sectionIds.includes(s.id))
     .map((section) => {
       const fields = section.fields
         .map((f) => {
@@ -52,12 +53,18 @@ export async function buildFillPrompt(
     })
     .join('\n\n');
 
-  const emptyFields: string[] = [];
+  const fieldsToFill: string[] = [];
   for (const section of CHARACTER_SCHEMA) {
-    if (sectionIds && !sectionIds.includes(section.id)) continue;
+    if (sectionIds && !sectionIds.includes(section.id) && !fieldIds) continue;
     for (const field of section.fields) {
-      if (!existingData[field.id] || !existingData[field.id].trim()) {
-        emptyFields.push(field.id);
+      if (fieldIds) {
+        if (fieldIds.includes(field.id)) {
+          fieldsToFill.push(field.id);
+        }
+      } else {
+        if (!existingData[field.id] || !existingData[field.id].trim()) {
+          fieldsToFill.push(field.id);
+        }
       }
     }
   }
@@ -67,16 +74,19 @@ export async function buildFillPrompt(
     ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
     : '';
 
-  const userPrompt = `Заполни ВСЕ пустые поля (null) в карточке персонажа ниже.${genderInstruction}
+  const userPrompt = `Заполни ВСЕ требуемые поля в карточке персонажа ниже.${genderInstruction}
 
 ${context ? `Дополнительный контекст от автора: ${context}\n` : ''}
 
-Текущая карточка персонажа (поля с null нужно заполнить):
+Текущая карточка персонажа (вся анкета для полного понимания контекста):
 
 ${schemaDesc}
 
-Пустых полей для заполнения: ${emptyFields.length}.
-Верни JSON-объект ТОЛЬКО с заполненными значениями для этих полей. Не включай уже заполненные поля и не добавляй новые ключи.
+ТЕБЕ НУЖНО ЗАПОЛНИТЬ ИЛИ ПЕРЕПИСАТЬ ТОЛЬКО ЭТИ ПОЛЯ (${fieldsToFill.length} шт): 
+${fieldsToFill.join(', ')}
+
+Если целевое поле уже содержит какой-то набросок (например, "боится пауков"), разверни это в красивый, подробный текст в соответствии с остальной карточкой и лором проекта.
+Верни JSON-объект ТОЛЬКО с указанными целевыми полями. Не возвращай остальные поля.
 Начни ответ сразу с { и закончи }.`;
 
   const system = await getSystemPrompt('FILL_PROMPT');

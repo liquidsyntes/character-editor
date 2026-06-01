@@ -8,6 +8,7 @@ export interface SiblingCharacter {
   name: string;
   emoji: string;
   color: string;
+  summary?: string;
 }
 
 export default function CharacterListPanel({
