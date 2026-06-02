@@ -15,7 +15,8 @@ import AnalyzeHistorySidebar from './AnalyzeHistorySidebar';
 import { SiblingCharacter } from './CharacterListPanel';
 import { DiffModal } from './DiffModal';
 import { CharacterSection } from './CharacterSection';
-
+import { CharacterFormHeader } from './CharacterFormHeader';
+import { CharacterFormSummary } from './CharacterFormSummary';
 import { useCharacterFormState } from '@/hooks/useCharacterFormState';
 import { useAiFill } from '@/hooks/useAiFill';
 import { useCharacterAnalysis } from '@/hooks/useCharacterAnalysis';
@@ -160,63 +161,29 @@ export default function CharacterForm({
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background h-full w-full">
-      <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
-            <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
-            <span className="font-label-caps text-[12px] hidden sm:inline">На главную</span>
-          </Link>
-          <button className="md:hidden text-on-surface hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-          <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
-          {aiProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{aiProgress}</span>}
-          {analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}
-          {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
-          {analyzeError && <span className="text-[12px] text-error ml-4">{analyzeError}</span>}
-        </div>
-        <nav className="hidden md:flex gap-8">
-        </nav>
-        <div className="flex items-center gap-4">
-          {aiUndoStack.length > 0 && (
-            <button onClick={handleUndo} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-sm" title="Отменить изменения ИИ">
-              <span className="material-symbols-outlined text-[16px]">undo</span> Отменить
-            </button>
-          )}
-          <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="История анализов">
-            <span className="material-symbols-outlined text-[16px]">history</span> История анализов
-          </button>
-          <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="Анализ">
-            <span className="material-symbols-outlined text-[16px]">{analyzeLoading ? 'hourglass_empty' : 'psychology'}</span> Анализ карточки
-          </button>
-          <div className="h-6 w-px bg-outline-variant mx-2"></div>
-          <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт JSON">
-            <span className="material-symbols-outlined">upload_file</span>
-            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-          </label>
-          <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
-            <span className="material-symbols-outlined">share</span>
-          </button>
-          {aiLoading ? (
-            <button onClick={() => aiAbortRef.current?.abort()} className="bg-error text-on-error px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
-               <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить
-            </button>
-          ) : (
-            <button onClick={handleAiFill} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
-               ✨ Автозаполнение
-            </button>
-          )}
-          <button onClick={() => setShowPrompts(!showPrompts)} className="text-on-surface-variant hover:text-primary transition-colors" title="Системные промпты">
-            <span className="material-symbols-outlined">code_blocks</span>
-          </button>
-          <button onClick={() => setShowTweaks(!showTweaks)} className="text-on-surface-variant hover:text-primary transition-colors" title="Настройки">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-          <Link href={`/character/${characterId}/preview`} className="text-on-surface-variant hover:text-primary transition-colors" title="Предпросмотр">
-            <span className="material-symbols-outlined">visibility</span>
-          </Link>
-        </div>
-      </header>
+      <CharacterFormHeader 
+        projectId={projectId}
+        projectName={projectName}
+        characterId={characterId}
+        aiProgress={aiProgress}
+        analyzeProgress={analyzeProgress}
+        aiError={aiError}
+        analyzeError={analyzeError}
+        aiUndoStackLength={aiUndoStack.length}
+        handleUndo={handleUndo}
+        setShowAnalyzeHistory={setShowAnalyzeHistory}
+        handleAnalyze={handleAnalyze}
+        analyzeLoading={analyzeLoading}
+        handleImport={handleImport}
+        setShowExport={setShowExport}
+        aiLoading={aiLoading}
+        aiAbortRef={aiAbortRef}
+        handleAiFill={handleAiFill}
+        showPrompts={showPrompts}
+        setShowPrompts={setShowPrompts}
+        showTweaks={showTweaks}
+        setShowTweaks={setShowTweaks}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         <div 
@@ -226,46 +193,13 @@ export default function CharacterForm({
         >
           <div className="max-w-[800px] mx-auto space-y-stack-lg">
             
-            <section className="flex flex-col md:flex-row gap-gutter items-start">
-              <div className="shrink-0 group cursor-pointer">
-                <div className="w-32 h-40 bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors relative overflow-hidden">
-                  <span className="material-symbols-outlined text-[32px] mb-2 opacity-50">add_a_photo</span>
-                  <span className="font-label-caps text-[10px] uppercase tracking-widest opacity-50">Фото</span>
-                </div>
-              </div>
-              <div className="flex-1 w-full space-y-4 pt-2">
-                <div>
-                  <input 
-                    className="w-full text-display-lg font-display-lg text-primary bg-transparent input-underline placeholder:text-outline focus:ring-0 px-0 focus:outline-none uppercase" 
-                    placeholder="ИМЯ ПЕРСОНАЖА" 
-                    type="text" 
-                    value={charName}
-                    readOnly
-                  />
-                  <div className="text-[12px] text-outline mt-1 font-label-caps">Чтобы изменить имя, заполните Имя и Фамилию в Досье</div>
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                  {data.characterFunction && (
-                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
-                      {data.characterFunction}
-                    </span>
-                  )}
-                  {data.plotSignificance && (
-                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
-                      {data.plotSignificance}
-                    </span>
-                  )}
-                  {!data.characterFunction && !data.plotSignificance && (
-                    <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase opacity-50">
-                      Роль не указана
-                    </span>
-                  )}
-                  <span className={`${percent === 100 ? 'bg-[#22c55e]/10 text-[#22c55e]' : percent >= 50 ? 'bg-[#f97316]/10 text-[#f97316]' : percent > 0 ? 'bg-[#ef4444]/10 text-[#ef4444]' : 'bg-surface-variant text-on-surface-variant'} font-mono-data text-[12px] px-2 py-1 rounded transition-colors duration-300`}>
-                    Прогресс: {filled}/{total} ({percent}%)
-                  </span>
-                </div>
-              </div>
-            </section>
+            <CharacterFormSummary 
+              data={data}
+              charName={charName}
+              percent={percent}
+              filled={filled}
+              total={total}
+            />
 
             <div className="flex items-center">
               <hr className="flex-1 border-outline-variant" />

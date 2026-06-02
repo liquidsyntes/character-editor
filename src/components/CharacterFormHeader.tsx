@@ -1,0 +1,110 @@
+import Link from 'next/link';
+import { MutableRefObject } from 'react';
+
+interface CharacterFormHeaderProps {
+  projectId?: string;
+  projectName?: string;
+  characterId: string;
+  aiProgress: string;
+  analyzeProgress: string;
+  aiError: string | null;
+  analyzeError: string | null;
+  aiUndoStackLength: number;
+  handleUndo: () => void;
+  setShowAnalyzeHistory: (show: boolean) => void;
+  handleAnalyze: () => void;
+  analyzeLoading: boolean;
+  handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setShowExport: (show: boolean) => void;
+  aiLoading: boolean;
+  aiAbortRef: MutableRefObject<AbortController | null>;
+  handleAiFill: () => void;
+  showPrompts: boolean;
+  setShowPrompts: (show: boolean) => void;
+  showTweaks: boolean;
+  setShowTweaks: (show: boolean) => void;
+}
+
+export function CharacterFormHeader({
+  projectId,
+  projectName,
+  characterId,
+  aiProgress,
+  analyzeProgress,
+  aiError,
+  analyzeError,
+  aiUndoStackLength,
+  handleUndo,
+  setShowAnalyzeHistory,
+  handleAnalyze,
+  analyzeLoading,
+  handleImport,
+  setShowExport,
+  aiLoading,
+  aiAbortRef,
+  handleAiFill,
+  showPrompts,
+  setShowPrompts,
+  showTweaks,
+  setShowTweaks,
+}: CharacterFormHeaderProps) {
+  return (
+    <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
+      <div className="flex items-center gap-4">
+        <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
+          <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
+          <span className="font-label-caps text-[12px] hidden sm:inline">На главную</span>
+        </Link>
+        <button className="md:hidden text-on-surface hover:text-primary transition-colors">
+          <span className="material-symbols-outlined">menu</span>
+        </button>
+        <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
+        {aiProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{aiProgress}</span>}
+        {analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}
+        {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
+        {analyzeError && <span className="text-[12px] text-error ml-4">{analyzeError}</span>}
+      </div>
+      <nav className="hidden md:flex gap-8">
+      </nav>
+      <div className="flex items-center gap-4">
+        {aiUndoStackLength > 0 && (
+          <button onClick={handleUndo} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-sm" title="Отменить изменения ИИ">
+            <span className="material-symbols-outlined text-[16px]">undo</span> Отменить
+          </button>
+        )}
+        <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="История анализов">
+          <span className="material-symbols-outlined text-[16px]">history</span> История анализов
+        </button>
+        <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="Анализ">
+          <span className="material-symbols-outlined text-[16px]">{analyzeLoading ? 'hourglass_empty' : 'psychology'}</span> Анализ карточки
+        </button>
+        <div className="h-6 w-px bg-outline-variant mx-2"></div>
+        <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт JSON">
+          <span className="material-symbols-outlined">upload_file</span>
+          <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+        </label>
+        <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
+          <span className="material-symbols-outlined">share</span>
+        </button>
+        {aiLoading ? (
+          <button onClick={() => aiAbortRef.current?.abort()} className="bg-error text-on-error px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить
+          </button>
+        ) : (
+          <button onClick={handleAiFill} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
+             ✨ Автозаполнение
+          </button>
+        )}
+        <button onClick={() => setShowPrompts(!showPrompts)} className="text-on-surface-variant hover:text-primary transition-colors" title="Системные промпты">
+          <span className="material-symbols-outlined">code_blocks</span>
+        </button>
+        <button onClick={() => setShowTweaks(!showTweaks)} className="text-on-surface-variant hover:text-primary transition-colors" title="Настройки">
+          <span className="material-symbols-outlined">settings</span>
+        </button>
+        <Link href={`/character/${characterId}/preview`} className="text-on-surface-variant hover:text-primary transition-colors" title="Предпросмотр">
+          <span className="material-symbols-outlined">visibility</span>
+        </Link>
+      </div>
+    </header>
+  );
+}

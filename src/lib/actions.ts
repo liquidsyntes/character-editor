@@ -27,13 +27,12 @@ export async function createProject() {
 
 export async function updateProject(id: string, data: { name?: string; description?: string; emoji?: string; color?: string }) {
   const userId = await getUserId();
-  const project = await prisma.project.findUnique({ where: { id } });
-  if (project?.userId !== userId) throw new Error('Unauthorized');
-
-  await prisma.project.update({
-    where: { id },
+  const result = await prisma.project.updateMany({
+    where: { id, userId },
     data,
   });
+  if (result.count === 0) throw new Error('Unauthorized');
+
   revalidatePath(`/project/${id}`);
   revalidatePath('/');
 }
@@ -58,11 +57,11 @@ export async function deleteProject(id: string) {
 
 export async function archiveProject(id: string) {
   const userId = await getUserId();
-  const project = await prisma.project.findUnique({ where: { id } });
-  if (project?.userId !== userId) return;
+  const project = await prisma.project.findFirst({ where: { id, userId } });
+  if (!project) return;
 
-  await prisma.project.update({
-    where: { id },
+  await prisma.project.updateMany({
+    where: { id, userId },
     data: { isArchived: !project.isArchived },
   });
   revalidatePath('/');
@@ -102,16 +101,14 @@ export async function createCharacter(projectId?: string | null) {
 
 export async function updateCharacter(id: string, formData: CharacterData) {
   const userId = await getUserId();
-  const character = await prisma.character.findUnique({ where: { id } });
-  if (character?.userId !== userId) throw new Error('Unauthorized');
 
   const firstName = formData.firstName || '';
   const lastName = formData.lastName || '';
   const name = [firstName, lastName].filter(Boolean).join(' ');
   const summary = formData.oneLiner || '';
 
-  await prisma.character.update({
-    where: { id },
+  const result = await prisma.character.updateMany({
+    where: { id, userId },
     data: {
       name,
       summary,
@@ -120,42 +117,43 @@ export async function updateCharacter(id: string, formData: CharacterData) {
     },
   });
 
+  if (result.count === 0) throw new Error('Unauthorized');
+
   revalidatePath(`/character/${id}`);
   revalidatePath('/');
 }
 
 export async function updateCharacterMeta(id: string, meta: { emoji?: string; color?: string }) {
   const userId = await getUserId();
-  const character = await prisma.character.findUnique({ where: { id } });
-  if (character?.userId !== userId) throw new Error('Unauthorized');
-
-  await prisma.character.update({
-    where: { id },
+  const result = await prisma.character.updateMany({
+    where: { id, userId },
     data: meta,
   });
+  if (result.count === 0) throw new Error('Unauthorized');
+
   revalidatePath(`/character/${id}`);
   revalidatePath('/');
 }
 
 export async function deleteCharacter(id: string) {
   const userId = await getUserId();
-  const char = await prisma.character.findUnique({ where: { id } });
-  if (char?.userId !== userId) throw new Error('Unauthorized');
+  const char = await prisma.character.findFirst({ where: { id, userId } });
+  if (!char) throw new Error('Unauthorized');
 
-  await prisma.character.delete({
-    where: { id },
+  await prisma.character.deleteMany({
+    where: { id, userId },
   });
   revalidatePath('/');
-  if (char?.projectId) revalidatePath(`/project/${char.projectId}`);
+  if (char.projectId) revalidatePath(`/project/${char.projectId}`);
 }
 
 export async function archiveCharacter(id: string) {
   const userId = await getUserId();
-  const character = await prisma.character.findUnique({ where: { id } });
-  if (character?.userId !== userId) return;
+  const character = await prisma.character.findFirst({ where: { id, userId } });
+  if (!character) return;
 
-  await prisma.character.update({
-    where: { id },
+  await prisma.character.updateMany({
+    where: { id, userId },
     data: { isArchived: !character.isArchived },
   });
   revalidatePath('/');
@@ -164,8 +162,8 @@ export async function archiveCharacter(id: string) {
 
 export async function duplicateCharacter(id: string) {
   const userId = await getUserId();
-  const original = await prisma.character.findUnique({ where: { id } });
-  if (original?.userId !== userId) return;
+  const original = await prisma.character.findFirst({ where: { id, userId } });
+  if (!original) return;
 
   const copy = await prisma.character.create({
     data: {
