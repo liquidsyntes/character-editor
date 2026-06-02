@@ -99,6 +99,7 @@ export default function CharacterForm({
     analyzeProgress,
     fixLoading,
     pendingDiff,
+    analyzeAbortRef,
     handleAnalyze,
     handleFixIssues,
     handleAcceptDiff,
@@ -174,6 +175,7 @@ export default function CharacterForm({
         setShowAnalyzeHistory={setShowAnalyzeHistory}
         handleAnalyze={handleAnalyze}
         analyzeLoading={analyzeLoading}
+        analyzeAbortRef={analyzeAbortRef}
         handleImport={handleImport}
         setShowExport={setShowExport}
         aiLoading={aiLoading}

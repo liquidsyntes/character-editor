@@ -14,6 +14,7 @@ interface CharacterFormHeaderProps {
   setShowAnalyzeHistory: (show: boolean) => void;
   handleAnalyze: () => void;
   analyzeLoading: boolean;
+  analyzeAbortRef: MutableRefObject<AbortController | null>;
   handleImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setShowExport: (show: boolean) => void;
   aiLoading: boolean;
@@ -38,6 +39,7 @@ export function CharacterFormHeader({
   setShowAnalyzeHistory,
   handleAnalyze,
   analyzeLoading,
+  analyzeAbortRef,
   handleImport,
   setShowExport,
   aiLoading,
@@ -75,9 +77,15 @@ export function CharacterFormHeader({
         <button onClick={() => setShowAnalyzeHistory(true)} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="История анализов">
           <span className="material-symbols-outlined text-[16px]">history</span> История анализов
         </button>
-        <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="Анализ">
-          <span className="material-symbols-outlined text-[16px]">{analyzeLoading ? 'hourglass_empty' : 'psychology'}</span> Анализ карточки
-        </button>
+        {analyzeLoading ? (
+          <button onClick={() => analyzeAbortRef.current?.abort()} className="bg-[#f97316] text-white px-3 py-1.5 rounded-full text-[13px] font-medium hover:scale-95 duration-100 transition-transform flex items-center gap-1 shadow-sm" title="Отменить анализ">
+            <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить анализ
+          </button>
+        ) : (
+          <button onClick={handleAnalyze} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-[13px] font-medium" title="Анализ">
+            <span className="material-symbols-outlined text-[16px]">psychology</span> Анализ карточки
+          </button>
+        )}
         <div className="h-6 w-px bg-outline-variant mx-2"></div>
         <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт JSON">
           <span className="material-symbols-outlined">upload_file</span>

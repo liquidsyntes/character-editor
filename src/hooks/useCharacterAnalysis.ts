@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CharacterData } from '@/types/character';
 import { AnalysisRecord } from '@/components/AnalyzeHistorySidebar';
 import { AiSettings } from '@/lib/ai/useAiSettings';
@@ -31,6 +31,8 @@ export function useCharacterAnalysis({
   const [analyzeProgress, setAnalyzeProgress] = useState<string>('');
   const [fixLoading, setFixLoading] = useState(false);
   const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
+  
+  const analyzeAbortRef = useRef<AbortController | null>(null);
 
   const handleAnalyze = useCallback(async () => {
     // Simple caching: don't analyze if we already have an analysis for this exact data and provider
@@ -46,6 +48,7 @@ export function useCharacterAnalysis({
 
     setAnalyzeLoading(true); setAnalyzeError(null); setAnalyzeProgress('');
     const controller = new AbortController();
+    analyzeAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
     try {
       const res = await fetch('/api/ai/analyze', {
@@ -205,6 +208,7 @@ export function useCharacterAnalysis({
     analyzeProgress,
     fixLoading,
     pendingDiff,
+    analyzeAbortRef,
     handleAnalyze,
     handleFixIssues,
     handleAcceptDiff,

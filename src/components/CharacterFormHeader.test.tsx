@@ -17,6 +17,7 @@ describe('CharacterFormHeader', () => {
     setShowAnalyzeHistory: vi.fn(),
     handleAnalyze: vi.fn(),
     analyzeLoading: false,
+    analyzeAbortRef: { current: null },
     handleImport: vi.fn(),
     setShowExport: vi.fn(),
     aiLoading: false,
