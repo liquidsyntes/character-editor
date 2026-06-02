@@ -59,9 +59,12 @@
 |------|--------------|
 | `src/lib/ai/prompt.test.ts` | parseFillResponse, parseAnalyzeResponse (4 теста) |
 | `src/app/api/ai/fill/route.test.ts` | Валидация, non-stream, stream (3 теста) |
-| `src/app/api/ai/analyze/route.test.ts` | Валидация, rate limit, stream (3 теста) |
+| `src/app/api/ai/analyze/fix/route.test.ts` | Валидация (2 теста) |
+| `src/lib/actions.test.ts` | Валидация и безопасность (3 теста) |
+| `src/components/CharacterFormHeader.test.tsx` | UI, обработка событий, рендер состояний (5 тестов) |
+| `src/components/CharacterFormSummary.test.tsx` | UI, расчет прогресса, рендер данных (4 теста) |
 
-**Не покрыто:** fix-роут, Server Actions, компоненты, provider.ts.
+**Не покрыто:** provider.ts, остальные сложные UI компоненты (DiffModal, AnalyzePanel).
 
 ## Состояние зависимостей
 
