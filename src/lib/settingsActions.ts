@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 
-type AiProvider = 'deepseek' | 'xai' | 'openai';
+type AiProvider = 'deepseek' | 'xai' | 'openai' | 'anthropic' | 'gemini' | 'openrouter';
 
 export async function saveApiKeysToCookie(newKeys: Partial<Record<AiProvider, string>>) {
   const cookieStore = await cookies();

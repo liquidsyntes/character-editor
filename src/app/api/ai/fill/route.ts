@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       provider: provider as ProviderName,
       model,
       temperature: typeof temperature === 'number' ? temperature : 0.85,
-      maxTokens: 4096,
+      maxTokens: 16384,
       apiKey: typeof apiKey === 'string' ? apiKey : undefined,
     };
 

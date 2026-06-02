@@ -4,6 +4,7 @@ import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
 export default async function PreviewPage({
   params,
 }: {

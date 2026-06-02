@@ -26,6 +26,7 @@ export default function TweaksPanel({
     updateApiKey,
     PROVIDER_MODELS,
     PROVIDER_LABELS,
+    dynamicModels,
   } = aiState;
 
   const [visibleKeys, setVisibleKeys] = useState<Partial<Record<AiProvider, boolean>>>({});
@@ -59,8 +60,17 @@ export default function TweaksPanel({
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
-  const providers: AiProvider[] = ['deepseek', 'xai', 'openai'];
-  const models = PROVIDER_MODELS[ai.provider] || [];
+  const providers = Object.keys(PROVIDER_LABELS) as AiProvider[];
+  
+  // Объединяем статические модели и динамические с сервера
+  const staticModels = PROVIDER_MODELS[ai.provider] || [];
+  const fetchedModels = dynamicModels[ai.provider] || [];
+  
+  // Убираем дубликаты
+  const modelsMap = new Map<string, {id: string, label: string}>();
+  staticModels.forEach(m => modelsMap.set(m.id, m));
+  fetchedModels.forEach(m => modelsMap.set(m.id, m));
+  const models = Array.from(modelsMap.values());
 
   const toggleKeyVisibility = (p: AiProvider) => {
     setVisibleKeys(prev => ({ ...prev, [p]: !prev[p] }));
@@ -101,40 +111,44 @@ export default function TweaksPanel({
             </h3>
 
             <div>
-              <div className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Провайдер</div>
-              <div className="flex flex-wrap gap-2">
-                {providers.map(p => (
-                  <button
-                    key={p}
-                    className={`font-label-caps text-label-caps px-4 py-2 border rounded transition-colors ${
-                      ai.provider === p 
-                        ? 'bg-primary text-on-primary border-primary' 
-                        : 'border-outline-variant text-on-surface-variant hover:border-outline hover:text-on-surface bg-surface'
-                    }`}
-                    onClick={() => updateProvider(p)}
-                  >
-                    {PROVIDER_LABELS[p]}
-                  </button>
-                ))}
+              <label htmlFor="ai-provider" className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Провайдер</label>
+              <div className="relative">
+                <select
+                  id="ai-provider"
+                  className="w-full bg-surface border border-outline-variant text-on-surface rounded px-4 py-2 appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md transition-colors cursor-pointer"
+                  value={ai.provider}
+                  onChange={(e) => updateProvider(e.target.value as AiProvider)}
+                >
+                  {providers.map(p => (
+                    <option key={p} value={p}>{PROVIDER_LABELS[p]}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                </div>
               </div>
             </div>
 
             <div>
-              <div className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Модель</div>
-              <div className="flex flex-col gap-2">
-                {models.map(m => (
-                  <button
-                    key={m.id}
-                    className={`font-body-md px-4 py-2 border rounded transition-colors text-left ${
-                      ai.model === m.id 
-                        ? 'bg-primary/10 text-primary border-primary' 
-                        : 'border-outline-variant text-on-surface-variant hover:border-outline hover:text-on-surface bg-surface'
-                    }`}
-                    onClick={() => updateModel(m.id)}
-                  >
-                    {m.label}
-                  </button>
-                ))}
+              <label htmlFor="ai-model" className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider mb-2 flex justify-between">
+                <span>Модель</span>
+                {fetchedModels.length > 0 && <span className="text-primary text-[9px]">(Загружено с сервера)</span>}
+              </label>
+              <div className="relative">
+                <input
+                  id="ai-model"
+                  list="ai-model-list"
+                  className="w-full bg-surface border border-outline-variant text-on-surface rounded px-4 py-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-body-md transition-colors"
+                  value={ai.model}
+                  onChange={(e) => updateModel(e.target.value)}
+                  placeholder="Выберите или введите модель..."
+                  autoComplete="off"
+                />
+                <datalist id="ai-model-list">
+                  {models.map(m => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </datalist>
               </div>
             </div>
 

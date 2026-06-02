@@ -3,11 +3,13 @@
  */
 
 import { createXai } from '@ai-sdk/xai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText, streamText } from 'ai';
 import { env } from '../env';
 import { getServerSideApiKeys } from '../settingsActions';
 
-export type ProviderName = 'deepseek' | 'xai' | 'openai';
+export type ProviderName = 'deepseek' | 'xai' | 'openai' | 'anthropic' | 'gemini' | 'openrouter';
 
 interface ProviderConfig {
   apiKey: string;
@@ -47,6 +49,36 @@ export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
       { id: 'gpt-4o', label: 'GPT-4o' },
       { id: 'gpt-4o-mini', label: 'GPT-4o Mini (быстрый)' },
       { id: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+    ],
+  },
+  anthropic: {
+    apiKey: env.ANTHROPIC_API_KEY || '',
+    baseUrl: 'https://api.anthropic.com',
+    defaultModel: 'claude-3-5-sonnet-20241022',
+    models: [
+      { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+      { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+      { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+    ],
+  },
+  gemini: {
+    apiKey: env.GEMINI_API_KEY || '',
+    baseUrl: 'https://generativelanguage.googleapis.com',
+    defaultModel: 'gemini-1.5-pro',
+    models: [
+      { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+      { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+    ],
+  },
+  openrouter: {
+    apiKey: env.OPENROUTER_API_KEY || '',
+    baseUrl: 'https://openrouter.ai/api',
+    defaultModel: 'anthropic/claude-3.5-sonnet',
+    models: [
+      { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet (OR)' },
+      { id: 'meta-llama/llama-3.1-70b-instruct', label: 'Llama 3.1 70B' },
+      { id: 'google/gemini-pro-1.5', label: 'Gemini 1.5 Pro (OR)' },
+      { id: 'microsoft/wizardlm-2-8x22b', label: 'WizardLM-2 8x22B' },
     ],
   },
 };
@@ -100,20 +132,29 @@ export async function chatCompletion(
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI) или в .env как ${provider.toUpperCase()}_API_KEY`);
   }
 
-  if (provider === 'xai') {
-    const xai = createXai({ apiKey });
+  if (provider === 'xai' || provider === 'anthropic' || provider === 'gemini') {
+    let modelInstance;
+    if (provider === 'xai') {
+      const xai = createXai({ apiKey });
+      modelInstance = xai(model);
+    } else if (provider === 'anthropic') {
+      const anthropic = createAnthropic({ apiKey });
+      modelInstance = anthropic(model);
+    } else if (provider === 'gemini') {
+      const google = createGoogleGenerativeAI({ apiKey });
+      modelInstance = google(model);
+    }
+
     const systemMsg = messages.find(m => m.role === 'system')?.content;
     const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     
     const { text, usage } = await generateText({
-      model: xai(model),
+      model: modelInstance!,
       system: systemMsg,
       messages: coreMessages,
       temperature: options.temperature ?? 0.8,
-      maxOutputTokens: options.maxTokens ?? 4096,
-      providerOptions: {
-        xai: { reasoningEffort: "low" },
-      },
+      maxOutputTokens: options.maxTokens ?? 16384,
+      providerOptions: provider === 'xai' ? { xai: { reasoningEffort: "low" } } : undefined,
     });
 
     return {
@@ -126,7 +167,7 @@ export async function chatCompletion(
     model,
     messages,
     temperature: options.temperature ?? 0.8,
-    max_tokens: options.maxTokens ?? 4096,
+    max_tokens: options.maxTokens ?? 16384,
     stream: false,
   };
 
@@ -182,20 +223,29 @@ export async function chatCompletionStream(
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI)`);
   }
 
-  if (provider === 'xai') {
-    const xai = createXai({ apiKey });
+  if (provider === 'xai' || provider === 'anthropic' || provider === 'gemini') {
+    let modelInstance;
+    if (provider === 'xai') {
+      const xai = createXai({ apiKey });
+      modelInstance = xai(model);
+    } else if (provider === 'anthropic') {
+      const anthropic = createAnthropic({ apiKey });
+      modelInstance = anthropic(model);
+    } else if (provider === 'gemini') {
+      const google = createGoogleGenerativeAI({ apiKey });
+      modelInstance = google(model);
+    }
+
     const systemMsg = messages.find(m => m.role === 'system')?.content;
     const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     
     const { textStream } = streamText({
-      model: xai(model),
+      model: modelInstance!,
       system: systemMsg,
       messages: coreMessages,
       temperature: options.temperature ?? 0.8,
-      maxOutputTokens: options.maxTokens ?? 4096,
-      providerOptions: {
-        xai: { reasoningEffort: "low" },
-      },
+      maxOutputTokens: options.maxTokens ?? 16384,
+      providerOptions: provider === 'xai' ? { xai: { reasoningEffort: "low" } } : undefined,
     });
 
     const encoder = new TextEncoder();
@@ -219,7 +269,7 @@ export async function chatCompletionStream(
     model,
     messages,
     temperature: options.temperature ?? 0.8,
-    max_tokens: options.maxTokens ?? 4096,
+    max_tokens: options.maxTokens ?? 16384,
     stream: true,
   };
 
@@ -321,5 +371,8 @@ export async function chatCompletionStream(
 export function getDefaultProvider(): ProviderName {
   if (env.OPENAI_API_KEY) return 'openai';
   if (env.XAI_API_KEY) return 'xai';
+  if (env.ANTHROPIC_API_KEY) return 'anthropic';
+  if (env.GEMINI_API_KEY) return 'gemini';
+  if (env.OPENROUTER_API_KEY) return 'openrouter';
   return 'deepseek';
 }

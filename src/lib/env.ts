@@ -6,6 +6,9 @@ const envSchema = z.object({
   DEEPSEEK_BASE_URL: z.string().url().default('https://api.deepseek.com'),
   OPENAI_API_KEY: z.string().optional(),
   XAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

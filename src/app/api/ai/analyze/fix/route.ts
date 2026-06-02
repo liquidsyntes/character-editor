@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       model,
       temperature,
       apiKey,
-      maxTokens: 8192,
+      maxTokens: 16384,
     };
 
     const aiRes = await chatCompletion(messages, options);
