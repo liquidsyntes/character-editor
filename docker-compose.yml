@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  character-editor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: character-editor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - sqlite_data:/app/prisma/data
+    environment:
+      # База данных будет лежать в примонтированном volume
+      - DATABASE_URL=file:/app/prisma/data/dev.db
+      - NEXTAUTH_URL=http://localhost:3000
+      # Сгенерируйте свой секрет (например, через `openssl rand -base64 32`) и пропишите тут или в .env файле
+      - NEXTAUTH_SECRET=changeme123_very_secret_string_please_change
+      # Если нужны другие переменные, пропишите их тут или создайте .env файл и используйте env_file
+      # - OPENAI_API_KEY=your_key
+      # - DEEPSEEK_API_KEY=your_key
+
+volumes:
+  sqlite_data:
+    description: "Volume для хранения базы данных SQLite"

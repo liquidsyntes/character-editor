@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
 import * as provider from '@/lib/ai/provider';
+import * as routeUtils from '@/lib/ai/routeUtils';
 
 // Mock the provider to prevent actual API calls
 vi.mock('@/lib/ai/provider', async (importOriginal) => {
@@ -10,6 +11,15 @@ vi.mock('@/lib/ai/provider', async (importOriginal) => {
     ...actual,
     chatCompletion: vi.fn(),
     chatCompletionStream: vi.fn(),
+  };
+});
+
+vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/routeUtils')>();
+  return {
+    ...actual,
+    requireAuth: vi.fn().mockResolvedValue(null),
+    checkApiRateLimit: vi.fn().mockReturnValue(null),
   };
 });
 
@@ -28,7 +38,7 @@ describe('POST /api/ai/fill', () => {
     expect(res.status).toBe(400);
     
     const data = await res.json();
-    expect(data.error).toBe('existingData is required');
+    expect(data.error).toBe('existingData is required and must be an object');
   });
 
   it('should process non-streaming request successfully', async () => {

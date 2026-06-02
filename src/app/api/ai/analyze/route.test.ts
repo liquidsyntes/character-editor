@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
+import * as routeUtils from '@/lib/ai/routeUtils';
 import * as provider from '@/lib/ai/provider';
-import * as rateLimit from '@/lib/rateLimit';
+import { NextResponse } from 'next/server';
 
 vi.mock('@/lib/ai/provider', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/ai/provider')>();
@@ -12,9 +13,14 @@ vi.mock('@/lib/ai/provider', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: vi.fn(() => ({ success: true, remaining: 10 })),
-}));
+vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/ai/routeUtils')>();
+  return {
+    ...actual,
+    requireAuth: vi.fn().mockResolvedValue(null),
+    checkApiRateLimit: vi.fn().mockReturnValue(null),
+  };
+});
 
 describe('POST /api/ai/analyze', () => {
   beforeEach(() => {
@@ -30,11 +36,13 @@ describe('POST /api/ai/analyze', () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toBe('existingData is required');
+    expect(data.error).toBe('existingData is required and must be an object');
   });
 
   it('should return 429 if rate limit is exceeded', async () => {
-    vi.mocked(rateLimit.checkRateLimit).mockReturnValueOnce({ success: false, remaining: 0 });
+    vi.mocked(routeUtils.checkApiRateLimit).mockReturnValueOnce(
+      NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 }) as any
+    );
 
     const req = new NextRequest('http://localhost/api/ai/analyze', {
       method: 'POST',
