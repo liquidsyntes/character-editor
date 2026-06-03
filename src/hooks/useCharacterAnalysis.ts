@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CharacterData } from '@/types/character';
 import { AnalysisRecord } from '@/components/AnalyzeHistorySidebar';
 import { AiSettings } from '@/lib/ai/useAiSettings';
 
 interface UseCharacterAnalysisProps {
+  characterId: string;
   data: CharacterData;
   setData: React.Dispatch<React.SetStateAction<CharacterData>>;
   doSave: (newData: CharacterData) => void;
@@ -15,6 +16,7 @@ interface UseCharacterAnalysisProps {
 }
 
 export function useCharacterAnalysis({
+  characterId,
   data,
   setData,
   doSave,
@@ -33,6 +35,22 @@ export function useCharacterAnalysis({
   const [pendingDiff, setPendingDiff] = useState<Record<string, string> | null>(null);
   
   const analyzeAbortRef = useRef<AbortController | null>(null);
+
+  // Load analyses from localStorage on mount or when characterId changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`analyses_${characterId}`);
+      if (saved) {
+        try {
+          setAnalyses(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setAnalyses([]);
+      }
+    }
+  }, [characterId]);
 
   const handleAnalyze = useCallback(async () => {
     // Simple caching: don't analyze if we already have an analysis for this exact data and provider
@@ -128,7 +146,11 @@ export function useCharacterAnalysis({
         provider: aiSettings.provider,
         dataSnapshot: { ...data }
       };
-      setAnalyses(prev => [record, ...prev]);
+      setAnalyses(prev => {
+        const next = [record, ...prev];
+        localStorage.setItem(`analyses_${characterId}`, JSON.stringify(next));
+        return next;
+      });
       setActiveAnalysisId(record.id);
     } catch (err) {
       clearTimeout(timeoutId); 
@@ -140,7 +162,7 @@ export function useCharacterAnalysis({
     } finally {
       setAnalyzeLoading(false);
     }
-  }, [data, aiSettings, projectContext, analyses]);
+  }, [data, aiSettings, projectContext, analyses, characterId]);
 
   const handleFixIssues = useCallback(async (issuesToFix: import('@/types/character').AnalyzeIssue[]) => {
     if (!issuesToFix || issuesToFix.length === 0) return;
@@ -199,6 +221,17 @@ export function useCharacterAnalysis({
     setPendingDiff(null);
   }, []);
 
+  const handleDeleteAnalysis = useCallback((id: string) => {
+    setAnalyses(prev => {
+      const next = prev.filter(a => a.id !== id);
+      localStorage.setItem(`analyses_${characterId}`, JSON.stringify(next));
+      return next;
+    });
+    if (activeAnalysisId === id) {
+      setActiveAnalysisId(null);
+    }
+  }, [characterId, activeAnalysisId]);
+
   return {
     analyzeLoading,
     analyses,
@@ -215,5 +248,6 @@ export function useCharacterAnalysis({
     handleFixIssues,
     handleAcceptDiff,
     handleRejectDiff,
+    handleDeleteAnalysis,
   };
 }

@@ -92,7 +92,6 @@ export default function CharacterForm({
   const {
     analyzeLoading,
     analyses,
-    setAnalyses,
     activeAnalysisId,
     setActiveAnalysisId,
     analyzeError,
@@ -105,8 +104,17 @@ export default function CharacterForm({
     handleFixIssues,
     handleAcceptDiff,
     handleRejectDiff,
+    handleDeleteAnalysis,
   } = useCharacterAnalysis({
-    data, setData, doSave, pushUndo, setFixedFields, aiSettings, projectContext: enrichedContext, saveTimer
+    characterId,
+    data,
+    setData,
+    doSave,
+    pushUndo,
+    setFixedFields,
+    aiSettings,
+    projectContext: enrichedContext,
+    saveTimer
   });
 
   const [activeTab, setActiveTab] = useState<'sections' | 'scratchpad' | 'commands'>('sections');
@@ -529,11 +537,11 @@ export default function CharacterForm({
         <AnalyzeHistorySidebar
           records={analyses}
           activeId={activeAnalysisId}
-          onSelect={setActiveAnalysisId}
-          onDelete={(id) => {
-            setAnalyses(prev => prev.filter(a => a.id !== id));
-            if (activeAnalysisId === id) setActiveAnalysisId(null);
+          onSelect={(id) => {
+            setActiveAnalysisId(id);
+            setShowAnalyzeHistory(false);
           }}
+          onDelete={handleDeleteAnalysis}
           onNewAnalysis={handleAnalyze}
           loading={analyzeLoading}
           isOpen={showAnalyzeHistory}

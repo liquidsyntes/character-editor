@@ -32,41 +32,41 @@ export default function AnalyzeHistorySidebar({
   isOpen,
   onClose,
 }: Props) {
-  if (!isOpen && !activeId) return null;
+  if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop for mobile */}
+      {/* Backdrop */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 z-[190] backdrop-blur-sm animate-in fade-in duration-200" 
+          className="fixed inset-0 bg-black/60 z-[190] backdrop-blur-sm animate-in fade-in duration-200" 
           onClick={onClose} 
         />
       )}
 
       {/* Sidebar */}
       <div 
-        className={`fixed md:relative top-0 right-0 h-full w-[320px] max-w-full bg-surface-container-lowest border-l border-outline-variant z-[195] shadow-2xl md:shadow-none flex flex-col transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0 md:hidden'
-        } ${activeId ? 'hidden md:flex' : ''}`}
+        className={`fixed top-0 right-0 h-full w-[320px] max-w-full bg-primary text-white border-l border-white/10 z-[195] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
       >
-        <div className="p-4 border-b border-outline-variant shrink-0 flex justify-between items-center bg-surface">
+        <div className="p-4 border-b border-white/10 shrink-0 flex justify-between items-center bg-black/25">
           <div className="flex items-center gap-2">
-            <span className="font-headline-sm text-[18px] font-bold text-on-surface">Отчёты</span>
+            <span className="text-sm font-bold text-white">История анализов</span>
             {records.length > 0 && (
-              <span className="bg-primary/10 text-primary font-mono-data text-[10px] px-2 py-0.5 rounded-full">
+              <span className="bg-white/15 text-white/90 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {records.length}
               </span>
             )}
           </div>
-          <button className="md:hidden text-on-surface-variant hover:text-primary p-1 bg-surface-container rounded transition-colors" onClick={onClose}>
+          <button className="text-white/70 hover:text-white p-1 hover:bg-white/10 rounded transition-colors flex items-center justify-center" onClick={onClose}>
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
-        <div className="p-4 border-b border-outline-variant shrink-0 bg-surface">
+        <div className="p-4 border-b border-white/10 shrink-0 bg-black/10">
           <button
-            className="w-full bg-surface-container-high border border-outline-variant text-primary hover:bg-primary hover:text-on-primary hover:border-primary py-2 rounded font-label-caps text-[12px] uppercase tracking-wider transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-white text-primary hover:bg-white/95 py-2 rounded font-semibold text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow"
             onClick={onNewAnalysis}
             disabled={loading}
           >
@@ -78,11 +78,11 @@ export default function AnalyzeHistorySidebar({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-background p-2 space-y-2">
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-[#0f1d35] p-3 space-y-2.5">
           {records.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center opacity-50 p-4">
-              <span className="material-symbols-outlined text-[32px] mb-2">history</span>
-              <p className="font-body-md text-[13px] text-on-surface-variant">Нет отчётов. Нажми «Новый анализ», чтобы создать первый.</p>
+              <span className="material-symbols-outlined text-[32px] mb-2 text-white/60">history</span>
+              <p className="text-xs text-white/60 leading-relaxed">Нет отчётов. Нажми «Новый анализ», чтобы создать первый.</p>
             </div>
           ) : (
             records.map(rec => (
@@ -90,21 +90,21 @@ export default function AnalyzeHistorySidebar({
                 key={rec.id}
                 className={`group relative rounded-lg border p-3 transition-all cursor-pointer ${
                   activeId === rec.id 
-                    ? 'bg-primary/5 border-primary shadow-sm' 
-                    : 'bg-surface border-outline-variant hover:border-primary/50'
+                    ? 'bg-white/10 border-white/30 shadow-sm' 
+                    : 'bg-white/5 border-white/10 hover:border-white/20'
                 }`}
                 onClick={() => onSelect(rec.id)}
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                  <span className="font-mono text-[9px] text-white/50 tracking-wider">
                     {rec.timestamp}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className={`font-mono-data text-[10px] px-1.5 py-0.5 rounded ${rec.result.totalIssues > 0 ? 'bg-error/10 text-error' : 'bg-green-500/10 text-green-500'}`}>
-                      {rec.result.totalIssues}
+                    <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded ${rec.result.totalIssues > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                      Проблем: {rec.result.totalIssues}
                     </span>
                     <button
-                      className="opacity-0 group-hover:opacity-100 text-on-surface-variant hover:text-error transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 transition-all flex items-center justify-center p-0.5 hover:bg-white/5 rounded"
                       onClick={(e) => { e.stopPropagation(); onDelete(rec.id); }}
                       title="Удалить отчёт"
                     >
@@ -113,7 +113,7 @@ export default function AnalyzeHistorySidebar({
                   </div>
                 </div>
                 
-                <p className="font-body-md text-[13px] text-on-surface line-clamp-3 leading-relaxed">
+                <p className="text-xs text-white/70 line-clamp-3 leading-relaxed">
                   {rec.result.summary || 'Без сводки'}
                 </p>
               </div>
