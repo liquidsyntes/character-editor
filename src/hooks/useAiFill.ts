@@ -1,7 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { CharacterData } from '@/types/character';
-import { CHARACTER_SCHEMA } from '@/lib/schema';
+import { CHARACTER_SCHEMA, getTotalFieldCount } from '@/lib/schema';
 import { AiSettings } from '@/lib/ai/useAiSettings';
+
+export interface AiProgressData {
+  isVisible: boolean;
+  current: number;
+  total: number;
+  label: string;
+}
 
 interface UseAiFillProps {
   data: CharacterData;
@@ -27,7 +34,7 @@ export function useAiFill({
   saveTimer
 }: UseAiFillProps) {
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiProgress, setAiProgress] = useState<string>('');
+  const [aiProgress, setAiProgress] = useState<AiProgressData | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
   const [aiFieldLoading, setAiFieldLoading] = useState<string | null>(null);
@@ -49,7 +56,9 @@ export function useAiFill({
 
   const handleAiFill = useCallback(async () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
-    setAiLoading(true); setAiError(null); setAiProgress('Думаю над персонажем...');
+    setAiLoading(true); setAiError(null); 
+    const totalFields = getTotalFieldCount();
+    setAiProgress({ isVisible: true, current: 0, total: totalFields, label: 'Думаю...' });
     const controller = new AbortController(); aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
@@ -114,6 +123,7 @@ export function useAiFill({
                 rawJson += parsedChunk.text;
                 const partial = parsePartialJson(rawJson);
                 finalParsed = partial;
+                setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
                 setData(prev => {
                   if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
                   return { ...prev, ...partial };
@@ -140,9 +150,9 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
 
-      setAiProgress(`✓ Заполнено ${Object.keys(finalParsed).length} полей`);
+      setAiProgress(prev => prev ? { ...prev, current: Object.keys(finalParsed).length, label: `Готово!` } : null);
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-      setTimeout(() => { setAiLoading(false); setAiProgress(''); }, 4000);
+      setTimeout(() => { setAiLoading(false); setAiProgress(null); }, 4000);
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
@@ -150,7 +160,7 @@ export function useAiFill({
       } else {
         setAiError(err.message || 'Ошибка');
       }
-      setAiProgress('');
+      setAiProgress(null);
       setAiLoading(false);
     }
   }, [data, doSave, aiSettings, projectContext, pushUndo, setData, setFixedFields, setOpenSections, saveTimer]);
@@ -159,6 +169,9 @@ export function useAiFill({
     if (aiSectionLoading) return;
     setAiSectionLoading(sectionId);
     setAiError(null);
+    const section = CHARACTER_SCHEMA.find(s => s.id === sectionId);
+    const totalFields = section ? section.fields.length : 1;
+    setAiProgress({ isVisible: true, current: 0, total: totalFields, label: 'Анализ секции...' });
     const controller = new AbortController();
     aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
@@ -208,6 +221,7 @@ export function useAiFill({
                 rawJson += parsedChunk.text;
                 const partial = parsePartialJson(rawJson);
                 finalParsed = partial;
+                setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
                 setData(prev => {
                   if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
                   return { ...prev, ...partial };
@@ -230,11 +244,13 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
       
+      setAiProgress(prev => prev ? { ...prev, current: Object.keys(finalParsed).length, label: `Готово!` } : null);
       setOpenSections(prev => new Set(prev).add(sectionId));
-      setTimeout(() => setAiSectionLoading(null), 2000);
+      setTimeout(() => { setAiSectionLoading(null); setAiProgress(null); }, 3000);
     } catch (err: any) {
       clearTimeout(timeoutId); 
       setAiSectionLoading(null);
+      setAiProgress(null);
       if (err.name === 'AbortError') {
         setAiError('Запрос отменён');
       } else {
@@ -247,6 +263,7 @@ export function useAiFill({
     if (aiFieldLoading || aiSectionLoading || aiLoading) return;
     setAiFieldLoading(fieldId);
     setAiError(null);
+    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Генерация...' });
     const controller = new AbortController();
     aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
@@ -296,6 +313,7 @@ export function useAiFill({
                 rawJson += parsedChunk.text;
                 const partial = parsePartialJson(rawJson);
                 finalParsed = partial;
+                setAiProgress(prev => prev ? { ...prev, current: 1, label: 'Генерация...' } : prev);
                 setData(prev => {
                   if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
                   return { ...prev, ...partial };
@@ -318,10 +336,12 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
       
-      setTimeout(() => setAiFieldLoading(null), 1000);
+      setAiProgress(prev => prev ? { ...prev, current: 1, label: `Готово!` } : null);
+      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 2000);
     } catch (err: any) {
       clearTimeout(timeoutId); 
       setAiFieldLoading(null);
+      setAiProgress(null);
       if (err.name === 'AbortError') {
         setAiError('Запрос отменён');
       } else {

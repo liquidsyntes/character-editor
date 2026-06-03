@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { MutableRefObject } from 'react';
+import { AiProgressData } from '@/hooks/useAiFill';
 
 interface CharacterFormHeaderProps {
   projectId?: string;
   projectName?: string;
   characterId: string;
-  aiProgress: string;
+  aiProgress: AiProgressData | null;
   analyzeProgress: string;
   aiError: string | null;
   analyzeError: string | null;
@@ -61,8 +62,21 @@ export function CharacterFormHeader({
           <span className="material-symbols-outlined">menu</span>
         </button>
         <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
-        {aiProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{aiProgress}</span>}
-        {analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}
+        {aiProgress && aiProgress.isVisible && (
+          <div className="ml-4 flex flex-col justify-center min-w-[150px] sm:min-w-[200px]">
+            <div className="flex justify-between text-[10px] font-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">
+              <span>{aiProgress.label}</span>
+              <span className="font-mono text-[9px]">{aiProgress.current} / {aiProgress.total}</span>
+            </div>
+            <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300 ease-out rounded-full" 
+                style={{ width: `${aiProgress.total > 0 ? Math.min(100, Math.round((aiProgress.current / aiProgress.total) * 100)) : 0}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+        {!aiProgress?.isVisible && analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}
         {aiError && <span className="text-[12px] text-error ml-4">{aiError}</span>}
         {analyzeError && <span className="text-[12px] text-error ml-4">{analyzeError}</span>}
       </div>
