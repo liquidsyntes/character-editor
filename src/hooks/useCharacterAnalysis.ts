@@ -209,6 +209,7 @@ export function useCharacterAnalysis({
     analyzeProgress,
     fixLoading,
     pendingDiff,
+    setPendingDiff,
     analyzeAbortRef,
     handleAnalyze,
     handleFixIssues,

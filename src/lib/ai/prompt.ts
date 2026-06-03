@@ -13,7 +13,11 @@ import {
   DEFAULT_USER_FILL_PROMPT,
   DEFAULT_USER_REGENERATE_PROMPT,
   DEFAULT_USER_ANALYZE_PROMPT,
-  DEFAULT_USER_FIX_PROMPT
+  DEFAULT_USER_FIX_PROMPT,
+  DEFAULT_SCRATCHPAD_SYSTEM_PROMPT,
+  DEFAULT_USER_SCRATCHPAD_PROMPT,
+  DEFAULT_QUICK_COMMAND_SYSTEM_PROMPT,
+  DEFAULT_USER_QUICK_COMMAND_PROMPT
 } from './prompt-constants';
 
 interface FillRequest {
@@ -23,7 +27,7 @@ interface FillRequest {
   context?: string;
 }
 
-export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT';
+export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT' | 'SCRATCHPAD_PROMPT' | 'USER_SCRATCHPAD_PROMPT' | 'QUICK_COMMAND_PROMPT' | 'USER_QUICK_COMMAND_PROMPT';
 
 export async function getPromptTemplate(key: PromptKey): Promise<string> {
   try {
@@ -41,6 +45,10 @@ export async function getPromptTemplate(key: PromptKey): Promise<string> {
     case 'USER_REGENERATE_PROMPT': return DEFAULT_USER_REGENERATE_PROMPT;
     case 'USER_ANALYZE_PROMPT': return DEFAULT_USER_ANALYZE_PROMPT;
     case 'USER_FIX_PROMPT': return DEFAULT_USER_FIX_PROMPT;
+    case 'SCRATCHPAD_PROMPT': return DEFAULT_SCRATCHPAD_SYSTEM_PROMPT;
+    case 'USER_SCRATCHPAD_PROMPT': return DEFAULT_USER_SCRATCHPAD_PROMPT;
+    case 'QUICK_COMMAND_PROMPT': return DEFAULT_QUICK_COMMAND_SYSTEM_PROMPT;
+    case 'USER_QUICK_COMMAND_PROMPT': return DEFAULT_USER_QUICK_COMMAND_PROMPT;
     default: return DEFAULT_FILL_SYSTEM_PROMPT;
   }
 }
@@ -235,5 +243,93 @@ ${iss.description}
     .replace('{{UNIQUE_FIELD_IDS}}', fieldsForRewrite);
 
   const system = (await getPromptTemplate('FIX_PROMPT')) || DEFAULT_FIX_SYSTEM_PROMPT;
+  return { system, user: userPrompt };
+}
+
+// ── AI Scratchpad & Quick Commands ───────────────────────────────────
+
+export async function buildScratchpadPrompt(
+  existingData: CharacterData,
+  scratchpadText: string,
+  context?: string
+): Promise<{ system: string; user: string }> {
+  // Always show the whole schema so the AI has full context of the character
+  const schemaDesc = CHARACTER_SCHEMA
+    .map((section) => {
+      const fields = section.fields
+        .map((f) => {
+          const existing = existingData[f.id]?.trim();
+          return `  "${f.id}": ${
+            existing ? `"${existing.replace(/"/g, '\\"')}"` : 'null'
+          } // ${f.label}${
+            f.placeholder ? ` (пример: ${f.placeholder})` : ''
+          }`;
+        })
+        .join('\n');
+      return `## ${section.icon} ${section.label}\n${fields}`;
+    })
+    .join('\n\n');
+
+  const gender = existingData.gender?.trim();
+  const genderInstruction = gender 
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
+    : '';
+    
+  const contextInstruction = context ? `Дополнительный контекст от автора: ${context}\n` : '';
+
+  const userTemplate = await getPromptTemplate('USER_SCRATCHPAD_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{SCRATCHPAD_TEXT}}', scratchpadText)
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{SCHEMA_DESC}}', schemaDesc);
+
+  const system = await getPromptTemplate('SCRATCHPAD_PROMPT');
+  return { system, user: userPrompt };
+}
+
+export async function buildQuickCommandPrompt(
+  existingData: CharacterData,
+  commandType: 'lifeEvent' | 'hiddenMotive' | 'innerConflict',
+  context?: string
+): Promise<{ system: string; user: string }> {
+  const schemaDesc = CHARACTER_SCHEMA
+    .map((section) => {
+      const fields = section.fields
+        .map((f) => {
+          const existing = existingData[f.id]?.trim();
+          return `  "${f.id}": ${
+            existing ? `"${existing.replace(/"/g, '\\"')}"` : 'null'
+          } // ${f.label}`;
+        })
+        .join('\n');
+      return `## ${section.icon} ${section.label}\n${fields}`;
+    })
+    .join('\n\n');
+
+  const gender = existingData.gender?.trim();
+  const genderInstruction = gender 
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
+    : '';
+    
+  const contextInstruction = context ? `Дополнительный контекст от автора: ${context}\n` : '';
+
+  let commandInstruction = '';
+  if (commandType === 'lifeEvent') {
+    commandInstruction = 'Сгенерируй случайное значимое событие из прошлого персонажа, которое оставило глубокий отпечаток на его характере и поведении. Обнови такие поля как: keyEvent (Ключевое событие), untoldPast (Что никогда не рассказывал о прошлом), innerPain (Внутренняя боль) или marks (Особые приметы - например, шрам).';
+  } else if (commandType === 'hiddenMotive') {
+    commandInstruction = 'Придумай скрытый мотив или тайную потребность, которая противоречит внешне заявленной цели персонажа. Обнови такие поля как: statedVsHiddenGoal (Заявленная цель vs скрытая потребность), maskedFear (Скрытый страх), selfDenial (В чём себе не признается).';
+  } else if (commandType === 'innerConflict') {
+    commandInstruction = 'Создай глубокий внутренний конфликт между убеждениями персонажа и его реальными поступками. Обнови такие поля как: conflictType (Тип конфликта), coreContradiction (Главное противоречие), hypocrisy (Лицемерие) или doubleStandard (Двойные стандарты).';
+  }
+
+  const userTemplate = await getPromptTemplate('USER_QUICK_COMMAND_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{COMMAND_INSTRUCTION}}', commandInstruction)
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{SCHEMA_DESC}}', schemaDesc);
+
+  const system = await getPromptTemplate('QUICK_COMMAND_PROMPT');
   return { system, user: userPrompt };
 }

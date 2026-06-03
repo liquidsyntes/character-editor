@@ -362,6 +362,94 @@ export function useAiFill({
     }
   }, [data, doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, saveTimer]);
 
+  const handleAiScratchpad = useCallback(async (scratchpadText: string): Promise<Record<string, string>> => {
+    if (aiLoading) return {};
+    setAiLoading(true);
+    setAiError(null);
+    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Анализ мыслей...' });
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
+    try {
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          context: projectContext,
+          stream: false,
+          scratchpadText,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          apiKey: aiSettings.apiKeys[aiSettings.provider],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
+        throw new Error(errMsg);
+      }
+
+      const result = await res.json();
+      setAiProgress(null);
+      setAiLoading(false);
+      return result.data || {};
+    } catch (err) {
+      setAiProgress(null);
+      setAiLoading(false);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setAiError(isAbort ? 'Запрос отменён' : errMsg);
+      throw err;
+    }
+  }, [data, aiLoading, aiSettings, projectContext]);
+
+  const handleQuickCommand = useCallback(async (commandType: 'lifeEvent' | 'hiddenMotive' | 'innerConflict'): Promise<Record<string, string>> => {
+    if (aiLoading) return {};
+    setAiLoading(true);
+    setAiError(null);
+    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Генерация идеи...' });
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
+    try {
+      const res = await fetch('/api/ai/fill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingData: data,
+          context: projectContext,
+          stream: false,
+          quickCommand: commandType,
+          provider: aiSettings.provider,
+          model: aiSettings.model,
+          apiKey: aiSettings.apiKeys[aiSettings.provider],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
+        throw new Error(errMsg);
+      }
+
+      const result = await res.json();
+      setAiProgress(null);
+      setAiLoading(false);
+      return result.data || {};
+    } catch (err) {
+      setAiProgress(null);
+      setAiLoading(false);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setAiError(isAbort ? 'Запрос отменён' : errMsg);
+      throw err;
+    }
+  }, [data, aiLoading, aiSettings, projectContext]);
+
   return {
     aiLoading,
     aiProgress,
@@ -372,5 +460,7 @@ export function useAiFill({
     handleAiFill,
     handleAiFillSection,
     handleAiFillField,
+    handleAiScratchpad,
+    handleQuickCommand,
   };
 }

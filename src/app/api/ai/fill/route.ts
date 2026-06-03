@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion, chatCompletionStream, ProviderName } from '@/lib/ai/provider';
-import { buildFillPrompt } from '@/lib/ai/prompt';
+import { buildFillPrompt, buildScratchpadPrompt, buildQuickCommandPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { sseResponse } from '@/lib/ai/streamUtils';
 import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
@@ -31,14 +31,25 @@ export async function POST(req: NextRequest) {
       model,
       temperature = 0.85,
       apiKey,
+      scratchpadText,
+      quickCommand,
     } = body;
 
-    const { system, user } = await buildFillPrompt({
-      existingData,
-      sectionIds,
-      fieldIds,
-      context,
-    });
+    let promptResult;
+    if (scratchpadText) {
+      promptResult = await buildScratchpadPrompt(existingData, scratchpadText, context);
+    } else if (quickCommand) {
+      promptResult = await buildQuickCommandPrompt(existingData, quickCommand, context);
+    } else {
+      promptResult = await buildFillPrompt({
+        existingData,
+        sectionIds,
+        fieldIds,
+        context,
+      });
+    }
+
+    const { system, user } = promptResult;
 
     const messages = [
       { role: 'system' as const, content: system },
