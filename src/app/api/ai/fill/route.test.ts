@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
 import * as provider from '@/lib/ai/provider';
-import * as routeUtils from '@/lib/ai/routeUtils';
 
 // Mock the provider to prevent actual API calls
 vi.mock('@/lib/ai/provider', async (importOriginal) => {

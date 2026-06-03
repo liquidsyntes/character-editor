@@ -41,7 +41,7 @@ describe('POST /api/ai/analyze', () => {
 
   it('should return 429 if rate limit is exceeded', async () => {
     vi.mocked(routeUtils.checkApiRateLimit).mockReturnValueOnce(
-      NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 }) as any
+      NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 })
     );
 
     const req = new NextRequest('http://localhost/api/ai/analyze', {

@@ -17,7 +17,7 @@ export function sseResponse(aiStream: ReadableStream<Uint8Array>): Response {
                 if (parsed.usage) {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ usage: parsed.usage })}\n\n`));
                 }
-              } catch (e) {}
+              } catch {}
             }
             controller.enqueue(encoder.encode('data: [DONE]\n\n'));
             break;
@@ -37,7 +37,7 @@ export function sseResponse(aiStream: ReadableStream<Uint8Array>): Response {
               if (parsed.usage) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ usage: parsed.usage })}\n\n`));
               }
-            } catch (e) {}
+            } catch {}
           }
         }
       } catch (err) {

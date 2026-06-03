@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import Link from 'next/link';
-
-import { CHARACTER_SCHEMA, getFilledFieldCount, getTotalFieldCount, getSectionFilledCount } from '@/lib/schema';
+import { CHARACTER_SCHEMA, getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
 
@@ -114,10 +112,12 @@ export default function CharacterForm({
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setOpenSections(new Set(parsed));
+          setTimeout(() => {
+            setOpenSections(new Set(parsed));
+          }, 0);
         }
       }
-    } catch (e) {}
+    } catch {}
 
     const savedScroll = sessionStorage.getItem(`scroll_${characterId}`);
     if (savedScroll && scrollRef.current) {
@@ -128,7 +128,7 @@ export default function CharacterForm({
   useEffect(() => {
     try {
       localStorage.setItem('character_editor_open_sections', JSON.stringify(Array.from(openSections)));
-    } catch (e) {}
+    } catch {}
   }, [openSections]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -231,7 +231,11 @@ export default function CharacterForm({
                 handleChange={handleChange}
                 toggleSection={() => setOpenSections(prev => { 
                   const n = new Set(prev); 
-                  n.has(section.id) ? n.delete(section.id) : n.add(section.id); 
+                  if (n.has(section.id)) {
+                    n.delete(section.id);
+                  } else {
+                    n.add(section.id);
+                  }
                   return n;
                 })}
               />

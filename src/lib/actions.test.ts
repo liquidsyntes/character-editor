@@ -39,12 +39,12 @@ vi.mock('next/cache', () => ({
 describe('Server Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'test-user-id' } } as any);
+    vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'test-user-id' } } as never);
   });
 
   describe('updateProject', () => {
     it('should update project if authorized', async () => {
-      vi.mocked(prisma.project.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.project.updateMany).mockResolvedValue({ count: 1 } as never);
       
       await actions.updateProject('project-1', { name: 'New Name' });
       
@@ -55,7 +55,7 @@ describe('Server Actions', () => {
     });
 
     it('should throw Unauthorized if project not found or not owned', async () => {
-      vi.mocked(prisma.project.updateMany).mockResolvedValue({ count: 0 } as any);
+      vi.mocked(prisma.project.updateMany).mockResolvedValue({ count: 0 } as never);
       
       await expect(actions.updateProject('project-1', { name: 'New' })).rejects.toThrow('Unauthorized');
     });
@@ -63,7 +63,7 @@ describe('Server Actions', () => {
 
   describe('updateCharacter', () => {
     it('should update character data', async () => {
-      vi.mocked(prisma.character.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.character.updateMany).mockResolvedValue({ count: 1 } as never);
       
       await actions.updateCharacter('char-1', { firstName: 'John', lastName: 'Doe', age: '30' });
       

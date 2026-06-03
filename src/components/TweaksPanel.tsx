@@ -31,19 +31,23 @@ export default function TweaksPanel({
 
   const [visibleKeys, setVisibleKeys] = useState<Partial<Record<AiProvider, boolean>>>({});
 
-  useEffect(() => {
-    const saved = localStorage.getItem('cc_theme');
-    if (saved) { setTheme(saved); applyTheme(saved); }
-    const savedDensity = localStorage.getItem('cc_density');
-    if (savedDensity) { setDensity(savedDensity); applyDensity(savedDensity); }
-  }, []);
-
   const applyTheme = (v: string) => {
     document.body.classList.toggle('light', v === 'light');
   };
   const applyDensity = (v: string) => {
     document.body.classList.toggle('compact', v === 'compact');
   };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('cc_theme');
+    const savedDensity = localStorage.getItem('cc_density');
+    if (saved || savedDensity) {
+      setTimeout(() => {
+        if (saved) { setTheme(saved); applyTheme(saved); }
+        if (savedDensity) { setDensity(savedDensity); applyDensity(savedDensity); }
+      }, 0);
+    }
+  }, []);
   const handleTheme = (v: string) => {
     setTheme(v); localStorage.setItem('cc_theme', v); applyTheme(v);
   };

@@ -42,7 +42,7 @@ export function handleAiError(err: unknown, context: string): NextResponse {
 /**
  * Validates that existingData is present and is an object.
  */
-export function validateExistingData(body: any): NextResponse | null {
+export function validateExistingData(body: Record<string, unknown> | null | undefined): NextResponse | null {
   if (!body?.existingData || typeof body.existingData !== 'object') {
     return NextResponse.json(
       { error: 'existingData is required and must be an object' },

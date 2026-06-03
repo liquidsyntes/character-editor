@@ -5,7 +5,7 @@ import { getSectionFilledCount } from '@/lib/schema';
 interface CharacterSectionProps {
   section: SectionDef;
   isOpen: boolean;
-  data: Record<string, any>;
+  data: Record<string, string>;
   fixedFields: string[];
   aiLoading: boolean;
   aiSectionLoading: string | null;

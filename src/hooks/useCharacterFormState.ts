@@ -5,7 +5,7 @@ import { updateCharacter } from '@/lib/actions';
 export function useCharacterFormState(characterId: string, initialData: CharacterData) {
   const [data, setData] = useState<CharacterData>(initialData);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
   const [fixedFields, setFixedFields] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

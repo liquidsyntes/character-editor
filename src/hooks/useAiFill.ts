@@ -63,15 +63,6 @@ export function useAiFill({
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-      const contextParts: string[] = [];
-      if (data.firstName) contextParts.push(`Имя: ${data.firstName}`);
-      if (data.lastName) contextParts.push(`Фамилия: ${data.lastName}`);
-      if (data.gender) contextParts.push(`Пол: ${data.gender}`);
-      if (data.age) contextParts.push(`Возраст: ${data.age}`);
-      if (data.oneLiner) contextParts.push(`Суть: ${data.oneLiner}`);
-      if (data.characterFunction) contextParts.push(`Функция: ${data.characterFunction}`);
-
-      const context = contextParts.filter(Boolean).join('; ') || undefined;
 
       const res = await fetch('/api/ai/fill', {
         method: 'POST',
@@ -91,7 +82,7 @@ export function useAiFill({
       clearTimeout(timeoutId);
       if (!res.ok) {
         let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
         throw new Error(errMsg);
       }
       if (!res.body) throw new Error('No body');
@@ -102,7 +93,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
-      let usageData: any = null;
+      let usageData: { promptTokens: number; completionTokens: number } | null = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -158,12 +149,14 @@ export function useAiFill({
       
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
       setTimeout(() => { setAiLoading(false); setAiProgress(null); }, 6000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (isAbort) {
         setAiError('Запрос отменён');
       } else {
-        setAiError(err.message || 'Ошибка');
+        setAiError(errMsg || 'Ошибка');
       }
       setAiProgress(null);
       setAiLoading(false);
@@ -205,7 +198,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
-      let usageData: any = null;
+      let usageData: { promptTokens: number; completionTokens: number } | null = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -234,7 +227,7 @@ export function useAiFill({
                   return { ...prev, ...partial };
                 });
               }
-            } catch (e) {}
+            } catch {}
           }
           boundary = buffer.indexOf('\n\n');
         }
@@ -257,14 +250,16 @@ export function useAiFill({
       
       setOpenSections(prev => new Set(prev).add(sectionId));
       setTimeout(() => { setAiSectionLoading(null); setAiProgress(null); }, 6000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeoutId); 
       setAiSectionLoading(null);
       setAiProgress(null);
-      if (err.name === 'AbortError') {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (isAbort) {
         setAiError('Запрос отменён');
       } else {
-        setAiError(err.message || 'Ошибка при заполнении секции');
+        setAiError(errMsg || 'Ошибка при заполнении секции');
       }
     }
   }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, setOpenSections, saveTimer]);
@@ -302,7 +297,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
-      let usageData: any = null;
+      let usageData: { promptTokens: number; completionTokens: number } | null = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -331,7 +326,7 @@ export function useAiFill({
                   return { ...prev, ...partial };
                 });
               }
-            } catch (e) {}
+            } catch {}
           }
           boundary = buffer.indexOf('\n\n');
         }
@@ -353,14 +348,16 @@ export function useAiFill({
       setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
       
       setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timeoutId); 
       setAiFieldLoading(null);
       setAiProgress(null);
-      if (err.name === 'AbortError') {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (isAbort) {
         setAiError('Запрос отменён');
       } else {
-        setAiError(err.message || 'Ошибка при заполнении поля');
+        setAiError(errMsg || 'Ошибка при заполнении поля');
       }
     }
   }, [data, doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, saveTimer]);

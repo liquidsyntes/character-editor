@@ -67,7 +67,7 @@ export function useCharacterAnalysis({
 
       if (!res.ok) {
         let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
         throw new Error(errMsg);
       }
       if (!res.body) throw new Error('No body in response');
@@ -115,9 +115,9 @@ export function useCharacterAnalysis({
         console.log('RAW JSON BEFORE PARSE:', rawJson);
         const { parseAnalyzeResponse } = await import('@/lib/ai/prompt-parser');
         result = parseAnalyzeResponse(rawJson);
-      } catch (parseErr: any) {
+      } catch (parseErr) {
         console.error('Analyze parse error:', parseErr);
-        throw new Error(parseErr.message || 'Не удалось разобрать ответ AI. Попробуйте ещё раз.');
+        throw new Error(parseErr instanceof Error ? parseErr.message : 'Не удалось разобрать ответ AI. Попробуйте ещё раз.');
       }
 
       const now = new Date();
@@ -130,12 +130,12 @@ export function useCharacterAnalysis({
       };
       setAnalyses(prev => [record, ...prev]);
       setActiveAnalysisId(record.id);
-    } catch (err: any) {
+    } catch (err) {
       clearTimeout(timeoutId); 
-      if (err.name === 'AbortError') {
+      if (err instanceof Error && err.name === 'AbortError') {
         setAnalyzeError('Запрос отменён');
       } else {
-        setAnalyzeError(err.message);
+        setAnalyzeError(err instanceof Error ? err.message : String(err));
       }
     } finally {
       setAnalyzeLoading(false);
@@ -166,7 +166,7 @@ export function useCharacterAnalysis({
       clearTimeout(timeoutId);
       if (!res.ok) {
         let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch(e){}
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
         throw new Error(errMsg);
       }
       const result = await res.json();
@@ -174,8 +174,9 @@ export function useCharacterAnalysis({
 
       setPendingDiff(result.data);
       
-    } catch (err: any) {
-      clearTimeout(timeoutId); setAnalyzeError(err.message || 'Ошибка авто-исправления');
+    } catch (err) {
+      clearTimeout(timeoutId);
+      setAnalyzeError(err instanceof Error ? err.message : 'Ошибка авто-исправления');
     } finally {
       setFixLoading(false);
     }

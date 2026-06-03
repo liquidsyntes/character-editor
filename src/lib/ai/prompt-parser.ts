@@ -9,6 +9,49 @@ export function removeThinking(text: string): string {
   return result.trim();
 }
 
+export function extractFirstJsonObject(text: string): string | null {
+  const objStart = text.indexOf('{');
+  if (objStart < 0) return null;
+
+  let depth = 0;
+  let objEnd = -1;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = objStart; i < text.length; i++) {
+    const char = text[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (!inString) {
+      if (char === '{') depth++;
+      if (char === '}') {
+        depth--;
+        if (depth === 0) {
+          objEnd = i;
+          break;
+        }
+      }
+    }
+  }
+
+  return objEnd > objStart ? text.slice(objStart, objEnd + 1) : null;
+}
+
+
 export function parseAnalyzeResponse(raw: string): AnalyzeResult {
   const json = removeThinking(raw);
 
@@ -32,57 +75,20 @@ export function parseAnalyzeResponse(raw: string): AnalyzeResult {
   }
 
   // Strategy 3: find JSON object (ignoring braces inside strings)
-  const objStart = json.indexOf('{');
-  if (objStart >= 0) {
-    let depth = 0;
-    let objEnd = -1;
-    let inString = false;
-    let escapeNext = false;
-    
-    for (let i = objStart; i < json.length; i++) {
-      const char = json[i];
-      
-      if (escapeNext) {
-        escapeNext = false;
-        continue;
+  const extracted = extractFirstJsonObject(json);
+  if (extracted) {
+    try {
+      const parsed = JSON.parse(extracted);
+      if (parsed.categories && Array.isArray(parsed.categories)) {
+        return validateAnalyzeResult(parsed);
       }
-      
-      if (char === '\\') {
-        escapeNext = true;
-        continue;
-      }
-      
-      if (char === '"') {
-        inString = !inString;
-        continue;
-      }
-      
-      if (!inString) {
-        if (char === '{') depth++;
-        if (char === '}') {
-          depth--;
-          if (depth === 0) {
-            objEnd = i;
-            break;
-          }
-        }
-      }
-    }
-    
-    if (objEnd > objStart) {
-      try {
-        const parsed = JSON.parse(json.slice(objStart, objEnd + 1));
-        if (parsed.categories && Array.isArray(parsed.categories)) {
-          return validateAnalyzeResult(parsed);
-        }
-      } catch {}
-    }
+    } catch {}
   }
 
   throw new Error(`Не удалось разобрать ответ AI — невалидный JSON. Вывод: ${json.slice(0, 100)}...`);
 }
 
-function validateAnalyzeResult(raw: Record<string, any>): AnalyzeResult {
+function validateAnalyzeResult(raw: Record<string, unknown>): AnalyzeResult {
   const severities = [
     'contradiction',
     'gap',
@@ -104,23 +110,29 @@ function validateAnalyzeResult(raw: Record<string, any>): AnalyzeResult {
   };
 
   const categories =
-    (raw.categories as any[])?.map((cat: any) => ({
-      title: String(cat.title || ''),
-      icon: String(cat.icon || ''),
-      severity: (severities.includes(cat.severity)
-        ? cat.severity
-        : 'gap') as AnalyzeIssue['severity'],
-      issues:
-        (cat.issues as any[])?.map((iss: any) => ({
-          title: String(iss.title || ''),
-          fields: Array.isArray(iss.fields) ? iss.fields.map(String) : [],
-          severity: (severities.includes(iss.severity)
-            ? iss.severity
-            : (severities.includes(cat.severity) ? cat.severity : 'gap')) as AnalyzeIssue['severity'],
-          description: replaceEnglishFields(String(iss.description || '')),
-          suggestion: iss.suggestion ? replaceEnglishFields(String(iss.suggestion)) : undefined
-        })) || []
-    })) || [];
+    (Array.isArray(raw.categories) ? raw.categories : []).map((catItem) => {
+      const cat = catItem as Record<string, unknown>;
+      const issuesRaw = Array.isArray(cat.issues) ? cat.issues : [];
+      return {
+        title: String(cat.title || ''),
+        icon: String(cat.icon || ''),
+        severity: (severities.includes(String(cat.severity))
+          ? cat.severity
+          : 'gap') as AnalyzeIssue['severity'],
+        issues: issuesRaw.map((issItem) => {
+          const iss = issItem as Record<string, unknown>;
+          return {
+            title: String(iss.title || ''),
+            fields: Array.isArray(iss.fields) ? iss.fields.map(String) : [],
+            severity: (severities.includes(String(iss.severity))
+              ? iss.severity
+              : (severities.includes(String(cat.severity)) ? cat.severity : 'gap')) as AnalyzeIssue['severity'],
+            description: replaceEnglishFields(String(iss.description || '')),
+            suggestion: iss.suggestion ? replaceEnglishFields(String(iss.suggestion)) : undefined
+          };
+        })
+      };
+    });
 
   const totalIssues = categories.reduce((sum, c) => sum + c.issues.length, 0);
 
@@ -132,7 +144,7 @@ function validateAnalyzeResult(raw: Record<string, any>): AnalyzeResult {
 }
 
 export function parseFillResponse(raw: string): CharacterData {
-  let json = removeThinking(raw);
+  const json = removeThinking(raw);
 
   // Strategy 1: Direct JSON parse
   try {
@@ -160,50 +172,15 @@ export function parseFillResponse(raw: string): CharacterData {
   }
 
   // Strategy 3: Find JSON object by scanning for { } boundaries (ignoring braces inside strings)
-  const objStart = cleaned.indexOf('{');
-  if (objStart >= 0) {
-    let depth = 0;
-    let objEnd = -1;
-    let inString = false;
-    let escapeNext = false;
-    
-    for (let i = objStart; i < cleaned.length; i++) {
-      const char = cleaned[i];
-      if (escapeNext) {
-        escapeNext = false;
-        continue;
+  const extracted = extractFirstJsonObject(cleaned);
+  if (extracted) {
+    try {
+      const parsed = JSON.parse(extracted);
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return validateAndClean(parsed);
       }
-      if (char === '\\') {
-        escapeNext = true;
-        continue;
-      }
-      if (char === '"') {
-        inString = !inString;
-        continue;
-      }
-      
-      if (!inString) {
-        if (char === '{') depth++;
-        if (char === '}') {
-          depth--;
-          if (depth === 0) {
-            objEnd = i;
-            break;
-          }
-        }
-      }
-    }
-
-    if (objEnd > objStart) {
-      const extracted = cleaned.slice(objStart, objEnd + 1);
-      try {
-        const parsed = JSON.parse(extracted);
-        if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-          return validateAndClean(parsed);
-        }
-      } catch {
-        // last resort below
-      }
+    } catch {
+      // last resort below
     }
   }
 
@@ -224,7 +201,7 @@ export function parseFillResponse(raw: string): CharacterData {
   throw new Error('No JSON object found in AI response');
 }
 
-function validateAndClean(parsed: Record<string, any>): CharacterData {
+function validateAndClean(parsed: Record<string, unknown>): CharacterData {
   const validIds = new Set<string>();
   for (const section of CHARACTER_SCHEMA) {
     for (const field of section.fields) {

@@ -128,17 +128,18 @@ export function useAiSettings(): Return {
           setDynamicModels(prev => ({ ...prev, [provider]: data.models }));
         }
       }
-    } catch (e) {}
+    } catch {}
   }, [dynamicModels]);
 
   useEffect(() => {
     const loaded = loadSettings();
-    setSaved(loaded);
-    setStaged(loaded);
-    
-    if (loaded.provider) {
-      fetchModels(loaded.provider);
-    }
+    setTimeout(() => {
+      setSaved(loaded);
+      setStaged(loaded);
+      if (loaded.provider) {
+        fetchModels(loaded.provider);
+      }
+    }, 0);
     
     // Asynchronously load masked API keys from HTTP-only cookies
     getMaskedApiKeysFromCookie().then(maskedKeys => {

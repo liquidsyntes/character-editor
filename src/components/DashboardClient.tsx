@@ -8,6 +8,7 @@ import { archiveCharacter, deleteCharacter, duplicateCharacter, updateProject } 
 import TweaksPanel from '@/components/TweaksPanel';
 import PromptsPanel from '@/components/PromptsPanel';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
+import { formatDate } from '@/lib/dateUtils';
 
 interface CharacterItem {
   id: string;
@@ -23,12 +24,6 @@ interface CharacterItem {
   projectId: string | null;
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ru-RU', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
-}
-
 export default function DashboardClient({
   characters: initial,
   projectId,
@@ -42,7 +37,6 @@ export default function DashboardClient({
   projectDescription?: string;
   projectEmoji?: string;
 }) {
-  const [characters, setCharacters] = useState(initial);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'drafts' | 'archived'>('all');
   const [showTweaks, setShowTweaks] = useState(false);
@@ -64,14 +58,14 @@ export default function DashboardClient({
   }, []);
 
   useEffect(() => {
-    setVisibleCount(24);
+    setTimeout(() => {
+      setVisibleCount(24);
+    }, 0);
   }, [search, filter]);
 
   const [pName, setPName] = useState(initialName || '');
   const [pDesc, setPDesc] = useState(initialDesc || '');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => { setCharacters(initial); }, [initial]);
 
   const saveProject = useCallback((name: string, description: string) => {
     if (!projectId || projectId === null) return;
@@ -91,7 +85,7 @@ export default function DashboardClient({
     saveProject(pName, val);
   };
 
-  const filtered = characters.filter(c => {
+  const filtered = initial.filter(c => {
     if (filter === 'archived' && !c.isArchived) return false;
     if (filter === 'drafts' && (!c.isDraft || c.isArchived)) return false;
     if (filter === 'all' && c.isArchived) return false;
@@ -150,7 +144,7 @@ export default function DashboardClient({
           {!isProjectContext && <span className="font-label-caps text-[12px] text-on-surface-variant/70 lowercase px-2 border-l border-outline-variant">Редактор</span>}
         </div>
         <div className="flex items-center gap-6">
-          <span className="text-on-surface-variant font-label-caps text-[12px] tracking-widest">{characters.filter(c => !c.isArchived).length} персонажей</span>
+          <span className="text-on-surface-variant font-label-caps text-[12px] tracking-widest">{initial.filter(c => !c.isArchived).length} персонажей</span>
           <div className="flex items-center gap-4">
             <button
               className={`text-on-surface-variant hover:text-primary transition-colors ${showPrompts ? 'text-primary' : ''}`}

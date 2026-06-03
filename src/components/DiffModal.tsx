@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { diffWords } from 'diff';
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 
@@ -19,10 +19,6 @@ export function DiffModal({ originalData, proposedData, onAccept, onReject }: Di
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setSelectedFields(next);
-  };
-
-  const handleAcceptAll = () => {
-    onAccept(proposedData);
   };
 
   const handleAcceptSelected = () => {

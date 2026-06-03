@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { AnalyzeResult, AnalyzeIssue } from '@/types/character';
+import { AnalyzeResult } from '@/types/character';
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { SEVERITY_LABELS } from '@/lib/constants';
 

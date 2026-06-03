@@ -163,7 +163,7 @@ export async function chatCompletion(
     };
   }
 
-  const requestBody: any = {
+  const requestBody: Record<string, unknown> = {
     model,
     messages,
     temperature: options.temperature ?? 0.8,
@@ -259,7 +259,7 @@ export async function chatCompletionStream(
           if (u) {
             controller.enqueue(encoder.encode(JSON.stringify({ 
               done: true, 
-              usage: { promptTokens: u.promptTokens || 0, completionTokens: u.completionTokens || 0 } 
+              usage: { promptTokens: u.inputTokens || 0, completionTokens: u.outputTokens || 0 } 
             }) + '\n'));
           } else {
             controller.enqueue(encoder.encode(JSON.stringify({ done: true }) + '\n'));
@@ -273,7 +273,7 @@ export async function chatCompletionStream(
     });
   }
 
-  const requestBody: any = {
+  const requestBody: Record<string, unknown> = {
     model,
     messages,
     temperature: options.temperature ?? 0.8,

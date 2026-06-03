@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let url = '';
-    let headers: any = {
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     };
@@ -35,19 +35,23 @@ export async function GET(req: NextRequest) {
       const res = await fetch(url, { headers });
       if (res.ok) {
         const json = await res.json();
-        const models = (json.data || []).map((m: any) => ({
-          id: m.id,
-          label: m.name || m.id
-        }));
+        const dataList = (Array.isArray(json.data) ? json.data : []) as unknown[];
+        const models = dataList.map((mItem: unknown) => {
+          const m = mItem as Record<string, unknown>;
+          return {
+            id: String(m.id || ''),
+            label: String(m.name || m.id || '')
+          };
+        });
         
         // Remove duplicates and sort
-        const uniqueModels = Array.from(new Map(models.map((m: any) => [m.id, m])).values());
+        const uniqueModels = Array.from(new Map(models.map((m: { id: string; label: string }) => [m.id, m])).values());
         return NextResponse.json({ models: uniqueModels });
       }
     }
     
     return NextResponse.json({ models: [] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ models: [] });
   }
 }

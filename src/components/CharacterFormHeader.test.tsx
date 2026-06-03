@@ -8,7 +8,7 @@ describe('CharacterFormHeader', () => {
     projectId: 'test-project-123',
     projectName: 'Test Project',
     characterId: 'char-123',
-    aiProgress: '',
+    aiProgress: null,
     analyzeProgress: '',
     aiError: null,
     analyzeError: null,

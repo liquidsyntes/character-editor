@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { deleteProject, archiveProject } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
+import { formatDate } from '@/lib/dateUtils';
 
 interface ProjectItem {
   id: string;
@@ -19,12 +20,6 @@ interface ProjectItem {
   _count: { characters: number };
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('ru-RU', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
-}
-
 export default function ProjectDashboard({
   projects: initial,
   unassignedCount,
@@ -32,14 +27,11 @@ export default function ProjectDashboard({
   projects: ProjectItem[];
   unassignedCount: number;
 }) {
-  const [projects, setProjects] = useState(initial);
   const [search, setSearch] = useState('');
   const [showTweaks, setShowTweaks] = useState(false);
   const aiState = useAiSettings();
 
-  useEffect(() => { setProjects(initial); }, [initial]);
-
-  const filtered = projects.filter(p => {
+  const filtered = initial.filter(p => {
     if (p.isArchived) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -71,7 +63,7 @@ export default function ProjectDashboard({
           <span className="font-label-caps text-[12px] text-on-surface-variant/70 lowercase px-2 border-l border-outline-variant">Студия</span>
         </div>
         <div className="flex items-center gap-6">
-          <span className="text-on-surface-variant font-label-caps text-[12px] tracking-widest">{projects.filter(p => !p.isArchived).length} проектов</span>
+          <span className="text-on-surface-variant font-label-caps text-[12px] tracking-widest">{initial.filter(p => !p.isArchived).length} проектов</span>
           <button
             className={`text-on-surface-variant hover:text-primary transition-colors ${showTweaks ? 'text-primary' : ''}`}
             onClick={() => setShowTweaks(!showTweaks)}
