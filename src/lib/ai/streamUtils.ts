@@ -14,6 +14,9 @@ export function sseResponse(aiStream: ReadableStream<Uint8Array>): Response {
                 if (parsed.delta) {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: parsed.delta })}\n\n`));
                 }
+                if (parsed.usage) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ usage: parsed.usage })}\n\n`));
+                }
               } catch (e) {}
             }
             controller.enqueue(encoder.encode('data: [DONE]\n\n'));
@@ -30,6 +33,9 @@ export function sseResponse(aiStream: ReadableStream<Uint8Array>): Response {
               const parsed = JSON.parse(line);
               if (parsed.delta) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: parsed.delta })}\n\n`));
+              }
+              if (parsed.usage) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ usage: parsed.usage })}\n\n`));
               }
             } catch (e) {}
           }

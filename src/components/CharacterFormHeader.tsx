@@ -62,18 +62,26 @@ export function CharacterFormHeader({
           <span className="material-symbols-outlined">menu</span>
         </button>
         <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
-        {aiProgress && aiProgress.isVisible && (
-          <div className="ml-4 flex flex-col justify-center min-w-[150px] sm:min-w-[200px]">
-            <div className="flex justify-between text-[10px] font-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">
-              <span>{aiProgress.label}</span>
-              <span className="font-mono text-[9px]">{aiProgress.current} / {aiProgress.total}</span>
-            </div>
-            <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-300 ease-out rounded-full" 
-                style={{ width: `${aiProgress.total > 0 ? Math.min(100, Math.round((aiProgress.current / aiProgress.total) * 100)) : 0}%` }}
-              ></div>
-            </div>
+        {aiProgress && (
+          <div className="ml-4 flex flex-col justify-center min-w-[200px] sm:min-w-[250px]">
+            {aiProgress.isVisible ? (
+              <>
+                <div className="flex justify-between text-[10px] font-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">
+                  <span>{aiProgress.label}</span>
+                  <span className="font-mono text-[9px]">{aiProgress.current} / {aiProgress.total}</span>
+                </div>
+                <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300 ease-out rounded-full" 
+                    style={{ width: `${aiProgress.total > 0 ? Math.min(100, Math.round((aiProgress.current / aiProgress.total) * 100)) : 0}%` }}
+                  ></div>
+                </div>
+              </>
+            ) : (
+              <div className="text-[12px] font-medium text-primary flex items-center">
+                {aiProgress.label}
+              </div>
+            )}
           </div>
         )}
         {!aiProgress?.isVisible && analyzeProgress && <span className="text-[12px] text-accent ml-4 truncate max-w-xs">{analyzeProgress}</span>}

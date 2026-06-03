@@ -9,7 +9,11 @@ import { prisma } from '@/lib/prisma';
 import { 
   DEFAULT_FILL_SYSTEM_PROMPT, 
   DEFAULT_ANALYZE_SYSTEM_PROMPT, 
-  DEFAULT_FIX_SYSTEM_PROMPT 
+  DEFAULT_FIX_SYSTEM_PROMPT,
+  DEFAULT_USER_FILL_PROMPT,
+  DEFAULT_USER_REGENERATE_PROMPT,
+  DEFAULT_USER_ANALYZE_PROMPT,
+  DEFAULT_USER_FIX_PROMPT
 } from './prompt-constants';
 
 interface FillRequest {
@@ -19,16 +23,26 @@ interface FillRequest {
   context?: string;
 }
 
-export async function getSystemPrompt(key: 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT'): Promise<string> {
+export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT';
+
+export async function getPromptTemplate(key: PromptKey): Promise<string> {
   try {
     const setting = await prisma.appSetting.findUnique({ where: { id: key } });
     if (setting?.value) return setting.value;
   } catch (err) {
-    console.error('Error fetching system prompt from DB', err);
+    console.error('Error fetching prompt from DB', err);
   }
   
-  if (key === 'ANALYZE_PROMPT') return DEFAULT_ANALYZE_SYSTEM_PROMPT;
-  return DEFAULT_FILL_SYSTEM_PROMPT;
+  switch(key) {
+    case 'ANALYZE_PROMPT': return DEFAULT_ANALYZE_SYSTEM_PROMPT;
+    case 'FIX_PROMPT': return DEFAULT_FIX_SYSTEM_PROMPT;
+    case 'FILL_PROMPT': return DEFAULT_FILL_SYSTEM_PROMPT;
+    case 'USER_FILL_PROMPT': return DEFAULT_USER_FILL_PROMPT;
+    case 'USER_REGENERATE_PROMPT': return DEFAULT_USER_REGENERATE_PROMPT;
+    case 'USER_ANALYZE_PROMPT': return DEFAULT_USER_ANALYZE_PROMPT;
+    case 'USER_FIX_PROMPT': return DEFAULT_USER_FIX_PROMPT;
+    default: return DEFAULT_FILL_SYSTEM_PROMPT;
+  }
 }
 
 export async function buildFillPrompt(
@@ -73,23 +87,18 @@ export async function buildFillPrompt(
   const genderInstruction = gender 
     ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
     : '';
+    
+  const contextInstruction = context ? `Дополнительный контекст от автора: ${context}\n` : '';
 
-  const userPrompt = `Заполни ВСЕ требуемые поля в карточке персонажа ниже.${genderInstruction}
+  const userTemplate = await getPromptTemplate('USER_FILL_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{SCHEMA_DESC}}', schemaDesc)
+    .replace('{{FIELDS_TO_FILL_COUNT}}', String(fieldsToFill.length))
+    .replace('{{FIELDS_TO_FILL}}', fieldsToFill.join(', '));
 
-${context ? `Дополнительный контекст от автора: ${context}\n` : ''}
-
-Текущая карточка персонажа (вся анкета для полного понимания контекста):
-
-${schemaDesc}
-
-ТЕБЕ НУЖНО ЗАПОЛНИТЬ ИЛИ ПЕРЕПИСАТЬ ТОЛЬКО ЭТИ ПОЛЯ (${fieldsToFill.length} шт): 
-${fieldsToFill.join(', ')}
-
-Если целевое поле уже содержит какой-то набросок (например, "боится пауков"), разверни это в красивый, подробный текст в соответствии с остальной карточкой и лором проекта.
-Верни JSON-объект ТОЛЬКО с указанными целевыми полями. Не возвращай остальные поля.
-Начни ответ сразу с { и закончи }.`;
-
-  const system = await getSystemPrompt('FILL_PROMPT');
+  const system = await getPromptTemplate('FILL_PROMPT');
   return { system, user: userPrompt };
 }
 
@@ -115,20 +124,16 @@ export async function buildRegeneratePrompt(
   const genderInstruction = gender 
     ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
     : '';
+    
+  const contextInstruction = context ? `Контекст от автора: ${context}\n` : '';
 
-  const userPrompt = `Пересоздай этого персонажа с нуля, углубив и усилив его. Можешь менять любые поля, включая уже заполненные. Сохрани общее направление и базовую концепцию, но сделай персонажа более живым, противоречивым и конкретным.${genderInstruction}
+  const userTemplate = await getPromptTemplate('USER_REGENERATE_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{SCHEMA_DESC}}', schemaDesc);
 
-${context ? `Контекст от автора: ${context}\n` : ''}
-
-Текущая карточка:
-
-${schemaDesc}
-
-Верни один JSON-объект со ВСЕМИ полями карточки (и измененными, и оставленными как есть).
-Каждое поле заполни конкретно, 1–3 емких предложения, без общих формулировок вроде "сложный человек" или "любит жизнь".
-Начни ответ сразу с { и закончи }.`;
-
-  const system = await getSystemPrompt('FILL_PROMPT');
+  const system = await getPromptTemplate('FILL_PROMPT');
   return { system, user: userPrompt };
 }
 
@@ -151,17 +156,15 @@ export async function buildAnalyzePrompt(
     }
   }
 
-  const userPrompt = `Проанализируй персонажа на противоречия, слепые зоны, клише, психологические нестыковки и упущенные возможности.
+  const contextInstruction = context ? `Контекст проекта (лор, жанр, сеттинг): ${context}\n` : '';
 
-${context ? `Контекст проекта (лор, жанр, сеттинг): ${context}\n` : ''}
-Важно: в текстовых полях ответа (summary, title, description, suggestion) используй только русские названия полей из комментариев (после //). fieldId указывай только внутри массива fields.
+  const userTemplate = await getPromptTemplate('USER_ANALYZE_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{FILLED_FIELDS_COUNT}}', String(filledFields.length))
+    .replace('{{FILLED_FIELDS}}', filledFields.join('\n'));
 
-Заполненные поля (${filledFields.length}):
-${filledFields.join('\n')}
-
-Найди все проблемы, но не выдумывай надуманные, если текста мало. Верни JSON строго по описанной схеме, без markdown и пояснений.`;
-
-  const system = await getSystemPrompt('ANALYZE_PROMPT');
+  const system = await getPromptTemplate('ANALYZE_PROMPT');
   return { system, user: userPrompt };
 }
 
@@ -214,29 +217,23 @@ ${iss.description}
   const genderInstruction = gender 
     ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) при переписывании полей.`
     : '';
-
-  const userPrompt = `Инструкция по исправлению противоречий и проблем в карточке персонажа.${genderInstruction}
-
-${context ? `Контекст проекта (лор, жанр, сеттинг): ${context}\n` : ''}
-Ниже перечислены проблемы, найденные в описании. Перепиши только указанные поля так, чтобы устранить эти проблемы. Остальные поля не трогай.
-
-Проблемы:
-${issueDescriptions}
-
-Что нужно исправить:
-Поля для перезаписи: ${uniqueFieldIds
+    
+  const contextInstruction = context ? `Контекст проекта (лор, жанр, сеттинг): ${context}\n` : '';
+  
+  const fieldsForRewrite = uniqueFieldIds
     .map((fid) => {
       const info = fieldMap.get(fid);
       return info ? `«${info.label}» (${fid})` : fid;
     })
-    .join(', ')}
+    .join(', ');
 
-Важно:
-- Перепиши только эти поля. Не добавляй новые.
-- Сохрани общий характер и основную линию персонажа, но устрани противоречия и клише.
-- Пиши конкретно, живым русским языком, 1–3 предложения на поле.
-- Показывай изменения через детали и поведение, а не через абстрактные ярлыки.`;
+  const userTemplate = await getPromptTemplate('USER_FIX_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{ISSUE_DESCRIPTIONS}}', issueDescriptions)
+    .replace('{{UNIQUE_FIELD_IDS}}', fieldsForRewrite);
 
-  const system = await getSystemPrompt('FIX_PROMPT') || DEFAULT_FIX_SYSTEM_PROMPT;
+  const system = (await getPromptTemplate('FIX_PROMPT')) || DEFAULT_FIX_SYSTEM_PROMPT;
   return { system, user: userPrompt };
 }

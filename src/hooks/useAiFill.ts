@@ -102,6 +102,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
+      let usageData: any = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -118,6 +119,7 @@ export function useAiFill({
             if (dataStr === '[DONE]') break;
             try {
               const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.usage) usageData = parsedChunk.usage;
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 rawJson += parsedChunk.text;
@@ -150,9 +152,12 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
 
-      setAiProgress(prev => prev ? { ...prev, current: Object.keys(finalParsed).length, label: `Готово!` } : null);
+      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
+      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
+      
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-      setTimeout(() => { setAiLoading(false); setAiProgress(null); }, 4000);
+      setTimeout(() => { setAiLoading(false); setAiProgress(null); }, 6000);
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
@@ -200,6 +205,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
+      let usageData: any = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -216,6 +222,7 @@ export function useAiFill({
             if (dataStr === '[DONE]') break;
             try {
               const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.usage) usageData = parsedChunk.usage;
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 rawJson += parsedChunk.text;
@@ -244,9 +251,12 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
       
-      setAiProgress(prev => prev ? { ...prev, current: Object.keys(finalParsed).length, label: `Готово!` } : null);
+      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
+      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
+      
       setOpenSections(prev => new Set(prev).add(sectionId));
-      setTimeout(() => { setAiSectionLoading(null); setAiProgress(null); }, 3000);
+      setTimeout(() => { setAiSectionLoading(null); setAiProgress(null); }, 6000);
     } catch (err: any) {
       clearTimeout(timeoutId); 
       setAiSectionLoading(null);
@@ -292,6 +302,7 @@ export function useAiFill({
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let buffer = '';
+      let usageData: any = null;
       
       while (true) {
         const { done, value } = await reader.read();
@@ -308,6 +319,7 @@ export function useAiFill({
             if (dataStr === '[DONE]') break;
             try {
               const parsedChunk = JSON.parse(dataStr);
+              if (parsedChunk.usage) usageData = parsedChunk.usage;
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 rawJson += parsedChunk.text;
@@ -336,8 +348,11 @@ export function useAiFill({
         setTimeout(() => setFixedFields([]), 5000);
       }
       
-      setAiProgress(prev => prev ? { ...prev, current: 1, label: `Готово!` } : null);
-      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 2000);
+      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
+      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
+      
+      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);
     } catch (err: any) {
       clearTimeout(timeoutId); 
       setAiFieldLoading(null);

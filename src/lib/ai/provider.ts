@@ -239,7 +239,7 @@ export async function chatCompletionStream(
     const systemMsg = messages.find(m => m.role === 'system')?.content;
     const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     
-    const { textStream } = streamText({
+    const { textStream, usage } = streamText({
       model: modelInstance!,
       system: systemMsg,
       messages: coreMessages,
@@ -255,7 +255,15 @@ export async function chatCompletionStream(
           for await (const chunk of textStream) {
             controller.enqueue(encoder.encode(JSON.stringify({ delta: chunk }) + '\n'));
           }
-          controller.enqueue(encoder.encode(JSON.stringify({ done: true }) + '\n'));
+          const u = await usage;
+          if (u) {
+            controller.enqueue(encoder.encode(JSON.stringify({ 
+              done: true, 
+              usage: { promptTokens: u.promptTokens || 0, completionTokens: u.completionTokens || 0 } 
+            }) + '\n'));
+          } else {
+            controller.enqueue(encoder.encode(JSON.stringify({ done: true }) + '\n'));
+          }
         } catch (err) {
           controller.error(err);
         } finally {
