@@ -18,7 +18,14 @@ export default async function ProjectPage({
     redirect('/login');
   }
 
-  const project = await prisma.project.findUnique({ where: { id } });
+  const project = await prisma.project.findUnique({ 
+    where: { id },
+    include: {
+      worldElements: {
+        orderBy: { updatedAt: 'desc' },
+      },
+    },
+  });
   if (!project || project.userId !== session.user.id) notFound();
 
   const characters = await prisma.character.findMany({
