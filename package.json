@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 4000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 4000",
     "lint": "eslint",
     "test": "vitest run"
   },
@@ -28,7 +28,11 @@
     "zod": "^4.4.3"
   },
   "optionalDependencies": {
-    "@libsql/linux-x64-gnu": "^0.5.29"
+    "@libsql/darwin-arm64": "^0.5.29",
+    "@libsql/darwin-x64": "^0.5.29",
+    "@libsql/linux-arm64-gnu": "^0.5.29",
+    "@libsql/linux-x64-gnu": "^0.5.29",
+    "@libsql/win32-x64-msvc": "^0.5.29"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

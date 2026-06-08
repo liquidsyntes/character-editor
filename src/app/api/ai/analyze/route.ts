@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const authError = await requireAuth();
     if (authError) return authError;
 
-    const rateLimitError = checkApiRateLimit(req, 10);
+    const rateLimitError = await checkApiRateLimit(req, 10);
     if (rateLimitError) return rateLimitError;
 
     const body = await req.json();

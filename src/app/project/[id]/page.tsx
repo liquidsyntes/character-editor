@@ -33,19 +33,29 @@ export default async function ProjectPage({
     orderBy: { updatedAt: 'desc' },
   });
 
-  const serialized = characters.map(c => ({
+  const serializedChars = characters.map(c => ({
     ...c,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   }));
 
+  const serializedWorld = project.worldElements.map(w => ({
+    ...w,
+    createdAt: w.createdAt.toISOString(),
+    updatedAt: w.updatedAt.toISOString(),
+  }));
+
   return (
     <DashboardClient
-      characters={serialized}
+      characters={serializedChars}
+      worldElements={serializedWorld}
       projectId={id}
       projectName={project.name || ''}
       projectDescription={project.description || ''}
       projectEmoji={project.emoji}
+      projectGenre={project.genre || ''}
+      projectFormat={project.format || ''}
+      projectSetting={project.setting || ''}
     />
   );
 }

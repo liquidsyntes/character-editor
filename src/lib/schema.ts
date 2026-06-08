@@ -1,4 +1,5 @@
 import { SectionDef } from '@/types/character';
+import { z } from 'zod';
 
 export const CHARACTER_SCHEMA: SectionDef[] = [
   {
@@ -361,4 +362,22 @@ export function getSectionFilledCount(sectionId: string, data: Record<string, st
   const section = CHARACTER_SCHEMA.find(s => s.id === sectionId);
   if (!section) return 0;
   return section.fields.filter(f => data[f.id] && data[f.id].trim() !== '').length;
+}
+
+const schemaShape: Record<string, z.ZodDefault<z.ZodOptional<z.ZodString>>> = {};
+for (const section of CHARACTER_SCHEMA) {
+  for (const field of section.fields) {
+    schemaShape[field.id] = z.string().optional().default('');
+  }
+}
+
+export const CharacterDataSchema = z.object(schemaShape);
+
+export function parseCharacterData(dataStr: string): Record<string, string> {
+  try {
+    const raw = JSON.parse(dataStr);
+    return CharacterDataSchema.parse(raw);
+  } catch (e) {
+    return CharacterDataSchema.parse({});
+  }
 }

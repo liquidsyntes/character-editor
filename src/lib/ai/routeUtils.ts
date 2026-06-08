@@ -7,9 +7,9 @@ import { authOptions } from "@/lib/auth";
  * Checks rate limits for the given request.
  * Returns a NextResponse with 429 status if limit exceeded, otherwise null.
  */
-export function checkApiRateLimit(req: Request | NextRequest, limit = 10, windowMs = 60000): NextResponse | null {
+export async function checkApiRateLimit(req: Request | NextRequest, limit = 10, windowMs = 60000): Promise<NextResponse | null> {
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-  const { success } = checkRateLimit(ip, limit, windowMs);
+  const { success } = await checkRateLimit(ip, limit, windowMs);
   if (!success) {
     return NextResponse.json(
       { error: 'Слишком много запросов. Подождите немного.' },

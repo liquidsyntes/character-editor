@@ -42,6 +42,7 @@ export function useCharacterAnalysis({
       const saved = localStorage.getItem(`analyses_${characterId}`);
       if (saved) {
         try {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setAnalyses(JSON.parse(saved));
         } catch (e) {
           console.error(e);

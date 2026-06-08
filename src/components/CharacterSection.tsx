@@ -17,6 +17,33 @@ interface CharacterSectionProps {
   toggleSection: () => void;
 }
 
+const SECTION_PREFIXES: Record<string, string> = {
+  basic: 'BD',
+  psychology: 'PS',
+  goals: 'CM',
+  relations: 'OP',
+  habits: 'PM',
+  backstory: 'IP',
+  secrets: 'US',
+  role: 'RI',
+  arc: 'AI',
+  screen: 'EP',
+  stress: 'RS',
+  social: 'SS',
+  storyConnection: 'SI',
+  cheatCode: 'CC',
+  innerWorld: 'VM',
+  shadow: 'TP',
+  fearDesire: 'SJ',
+  trauma: 'PT',
+  intimacy: 'OB',
+  morality: 'ZM',
+  bodyHabits: 'BT',
+  speechVoice: 'RG',
+  selfDeception: 'IL',
+  extreme: 'ES',
+};
+
 export function CharacterSection({
   section,
   isOpen,
@@ -32,6 +59,7 @@ export function CharacterSection({
   toggleSection,
 }: CharacterSectionProps) {
   const sectionFilled = getSectionFilledCount(section.id, data);
+  const prefix = SECTION_PREFIXES[section.id] || 'XX';
 
   return (
     <section id={section.id} className="scroll-mt-20">
@@ -68,18 +96,20 @@ export function CharacterSection({
       {isOpen && (
         <div className="flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            {section.fields.map(field => {
+            {section.fields.map((field, index) => {
               const spanClass = field.span === 2 ? 'md:col-span-2' : 
                                 field.span === 3 ? 'md:col-span-3' : 
                                 'md:col-span-6';
               const isFixed = fixedFields.includes(field.id);
               const isSectionLoading = aiLoading || aiSectionLoading === section.id;
               const isFieldLoading = aiFieldLoading === field.id;
+              const fieldCode = `${prefix}${String(index + 1).padStart(2, '0')}`;
               
               return (
                 <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading || isFieldLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
                   <div className="flex justify-between items-center mb-1">
                     <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                      <span className="font-bold text-primary/70 mr-3">{fieldCode} |</span>
                       {field.label}
                     </label>
                     <button

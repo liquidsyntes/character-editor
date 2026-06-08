@@ -17,8 +17,10 @@ vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/ai/routeUtils')>();
   return {
     ...actual,
+    handleAiError: vi.fn().mockImplementation((err) => NextResponse.json({ error: (err as Error).message }, { status: 500 })),
+    validateExistingData: vi.fn().mockReturnValue(null),
+    checkApiRateLimit: vi.fn().mockResolvedValue(null),
     requireAuth: vi.fn().mockResolvedValue(null),
-    checkApiRateLimit: vi.fn().mockReturnValue(null),
   };
 });
 
@@ -40,7 +42,7 @@ describe('POST /api/ai/analyze', () => {
   });
 
   it('should return 429 if rate limit is exceeded', async () => {
-    vi.mocked(routeUtils.checkApiRateLimit).mockReturnValueOnce(
+    vi.mocked(routeUtils.checkApiRateLimit).mockResolvedValueOnce(
       NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 })
     );
 

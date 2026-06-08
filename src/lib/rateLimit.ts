@@ -1,40 +1,39 @@
-interface RateLimitRecord {
-  count: number;
-  resetAt: number;
-}
+import { prisma } from '@/lib/prisma';
 
-const limits = new Map<string, RateLimitRecord>();
-let lastCleanup = Date.now();
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 минут
-
-// Ленивая очистка устаревших IP для предотвращения утечки памяти
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+export async function checkRateLimit(ip: string, maxRequests: number = 15, windowMs: number = 60000): Promise<{ success: boolean; remaining: number }> {
+  const now = new Date();
   
-  for (const [key, record] of limits.entries()) {
-    if (record.resetAt < now) {
-      limits.delete(key);
+  // Ленивая очистка
+  if (Math.random() < 0.1) {
+    await prisma.rateLimit.deleteMany({
+      where: { resetAt: { lt: now } }
+    }).catch(() => {});
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { ip } });
+    
+    if (!record || record.resetAt < now) {
+      await prisma.rateLimit.upsert({
+        where: { ip },
+        update: { count: 1, resetAt: new Date(now.getTime() + windowMs) },
+        create: { ip, count: 1, resetAt: new Date(now.getTime() + windowMs) }
+      });
+      return { success: true, remaining: maxRequests - 1 };
     }
+    
+    if (record.count >= maxRequests) {
+      return { success: false, remaining: 0 };
+    }
+    
+    await prisma.rateLimit.update({
+      where: { ip },
+      data: { count: record.count + 1 }
+    });
+    return { success: true, remaining: maxRequests - record.count - 1 };
+  } catch (e) {
+    // В случае ошибки БД пропускаем запрос, чтобы не блочить
+    console.error('Rate limit error:', e);
+    return { success: true, remaining: 1 };
   }
-  lastCleanup = now;
-}
-
-export function checkRateLimit(ip: string, maxRequests: number = 15, windowMs: number = 60000): { success: boolean; remaining: number } {
-  cleanup(); // Вызываем очистку при каждом запросе (реально сработает раз в 5 минут)
-
-  const now = Date.now();
-  const record = limits.get(ip);
-  
-  if (!record || record.resetAt < now) {
-    limits.set(ip, { count: 1, resetAt: now + windowMs });
-    return { success: true, remaining: maxRequests - 1 };
-  }
-  
-  if (record.count >= maxRequests) {
-    return { success: false, remaining: 0 };
-  }
-  
-  record.count++;
-  return { success: true, remaining: maxRequests - record.count };
 }

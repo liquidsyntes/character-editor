@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { CHARACTER_SCHEMA } from '@/lib/schema';
+import { CHARACTER_SCHEMA, parseCharacterData } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
 import Link from 'next/link';
 
@@ -15,7 +15,7 @@ export default async function PreviewPage({
   if (!character) notFound();
 
   let data: CharacterData = {};
-  try { data = JSON.parse(character.data); } catch {}
+  try { data = parseCharacterData(character.data); } catch {}
 
   const charName = character.name || [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Безымянный персонаж';
 

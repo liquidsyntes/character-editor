@@ -25,7 +25,15 @@ export async function createProject() {
   redirect(`/project/${project.id}`);
 }
 
-export async function updateProject(id: string, data: { name?: string; description?: string; emoji?: string; color?: string }) {
+export async function updateProject(id: string, data: { 
+  name?: string; 
+  description?: string; 
+  emoji?: string; 
+  color?: string;
+  genre?: string;
+  format?: string;
+  setting?: string;
+}) {
   const userId = await getUserId();
   const result = await prisma.project.updateMany({
     where: { id, userId },
@@ -236,4 +244,63 @@ export async function getUnassignedCharacterCount() {
       userId,
     },
   });
+}
+
+// ── World Element Actions ────────────────
+
+export async function createWorldElement(projectId: string, category: string = 'location') {
+  const userId = await getUserId();
+  
+  // Verify ownership of the project
+  const project = await prisma.project.findFirst({ where: { id: projectId, userId } });
+  if (!project) throw new Error('Unauthorized');
+
+  const element = await prisma.worldElement.create({
+    data: {
+      projectId,
+      title: 'Новая запись',
+      content: '',
+      category,
+    },
+  });
+
+  redirect(`/world/${element.id}`);
+}
+
+export async function updateWorldElement(
+  id: string,
+  data: { title?: string; content?: string; category?: string }
+) {
+  const userId = await getUserId();
+
+  // Verify project ownership of the world element
+  const element = await prisma.worldElement.findUnique({
+    where: { id },
+    include: { project: true },
+  });
+  if (!element || element.project.userId !== userId) throw new Error('Unauthorized');
+
+  const updated = await prisma.worldElement.update({
+    where: { id },
+    data,
+  });
+
+  revalidatePath(`/project/${element.projectId}`);
+  return updated;
+}
+
+export async function deleteWorldElement(id: string) {
+  const userId = await getUserId();
+
+  const element = await prisma.worldElement.findUnique({
+    where: { id },
+    include: { project: true },
+  });
+  if (!element || element.project.userId !== userId) throw new Error('Unauthorized');
+
+  await prisma.worldElement.delete({
+    where: { id },
+  });
+
+  revalidatePath(`/project/${element.projectId}`);
 }

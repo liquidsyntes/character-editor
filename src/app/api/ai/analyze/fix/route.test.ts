@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextResponse } from 'next/server';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
 import * as provider from '@/lib/ai/provider';
@@ -15,8 +16,10 @@ vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/ai/routeUtils')>();
   return {
     ...actual,
+    handleAiError: vi.fn().mockImplementation((err) => NextResponse.json({ error: (err as Error).message }, { status: 500 })),
+    validateExistingData: vi.fn().mockReturnValue(null),
+    checkApiRateLimit: vi.fn().mockResolvedValue(null),
     requireAuth: vi.fn().mockResolvedValue(null),
-    checkApiRateLimit: vi.fn().mockReturnValue(null),
   };
 });
 

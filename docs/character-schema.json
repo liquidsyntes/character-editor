@@ -1,0 +1,592 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Character Card",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "description": "Имя"
+    },
+    "lastName": {
+      "type": "string",
+      "description": "Фамилия"
+    },
+    "age": {
+      "type": "string",
+      "description": "Возраст"
+    },
+    "height": {
+      "type": "string",
+      "description": "Рост"
+    },
+    "gender": {
+      "type": "string",
+      "description": "Пол"
+    },
+    "build": {
+      "type": "string",
+      "description": "Телосложение"
+    },
+    "posture": {
+      "type": "string",
+      "description": "Осанка"
+    },
+    "hair": {
+      "type": "string",
+      "description": "Цвет волос"
+    },
+    "eyes": {
+      "type": "string",
+      "description": "Цвет глаз"
+    },
+    "alwaysWears": {
+      "type": "string",
+      "description": "Что он никогда не снимает?"
+    },
+    "marks": {
+      "type": "string",
+      "description": "Особые приметы"
+    },
+    "weakness": {
+      "type": "string",
+      "description": "Главная слабость"
+    },
+    "strength": {
+      "type": "string",
+      "description": "Главная сила"
+    },
+    "angers": {
+      "type": "string",
+      "description": "Что выводит его из себя?"
+    },
+    "conflictBehavior": {
+      "type": "string",
+      "description": "Как ведёт себя в конфликте?"
+    },
+    "optimistType": {
+      "type": "string",
+      "description": "Оптимист, пессимист или реалист?"
+    },
+    "valuesInPeople": {
+      "type": "string",
+      "description": "Что он ценит в людях больше всего?"
+    },
+    "innerPain": {
+      "type": "string",
+      "description": "Самая большая внутренняя боль"
+    },
+    "defaultEmotion": {
+      "type": "string",
+      "description": "Базовая эмоция по умолчанию"
+    },
+    "decisionStyle": {
+      "type": "string",
+      "description": "Как он принимает решения?"
+    },
+    "worstFear": {
+      "type": "string",
+      "description": "Что для него хуже всего — быть слабым, виноватым или лишним?"
+    },
+    "selfAttitude": {
+      "type": "string",
+      "description": "Как он относится к себе?"
+    },
+    "whenAshamed": {
+      "type": "string",
+      "description": "Что он делает, когда ему стыдно?"
+    },
+    "handlesOffense": {
+      "type": "string",
+      "description": "Как он переживает обиду?"
+    },
+    "argueStyle": {
+      "type": "string",
+      "description": "Спорит до конца или сдаётся?"
+    },
+    "selfDestruct": {
+      "type": "string",
+      "description": "Насколько он склонен к самоуничтожению?"
+    },
+    "beliefSystem": {
+      "type": "string",
+      "description": "Во что он верит больше — в людей, систему или только в себя?"
+    },
+    "rightOrLoved": {
+      "type": "string",
+      "description": "Что для него важнее — быть правым или быть любимым?"
+    },
+    "selfDenial": {
+      "type": "string",
+      "description": "В чём он себе никогда не признается?"
+    },
+    "explainsFailures": {
+      "type": "string",
+      "description": "Как он объясняет свои провалы?"
+    },
+    "breakingPoint": {
+      "type": "string",
+      "description": "Что его может сломать окончательно?"
+    },
+    "wantsMost": {
+      "type": "string",
+      "description": "Чего он хочет больше всего?"
+    },
+    "fearsMost": {
+      "type": "string",
+      "description": "Чего он боится больше всего?"
+    },
+    "dailyDrive": {
+      "type": "string",
+      "description": "Что им движет в повседневной жизни?"
+    },
+    "successDefinition": {
+      "type": "string",
+      "description": "Что для него значит «успех»?"
+    },
+    "howFar": {
+      "type": "string",
+      "description": "На что он готов пойти ради своей цели?"
+    },
+    "obstacle": {
+      "type": "string",
+      "description": "Что (или кто) стоит у него на пути?"
+    },
+    "rel1": {
+      "type": "string",
+      "description": "Связь с [имя персонажа]"
+    },
+    "rel2": {
+      "type": "string",
+      "description": "Связь с [имя персонажа]"
+    },
+    "rel3": {
+      "type": "string",
+      "description": "Связь с [имя персонажа]"
+    },
+    "bestFriend": {
+      "type": "string",
+      "description": "Лучший друг / подруга"
+    },
+    "enemy": {
+      "type": "string",
+      "description": "Враг или соперник"
+    },
+    "family": {
+      "type": "string",
+      "description": "Семья"
+    },
+    "loveInterest": {
+      "type": "string",
+      "description": "Любовный интерес"
+    },
+    "trustsUnconditionally": {
+      "type": "string",
+      "description": "Кому он доверяет безоговорочно?"
+    },
+    "avoids": {
+      "type": "string",
+      "description": "Кого он избегает?"
+    },
+    "nervousHabit": {
+      "type": "string",
+      "description": "Что он делает, когда нервничает?"
+    },
+    "morningRitual": {
+      "type": "string",
+      "description": "Утренний ритуал"
+    },
+    "badHabit": {
+      "type": "string",
+      "description": "Вредная привычка"
+    },
+    "catchphrase": {
+      "type": "string",
+      "description": "Любимое слово или фраза-паразит"
+    },
+    "laughStyle": {
+      "type": "string",
+      "description": "Как он смеётся?"
+    },
+    "handGesture": {
+      "type": "string",
+      "description": "Что он делает руками во время разговора?"
+    },
+    "sleepStyle": {
+      "type": "string",
+      "description": "Как он спит?"
+    },
+    "grewUp": {
+      "type": "string",
+      "description": "Где он вырос?"
+    },
+    "childhoodMemory": {
+      "type": "string",
+      "description": "Самое яркое детское воспоминание"
+    },
+    "education": {
+      "type": "string",
+      "description": "Образование"
+    },
+    "keyEvent": {
+      "type": "string",
+      "description": "Ключевое событие, изменившее его жизнь"
+    },
+    "biggestMistake": {
+      "type": "string",
+      "description": "Самая большая ошибка в прошлом"
+    },
+    "childhoodDream": {
+      "type": "string",
+      "description": "Кем он хотел стать в детстве?"
+    },
+    "untoldPast": {
+      "type": "string",
+      "description": "Что он никогда никому не рассказывал о своём прошлом?"
+    },
+    "currentSecret": {
+      "type": "string",
+      "description": "Тайна, которую он хранит прямо сейчас"
+    },
+    "unknownFact": {
+      "type": "string",
+      "description": "Что о нём никто не знает?"
+    },
+    "hiddenTalent": {
+      "type": "string",
+      "description": "Неожиданный талант или умение"
+    },
+    "phobia": {
+      "type": "string",
+      "description": "Странный страх или фобия"
+    },
+    "contradiction": {
+      "type": "string",
+      "description": "Что в его внешности или поведении противоречит его сути?"
+    },
+    "collects": {
+      "type": "string",
+      "description": "Что он коллекционирует (вещи или мысли)?"
+    },
+    "chapterTitle": {
+      "type": "string",
+      "description": "Если бы его жизнь была книгой — как называлась бы текущая глава?"
+    },
+    "characterFunction": {
+      "type": "string",
+      "description": "Функция персонажа"
+    },
+    "plotSignificance": {
+      "type": "string",
+      "description": "Значимость в сюжете"
+    },
+    "roleInPlot": {
+      "type": "string",
+      "description": "Кто он в сюжете?"
+    },
+    "conflictType": {
+      "type": "string",
+      "description": "Главный тип конфликта"
+    },
+    "coreContradiction": {
+      "type": "string",
+      "description": "Главное противоречие"
+    },
+    "idealEnding": {
+      "type": "string",
+      "description": "Его идеальный финал"
+    },
+    "arcStart": {
+      "type": "string",
+      "description": "В начале истории он…"
+    },
+    "arcEnd": {
+      "type": "string",
+      "description": "В конце истории он…"
+    },
+    "arcChange": {
+      "type": "string",
+      "description": "Что в нём меняется?"
+    },
+    "crossesLine": {
+      "type": "string",
+      "description": "Где он переступает черту?"
+    },
+    "firstImpression": {
+      "type": "string",
+      "description": "Первое впечатление от него"
+    },
+    "entersScene": {
+      "type": "string",
+      "description": "Как он входит в сцену?"
+    },
+    "exitsScene": {
+      "type": "string",
+      "description": "Как он уходит из сцены?"
+    },
+    "signatureSound": {
+      "type": "string",
+      "description": "Характерный звук рядом с ним"
+    },
+    "alwaysInFrame": {
+      "type": "string",
+      "description": "Что всегда с ним в кадре?"
+    },
+    "defenseReaction": {
+      "type": "string",
+      "description": "Главная защитная реакция"
+    },
+    "lyingStyle": {
+      "type": "string",
+      "description": "Как он врёт?"
+    },
+    "onEdge": {
+      "type": "string",
+      "description": "Признак, что он на грани"
+    },
+    "becomesWorseWith": {
+      "type": "string",
+      "description": "С кем он становится хуже?"
+    },
+    "becomesBetterWith": {
+      "type": "string",
+      "description": "С кем он становится лучше?"
+    },
+    "socialMask": {
+      "type": "string",
+      "description": "Социальная маска"
+    },
+    "wantsToBeLike": {
+      "type": "string",
+      "description": "На кого хочет быть похож?"
+    },
+    "despises": {
+      "type": "string",
+      "description": "Кого презирает больше всего?"
+    },
+    "envies": {
+      "type": "string",
+      "description": "Кому завидует?"
+    },
+    "whyStays": {
+      "type": "string",
+      "description": "Почему он не уходит из событий?"
+    },
+    "notReadyToLose": {
+      "type": "string",
+      "description": "Что он не готов потерять?"
+    },
+    "breakPrinciples": {
+      "type": "string",
+      "description": "Ради чего нарушит свои принципы?"
+    },
+    "complicatesOthers": {
+      "type": "string",
+      "description": "Как он осложняет жизнь другим?"
+    },
+    "oneLiner": {
+      "type": "string",
+      "description": "Одна строка о персонаже"
+    },
+    "imageMetaphor": {
+      "type": "string",
+      "description": "Образ, который его описывает"
+    },
+    "viewerEmotion": {
+      "type": "string",
+      "description": "Главная эмоция для зрителя"
+    },
+    "silenceThoughts": {
+      "type": "string",
+      "description": "О чём персонаж думает, когда остаётся в тишине — без отвлечений, без людей, без задач?"
+    },
+    "bannedThought": {
+      "type": "string",
+      "description": "Какую мысль о себе он гонит прочь быстрее всего, стоит ей появиться?"
+    },
+    "selfContempt": {
+      "type": "string",
+      "description": "За что он себя презирает — и как оправдывает это презрение перед самим собой?"
+    },
+    "lastSelfLie": {
+      "type": "string",
+      "description": "Опиши момент, когда персонаж в последний раз врал себе. Что именно он сказал и зачем?"
+    },
+    "hypocrisy": {
+      "type": "string",
+      "description": "В чём персонаж — лицемер? Где его слова и поступки расходятся системно, а не случайно?"
+    },
+    "unspeakableTruth": {
+      "type": "string",
+      "description": "Какую правду о нём нельзя произносить вслух, чтобы не разрушить его самооценку?"
+    },
+    "falseBelief": {
+      "type": "string",
+      "description": "Какое убеждение о себе он считает фундаментом своей личности — но оно ложно?"
+    },
+    "secretEnvy": {
+      "type": "string",
+      "description": "Кому он завидует, но никогда в этом не признается?"
+    },
+    "doubleStandard": {
+      "type": "string",
+      "description": "Что персонаж осуждает в других — но разрешает себе (и как объясняет исключение)?"
+    },
+    "statedVsHiddenGoal": {
+      "type": "string",
+      "description": "Чего персонаж хочет (заявленная цель) и чего он на самом деле хочет (скрытая потребность)?"
+    },
+    "maskedFear": {
+      "type": "string",
+      "description": "Какой страх маскируется под другое чувство: гнев, презрение, скуку, заботу?"
+    },
+    "noConsequences": {
+      "type": "string",
+      "description": "Если бы персонаж гарантированно не понёс последствий — что бы он сделал завтра?"
+    },
+    "worstPossibleDay": {
+      "type": "string",
+      "description": "Опиши худший день в жизни персонажа — не тот что был, а тот что мог бы случиться"
+    },
+    "maniacalControl": {
+      "type": "string",
+      "description": "Что он контролирует с маниакальной силой, потому что боится — если отпустит, случится ___?"
+    },
+    "firstBetrayal": {
+      "type": "string",
+      "description": "Кого персонаж предал первым? Или кто предал его — и как это определило его дальнейшие отношения?"
+    },
+    "worldUnsafe": {
+      "type": "string",
+      "description": "В какой момент мир перестал быть для него безопасным? Сколько ему было лет?"
+    },
+    "cruelestWords": {
+      "type": "string",
+      "description": "Что самое жестокое он услышал о себе в детстве — и от кого?"
+    },
+    "familyRole": {
+      "type": "string",
+      "description": "Какую роль он играл в своей семье (спасатель, невидимка, козёл отпущения, принцесса, солдат)?"
+    },
+    "innerChildRitual": {
+      "type": "string",
+      "description": "Какой ритуал или привычка успокаивает его внутреннего ребёнка — даже если сам персонаж этого не осознаёт?"
+    },
+    "unaskedQuestion": {
+      "type": "string",
+      "description": "О чём он никогда не спросил своих родителей, но до сих пор хочет знать?"
+    },
+    "afterIntimacy": {
+      "type": "string",
+      "description": "Что персонаж делает сразу после секса? О чём думает, что говорит, куда смотрит?"
+    },
+    "punishingLove": {
+      "type": "string",
+      "description": "Кого он наказывает своей любовью — и как именно?"
+    },
+    "firstMinuteCheck": {
+      "type": "string",
+      "description": "Что он проверяет в новом человеке в первые минуты знакомства (и в чём ошибается)?"
+    },
+    "unbearableCompanion": {
+      "type": "string",
+      "description": "С кем он невыносим — и почему продолжает быть рядом с этим человеком?"
+    },
+    "hiddenNeedFromOthers": {
+      "type": "string",
+      "description": "Какую свою потребность он пытается закрыть через других людей — но никогда не признается в этом?"
+    },
+    "eternalSuffering": {
+      "type": "string",
+      "description": "Ради чего (или кого) персонаж согласился бы на вечные муки — не героическую смерть, а именно бесконечное страдание?"
+    },
+    "romanticizedSin": {
+      "type": "string",
+      "description": "Какой грех он считает добродетелью — и как он его романтизирует?"
+    },
+    "historicalSide": {
+      "type": "string",
+      "description": "На чью сторону он встал бы в конкретной исторической катастрофе — и честно: как бы поступил на самом деле?"
+    },
+    "notForSale": {
+      "type": "string",
+      "description": "Что для него не продаётся? Что не покупается ни за какие деньги, угрозы или соблазны?"
+    },
+    "moralDebt": {
+      "type": "string",
+      "description": "Кому он должен — не денег, а морального долга, который его гнетёт?"
+    },
+    "whenAlone": {
+      "type": "string",
+      "description": "Что персонаж делает только когда уверен, что никто не видит и не узнает?"
+    },
+    "first15Minutes": {
+      "type": "string",
+      "description": "На что он тратит первые 15 минут после пробуждения? Порядок действий, ритуал, мысли"
+    },
+    "shameBodyReaction": {
+      "type": "string",
+      "description": "Как его тело реагирует на стыд? Жар в ушах, потные ладони, желание сжаться, агрессивный взгляд?"
+    },
+    "foodAlone": {
+      "type": "string",
+      "description": "Что он ест когда никто не готовит, не смотрит, не ждёт — еда без свидетелей?"
+    },
+    "insecurityWord": {
+      "type": "string",
+      "description": "Какое слово-паразит выдаёт его неуверенность? Или наоборот — какое слово он использует как щит?"
+    },
+    "silenceAndNoise": {
+      "type": "string",
+      "description": "О чём персонаж молчит, когда должен говорить? И о чём говорит, когда должен молчать?"
+    },
+    "voiceChanges": {
+      "type": "string",
+      "description": "Как меняется его голос при разговоре с тремя разными людьми: с тем кого он боится, с тем кого он хочет, с тем кому он врёт?"
+    },
+    "personalMantra": {
+      "type": "string",
+      "description": "Какая фраза — его личное заклинание, которое он повторяет в трудные моменты?"
+    },
+    "lifeNarrative": {
+      "type": "string",
+      "description": "Какую историю персонаж рассказывает себе о своей жизни — и что эта история скрывает?"
+    },
+    "forgivesSelNotOthers": {
+      "type": "string",
+      "description": "Что он не может простить другим, но с лёгкостью прощает себе?"
+    },
+    "liberatingTruth": {
+      "type": "string",
+      "description": "Какая правда о нём сделала бы его свободным — но он не готов её услышать?"
+    },
+    "meetTrueSelf": {
+      "type": "string",
+      "description": "Если бы персонаж встретил себя настоящего (без масок) — он бы обнял, ударил или прошёл мимо?"
+    },
+    "lostEverything": {
+      "type": "string",
+      "description": "Что персонаж делает, когда у него отняли всё — дом, людей, статус, будущее. Какой поступок станет дном, а какой — первой ступенью вверх?"
+    },
+    "physicalThreat": {
+      "type": "string",
+      "description": "Опиши его реакцию на прямую физическую угрозу: замирание, бегство, агрессия — или что-то неожиданное?"
+    },
+    "impossibleChoice": {
+      "type": "string",
+      "description": "Кого он спасёт, если выбор: незнакомый ребёнок или близкий человек, который его предал? Инстинкт, не философия"
+    },
+    "lastMinute": {
+      "type": "string",
+      "description": "Что он скажет или сделает за минуту до гарантированной смерти — и кому это будет адресовано?"
+    },
+    "powerOverHelpless": {
+      "type": "string",
+      "description": "Какую власть над беспомощным он употребит, если никто никогда не узнает? Милосердие, жестокость, равнодушие?"
+    },
+    "absoluteLimit": {
+      "type": "string",
+      "description": "Где его предел — точка, в которой он скажет «нет, дальше не пойду» даже под страхом смерти? И что случается, когда его продавливают за эту точку?"
+    }
+  },
+  "additionalProperties": false
+}
