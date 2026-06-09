@@ -9,6 +9,7 @@ import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { NarrativeHeader } from '@/components/NarrativeHeader';
 import { CharacterFormSummary } from '@/components/CharacterFormSummary';
 import { NarrativePromptsPanel } from '@/components/NarrativePromptsPanel';
+import { NarrativeExportModal } from '@/components/NarrativeExportModal';
 import TweaksPanel from '@/components/TweaksPanel';
 
 interface NarrativeClientProps {
@@ -34,6 +35,7 @@ export function NarrativeClient({
   const [isLore, setIsLore] = useState(initialIsLore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<any>(null);
   
   const [showPrompts, setShowPrompts] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
@@ -41,6 +43,14 @@ export function NarrativeClient({
   
   const aiSettings = useAiSettings();
   const abortRef = useRef<AbortController | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  React.useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [narrative]);
 
   const filledFields = getFilledFieldCount(initialData);
   const totalFields = getTotalFieldCount();
@@ -110,6 +120,9 @@ export function NarrativeClient({
               if (parsedChunk.text) {
                 generatedText += parsedChunk.text;
                 setNarrative(generatedText);
+              }
+              if (parsedChunk.usage) {
+                setUsage(parsedChunk.usage);
               }
             } catch (e) {
               if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
@@ -199,15 +212,23 @@ export function NarrativeClient({
               </div>
             )}
 
-            <div className="flex-1">
+            <div className="flex-1 pb-16">
               {narrative ? (
-                <textarea
-                  className="w-full min-h-[600px] h-full bg-surface-container-lowest border border-outline-variant rounded-xl p-8 shadow-sm text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 custom-scrollbar"
-                  value={narrative}
-                  onChange={(e) => setNarrative(e.target.value)}
-                  onBlur={() => updateCharacterNarrative(characterId, narrative)}
-                  placeholder="Начните писать описание здесь..."
-                />
+                <>
+                  <textarea
+                    ref={textareaRef}
+                    className="w-full min-h-[600px] bg-surface-container-lowest border-[0.5px] border-outline-variant/30 rounded-xl p-8 shadow-sm text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 overflow-hidden"
+                    value={narrative}
+                    onChange={(e) => setNarrative(e.target.value)}
+                    onBlur={() => updateCharacterNarrative(characterId, narrative)}
+                    placeholder="Начните писать описание здесь..."
+                  />
+                  {usage && (
+                    <div className="text-right text-[10px] text-on-surface-variant font-mono-data mt-3 opacity-70">
+                      Сгенерировано с помощью {aiSettings.saved.model} • Промпт: {usage.prompt_tokens || usage.promptTokens} токенов, Ответ: {usage.completion_tokens || usage.completionTokens} токенов
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-lowest/50">
                   <span className="material-symbols-outlined text-4xl mb-4 opacity-50">menu_book</span>
@@ -230,6 +251,7 @@ export function NarrativeClient({
 
       <NarrativePromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
       <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiSettings} />
+      {showExport && <NarrativeExportModal narrative={narrative} name={characterName} onClose={() => setShowExport(false)} />}
     </div>
   );
 }

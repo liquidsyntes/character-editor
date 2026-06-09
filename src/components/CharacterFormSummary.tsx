@@ -23,11 +23,9 @@ export function CharacterFormSummary({ data, charName, percent, filled, total, i
         </div>
         <button
           onClick={() => onToggleLore(!isLore)}
-          className={`w-32 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded border transition-colors ${isLore ? 'bg-primary/10 border-primary text-primary' : 'bg-surface border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-outline'}`}
-          title="Лорные персонажи скрывают часть лишних полей и выделяются в списках"
+          className={`w-32 flex flex-col items-center justify-center py-2 rounded border transition-colors ${isLore ? 'bg-[#f97316]/10 border-[#f97316] text-[#f97316]' : 'bg-surface border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-outline'}`}
         >
-          <span className="material-symbols-outlined text-[14px]">{isLore ? 'history_edu' : 'history_edu'}</span>
-          <span className="font-label-caps text-[10px] uppercase">{isLore ? 'Лорный' : 'Лорный?'}</span>
+          <span className="font-label-caps text-[10px] uppercase leading-tight text-center">Лорный<br/>Персонаж</span>
         </button>
       </div>
       <div className="flex-1 w-full space-y-4 pt-2">
@@ -57,9 +55,6 @@ export function CharacterFormSummary({ data, charName, percent, filled, total, i
               Роль не указана
             </span>
           )}
-          <span className={`${percent === 100 ? 'bg-[#22c55e]/10 text-[#22c55e]' : percent >= 50 ? 'bg-[#f97316]/10 text-[#f97316]' : percent > 0 ? 'bg-[#ef4444]/10 text-[#ef4444]' : 'bg-surface-variant text-on-surface-variant'} font-mono-data text-[12px] px-2 py-1 rounded transition-colors duration-300`}>
-            Прогресс: {filled}/{total} ({percent}%)
-          </span>
           <span className={`${percent === 100 ? 'bg-[#22c55e]/10 text-[#22c55e]' : percent >= 50 ? 'bg-[#f97316]/10 text-[#f97316]' : percent > 0 ? 'bg-[#ef4444]/10 text-[#ef4444]' : 'bg-surface-variant text-on-surface-variant'} font-mono-data text-[12px] px-2 py-1 rounded transition-colors duration-300`}>
             Прогресс: {filled}/{total} ({percent}%)
           </span>
