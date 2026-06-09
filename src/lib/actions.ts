@@ -320,3 +320,15 @@ export async function deleteWorldElement(id: string) {
 
   revalidatePath(`/project/${element.projectId}`);
 }
+
+export async function updateCharacterPublicOpinions(characterId: string, publicOpinions: string) {
+  const userId = await getUserId();
+  const result = await prisma.character.updateMany({
+    where: { id: characterId, userId },
+    data: { publicOpinions },
+  });
+  
+  if (result.count === 0) throw new Error('Персонаж не найден или нет прав на изменение');
+  revalidatePath('/');
+  revalidatePath(`/character/${characterId}/public`);
+}

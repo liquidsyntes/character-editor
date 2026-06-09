@@ -205,6 +205,13 @@ export function CharacterSidebar({
               <span className="material-symbols-outlined text-[16px]">menu_book</span>
               <span className="text-sm font-medium">Художественное описание</span>
             </a>
+            <a
+              href={`/character/${characterId}/public`}
+              className={`w-full flex items-center gap-2 p-2 mt-2 rounded-lg text-left transition-all bg-white/10 border border-white/20 text-white hover:bg-white/20 shadow-sm`}
+            >
+              <span className="material-symbols-outlined text-[16px]">forum</span>
+              <span className="text-sm font-medium">Мнение о персонаже</span>
+            </a>
           </div>
         )}
 

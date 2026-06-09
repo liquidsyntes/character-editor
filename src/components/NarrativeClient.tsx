@@ -168,7 +168,12 @@ export function NarrativeClient({
             <span className="text-sm">Вернуться к анкете</span>
           </Link>
 
-          <Link href={projectId ? `/project/${projectId}` : "/"} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all hover:bg-white/5 text-white/70 hover:text-white">
+          <Link href={`/character/${characterId}/public`} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all hover:bg-white/5 text-white/70 hover:text-white">
+            <span className="material-symbols-outlined text-[16px]">forum</span>
+            <span className="text-sm">Мнение о персонаже</span>
+          </Link>
+
+          <Link href={projectId ? `/project/${projectId}` : "/"} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all hover:bg-white/5 text-white/70 hover:text-white mt-auto">
             <span className="material-symbols-outlined text-[16px]">dashboard</span>
             <span className="text-sm">Дашборд проекта</span>
           </Link>
@@ -228,6 +233,16 @@ export function NarrativeClient({
                       Сгенерировано с помощью {aiSettings.saved.model} • Промпт: {usage.prompt_tokens || usage.promptTokens} токенов, Ответ: {usage.completion_tokens || usage.completionTokens} токенов
                     </div>
                   )}
+
+                  <div className="flex justify-center mt-12 border-t border-outline-variant pt-8">
+                    <Link
+                      href={`/character/${characterId}/public`}
+                      className="px-6 py-3 bg-surface border border-outline-variant rounded-lg text-on-surface hover:text-primary hover:border-primary transition-colors flex items-center gap-3 shadow-sm font-label-caps uppercase tracking-wider text-sm"
+                    >
+                      <span>Мнение о персонаже</span>
+                      <span className="material-symbols-outlined">arrow_forward</span>
+                    </Link>
+                  </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-lowest/50">
