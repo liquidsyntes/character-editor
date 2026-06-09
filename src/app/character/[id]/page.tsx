@@ -65,6 +65,7 @@ export default async function CharacterEditorPage({
       key={character.id}
       characterId={character.id}
       initialData={data}
+      isLore={character.isLore}
       siblings={siblings}
       projectId={projectId}
       projectName={projectName}

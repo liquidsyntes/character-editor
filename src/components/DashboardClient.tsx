@@ -36,6 +36,7 @@ interface CharacterItem {
   summary: string;
   isDraft: boolean;
   isArchived: boolean;
+  isLore: boolean;
   createdAt: string;
   updatedAt: string;
   projectId: string | null;
@@ -63,7 +64,7 @@ export default function DashboardClient({
   projectSetting?: string;
 }) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'drafts' | 'archived'>('all');
+  const [filter, setFilter] = useState<'all' | 'story' | 'lore' | 'drafts' | 'archived'>('all');
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
   const aiState = useAiSettings();
@@ -168,6 +169,8 @@ export default function DashboardClient({
   const filtered = initial.filter(c => {
     if (filter === 'archived' && !c.isArchived) return false;
     if (filter === 'drafts' && (!c.isDraft || c.isArchived)) return false;
+    if (filter === 'story' && (c.isLore || c.isArchived)) return false;
+    if (filter === 'lore' && (!c.isLore || c.isArchived)) return false;
     if (filter === 'all' && c.isArchived) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -389,8 +392,8 @@ export default function DashboardClient({
               </div>
             </div>
 
-            <div className="flex gap-2 mb-8">
-              {([['all', 'Все'], ['drafts', 'Черновики'], ['archived', 'Архив']] as const).map(([key, label]) => (
+            <div className="flex gap-2 mb-8 flex-wrap">
+              {([['all', 'Все'], ['story', 'Участники сюжета'], ['lore', 'Лорные'], ['drafts', 'Черновики'], ['archived', 'Архив']] as const).map(([key, label]) => (
                 <button
                   key={key}
                   className={`font-label-caps text-[12px] px-4 py-2 rounded border transition-colors ${
@@ -440,6 +443,9 @@ export default function DashboardClient({
                             <span className="text-[28px] leading-none">{char.emoji || '👤'}</span>
                             
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                              {char.isLore && (
+                                <span className="bg-surface-container-highest text-on-surface text-[10px] uppercase font-bold px-2 py-0.5 rounded mr-2" title="Лорный персонаж">📜 Лор</span>
+                              )}
                               <button className="text-on-surface-variant hover:text-primary p-1 bg-surface-container rounded transition-colors" onClick={e => handleDuplicate(e, char.id)} title="Дублировать">
                                 <span className="material-symbols-outlined text-[16px]">content_copy</span>
                               </button>

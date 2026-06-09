@@ -131,7 +131,7 @@ export async function updateCharacter(id: string, formData: CharacterData) {
   revalidatePath('/');
 }
 
-export async function updateCharacterMeta(id: string, meta: { emoji?: string; color?: string }) {
+export async function updateCharacterMeta(id: string, meta: { emoji?: string; color?: string; isLore?: boolean }) {
   const userId = await getUserId();
   const result = await prisma.character.updateMany({
     where: { id, userId },
@@ -181,6 +181,7 @@ export async function duplicateCharacter(id: string) {
       color: original.color,
       summary: original.summary,
       isDraft: true,
+      isLore: original.isLore,
       projectId: original.projectId,
       userId,
     },
@@ -231,6 +232,7 @@ export async function getSiblingCharacters(projectId?: string | null) {
       emoji: true,
       color: true,
       summary: true,
+      isLore: true,
     },
   });
 }

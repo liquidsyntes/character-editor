@@ -27,15 +27,18 @@ export default function CharacterForm({
   projectId,
   projectName,
   projectContext,
+  isLore,
 }: {
   characterId: string;
   initialData: CharacterData;
+  isLore?: boolean;
   siblings?: SiblingCharacter[];
   projectId?: string;
   projectName?: string;
   projectContext?: string;
 }) {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['basic']));
+  const [isLoreState, setIsLoreState] = useState(isLore || false);
   const [showExport, setShowExport] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
@@ -231,6 +234,12 @@ export default function CharacterForm({
                 percent={percent}
                 filled={filled}
                 total={total}
+                isLore={isLoreState}
+                onToggleLore={async (val) => {
+                  setIsLoreState(val);
+                  const { updateCharacterMeta } = await import('@/lib/actions');
+                  await updateCharacterMeta(characterId, { isLore: val });
+                }}
               />
 
               <div className="flex items-center">
@@ -245,7 +254,10 @@ export default function CharacterForm({
                 </div>
               </div>
 
-              {CHARACTER_SCHEMA.map(section => (
+              {CHARACTER_SCHEMA.map(section => {
+                // Если персонаж лорный, скрываем секцию "Экранное поведение"
+                if (isLoreState && section.id === 'screen') return null;
+                return (
                 <CharacterSection
                   key={section.id}
                   section={section}
@@ -269,7 +281,7 @@ export default function CharacterForm({
                     return n;
                   })}
                 />
-              ))}
+              )})}
             </div>
           </div>
           

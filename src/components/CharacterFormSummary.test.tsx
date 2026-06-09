@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { CharacterFormSummary } from './CharacterFormSummary';
 import '@testing-library/jest-dom';
 
@@ -10,6 +10,8 @@ describe('CharacterFormSummary', () => {
     percent: 0,
     filled: 0,
     total: 100,
+    isLore: false,
+    onToggleLore: vi.fn(),
   };
 
   it('renders character name correctly', () => {

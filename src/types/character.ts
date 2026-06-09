@@ -29,6 +29,7 @@ export interface CharacterRecord {
   summary: string;
   isDraft: boolean;
   isArchived: boolean;
+  isLore: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
