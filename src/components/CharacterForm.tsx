@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { CHARACTER_SCHEMA, getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
@@ -282,6 +283,21 @@ export default function CharacterForm({
                   })}
                 />
               )})}
+            </div>
+
+            {/* Блок дополнительных функций (Нарратив и т.д.) */}
+            <div className="mt-16 pt-8 border-t border-outline-variant flex flex-col items-center justify-center">
+              <h3 className="text-xl font-medium text-on-surface mb-2">Художественное описание</h3>
+              <p className="text-on-surface-variant text-sm mb-6 text-center max-w-lg">
+                Сгенерируйте живое и атмосферное книжное описание на основе заполненной анкеты, которое раскроет персонажа в действии.
+              </p>
+              <Link
+                href={`/character/${characterId}/narrative`}
+                className="flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors shadow-sm font-medium"
+              >
+                <span className="material-symbols-outlined">menu_book</span>
+                <span>Перейти к описанию</span>
+              </Link>
             </div>
           </div>
           

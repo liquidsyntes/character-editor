@@ -30,6 +30,7 @@ export interface CharacterRecord {
   isDraft: boolean;
   isArchived: boolean;
   isLore: boolean;
+  narrative: string;
   createdAt: Date;
   updatedAt: Date;
 }

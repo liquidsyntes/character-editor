@@ -45,6 +45,7 @@ model Character {
   isDraft    Boolean  @default(true)
   isArchived Boolean  @default(false)
   isLore     Boolean  @default(false)
+  narrative  String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   project    Project? @relation(fields: [projectId], references: [id])

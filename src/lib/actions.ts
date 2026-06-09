@@ -131,6 +131,18 @@ export async function updateCharacter(id: string, formData: CharacterData) {
   revalidatePath('/');
 }
 
+export async function updateCharacterNarrative(id: string, narrative: string) {
+  const userId = await getUserId();
+  const result = await prisma.character.updateMany({
+    where: { id, userId },
+    data: { narrative },
+  });
+  
+  if (result.count === 0) throw new Error('Персонаж не найден или нет прав на изменение');
+  revalidatePath('/');
+  revalidatePath(`/character/${id}`);
+}
+
 export async function updateCharacterMeta(id: string, meta: { emoji?: string; color?: string; isLore?: boolean }) {
   const userId = await getUserId();
   const result = await prisma.character.updateMany({
@@ -182,6 +194,7 @@ export async function duplicateCharacter(id: string) {
       summary: original.summary,
       isDraft: true,
       isLore: original.isLore,
+      narrative: original.narrative,
       projectId: original.projectId,
       userId,
     },
@@ -233,6 +246,7 @@ export async function getSiblingCharacters(projectId?: string | null) {
       color: true,
       summary: true,
       isLore: true,
+      narrative: true,
     },
   });
 }
