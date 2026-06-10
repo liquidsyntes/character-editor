@@ -237,7 +237,7 @@ export function NarrativeClient({
                   <div className="flex justify-center mt-12 border-t border-outline-variant pt-8">
                     <Link
                       href={`/character/${characterId}/public`}
-                      className="px-6 py-3 bg-surface border border-outline-variant rounded-lg text-on-surface hover:text-primary hover:border-primary transition-colors flex items-center gap-3 shadow-sm font-label-caps uppercase tracking-wider text-sm"
+                      className="px-6 py-3 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-[#0d9488] hover:text-white hover:border-[#0d9488] transition-colors flex items-center gap-3 shadow-sm font-label-caps uppercase tracking-wider text-sm"
                     >
                       <span>Мнение о персонаже</span>
                       <span className="material-symbols-outlined">arrow_forward</span>

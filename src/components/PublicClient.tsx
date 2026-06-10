@@ -97,7 +97,7 @@ function AutoResizeTextarea({ value, onChange, placeholder, title, onBlur }: any
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">{title}</h3>
+      <h3 className="font-label-caps text-[14px] font-bold tracking-wider text-on-surface uppercase">{title}</h3>
       <textarea
         ref={ref}
         className="w-full bg-surface-container-lowest border-[0.5px] border-outline-variant/30 rounded-xl p-6 shadow-sm text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 overflow-hidden"
