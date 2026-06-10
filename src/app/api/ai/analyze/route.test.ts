@@ -18,7 +18,6 @@ vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
   return {
     ...actual,
     handleAiError: vi.fn().mockImplementation((err) => NextResponse.json({ error: (err as Error).message }, { status: 500 })),
-    validateExistingData: vi.fn().mockReturnValue(null),
     checkApiRateLimit: vi.fn().mockResolvedValue(null),
     requireAuth: vi.fn().mockResolvedValue(null),
   };
