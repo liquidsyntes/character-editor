@@ -32,7 +32,8 @@
     "@libsql/darwin-x64": "^0.5.29",
     "@libsql/linux-arm64-gnu": "^0.5.29",
     "@libsql/linux-x64-gnu": "^0.5.29",
-    "@libsql/win32-x64-msvc": "^0.5.29"
+    "@libsql/win32-x64-msvc": "^0.5.29",
+    "@rolldown/binding-linux-x64-gnu": "^1.1.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
