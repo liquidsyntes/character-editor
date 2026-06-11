@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSideApiKeys } from '@/lib/settingsActions';
-import { PROVIDER_CONFIGS, ProviderName } from '@/lib/ai/provider';
+import { PROVIDER_CONFIGS, AiProvider } from '@/lib/ai/provider';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const provider = searchParams.get('provider') as ProviderName;
+  const provider = searchParams.get('provider') as AiProvider;
 
   if (!provider || !PROVIDER_CONFIGS[provider]) {
     return NextResponse.json({ models: [] }, { status: 400 });

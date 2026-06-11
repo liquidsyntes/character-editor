@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server';
-import { chatCompletionStream, ProviderName } from '@/lib/ai/provider';
+﻿import { NextRequest } from 'next/server';
+import { chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { sseResponse } from '@/lib/ai/streamUtils';
 import { handleAiError, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
 import { getAppSetting } from '@/app/actions/settings';
@@ -30,11 +30,11 @@ export async function POST(req: NextRequest) {
     const systemPrompt = await getAppSetting('PUBLIC_PROMPT') || DEFAULT_PUBLIC_SYSTEM_PROMPT;
 
     const userDataText = `
-### Анкета персонажа
+### РђРЅРєРµС‚Р° РїРµСЂСЃРѕРЅР°Р¶Р°
 ${JSON.stringify(existingData, null, 2)}
 
-### Художественное описание персонажа
-${narrative || '(Описание отсутствует)'}
+### РҐСѓРґРѕР¶РµСЃС‚РІРµРЅРЅРѕРµ РѕРїРёСЃР°РЅРёРµ РїРµСЂСЃРѕРЅР°Р¶Р°
+${narrative || '(РћРїРёСЃР°РЅРёРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚)'}
 `;
 
     const messages = [
@@ -45,7 +45,7 @@ ${narrative || '(Описание отсутствует)'}
     const stream = await chatCompletionStream(messages, {
       model,
       temperature,
-      provider: provider as ProviderName,
+      provider: provider as AiProvider,
       apiKey,
     });
 

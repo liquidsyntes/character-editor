@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server';
-import { chatCompletionStream, ProviderName } from '@/lib/ai/provider';
+﻿import { NextRequest } from 'next/server';
+import { chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { buildAnalyzePrompt } from '@/lib/ai/prompt';
 import { sseResponse } from '@/lib/ai/streamUtils';
 import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     ];
 
     const aiStream = await chatCompletionStream(messages, {
-      provider: provider as ProviderName,
+      provider: provider as AiProvider,
       model,
       temperature: typeof temperature === 'number' ? temperature : 0.7,
       maxTokens: 16384,
