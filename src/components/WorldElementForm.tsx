@@ -161,9 +161,10 @@ export default function WorldElementForm({
         }
       }
       saveElement(title, generatedText);
-    } catch (err: any) {
-      if (err.name === 'AbortError') setAiError('Генерация остановлена');
-      else setAiError(err.message || 'Ошибка генерации');
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') setAiError('Генерация остановлена');
+      else if (err instanceof Error) setAiError(err.message || 'Ошибка генерации');
+      else setAiError('Ошибка генерации');
     } finally {
       setAiLoading(false);
     }
