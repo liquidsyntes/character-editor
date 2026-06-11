@@ -1,9 +1,11 @@
 'use client';
 
+import { CharacterData } from '@/types/character';
+
 interface QuickCommandsProps {
   aiLoading: boolean;
-  handleQuickCommand: (cmd: 'lifeEvent' | 'hiddenMotive' | 'innerConflict') => Promise<Record<string, any>>;
-  setPendingDiff: (diff: Record<string, any>) => void;
+  handleQuickCommand: (cmd: 'lifeEvent' | 'hiddenMotive' | 'innerConflict') => Promise<Partial<CharacterData>>;
+  setPendingDiff: (diff: Partial<CharacterData>) => void;
 }
 
 export function QuickCommands({ aiLoading, handleQuickCommand, setPendingDiff }: QuickCommandsProps) {

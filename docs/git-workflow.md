@@ -14,7 +14,7 @@ git checkout -b feat/название-задачи
 
 ```bash
 git add .
-git commit -m "краткое описание изменений"
+git commit -m "краткое и понятное описание изменений на русском"
 ```
 
 ## Перед merge в main

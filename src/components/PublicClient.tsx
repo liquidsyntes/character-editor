@@ -86,7 +86,15 @@ function parseMarkdownToOpinions(markdown: string) {
   return result;
 }
 
-function AutoResizeTextarea({ value, onChange, placeholder, title, onBlur }: any) {
+interface AutoResizeTextareaProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  title: string;
+  onBlur?: () => void;
+}
+
+function AutoResizeTextarea({ value, onChange, placeholder, title, onBlur }: AutoResizeTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (ref.current) {
@@ -124,7 +132,7 @@ export function PublicClient({
   const [isLore, setIsLore] = useState(initialIsLore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usage, setUsage] = useState<any>(null);
+  const [usage, setUsage] = useState<{ prompt_tokens?: number; promptTokens?: number; completion_tokens?: number; completionTokens?: number } | null>(null);
   
   const [showPrompts, setShowPrompts] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
@@ -236,11 +244,13 @@ export function PublicClient({
 
       await updateCharacterPublicOpinions(characterId, JSON.stringify(finalOpinions));
 
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
         setError('Генерация отменена');
-      } else {
+      } else if (err instanceof Error) {
         setError(err.message || 'Ошибка генерации');
+      } else {
+        setError('Ошибка генерации');
       }
     } finally {
       setLoading(false);
@@ -324,7 +334,7 @@ export function PublicClient({
                   key={key}
                   title={label}
                   value={opinions[key]}
-                  onChange={(e: any) => setOpinions(prev => ({ ...prev, [key]: e.target.value }))}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setOpinions(prev => ({ ...prev, [key]: e.target.value }))}
                   onBlur={handleBlur}
                   placeholder={`Что скажет ${label.toLowerCase()}?`}
                 />
