@@ -22,6 +22,30 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
     ],
   },
   {
+    id: 'lifestyle',
+    icon: '💼',
+    label: 'Быт и профессия',
+    fieldCount: 4,
+    fields: [
+      { id: 'profession', label: 'Профессия и роль в мире', placeholder: 'Работа, социальный статус, легальная и реальная деятельность', type: 'textarea' },
+      { id: 'livingConditions', label: 'Текущее место и условия жизни', placeholder: 'Город, тип жилья, с кем живет, уровень достатка', type: 'textarea' },
+      { id: 'healthAndRoutine', label: 'Режим и здоровье', placeholder: 'Сон, хронические болячки, ограничения по телу', type: 'textarea' },
+      { id: 'toolsAndTech', label: 'Инструменты и технологии', placeholder: 'Чем он пользуется постоянно: телефон, оружие, софт, гаджет', type: 'textarea' },
+    ],
+  },
+  {
+    id: 'visualStyle',
+    icon: '🧥',
+    label: 'Визуальный слой и стиль',
+    fieldCount: 4,
+    fields: [
+      { id: 'clothingStyle', label: 'Стиль одежды и состояние вещей', placeholder: 'Новое или затертое, бренд или рандом, аккуратность', type: 'textarea' },
+      { id: 'scent', label: 'Запах персонажа', placeholder: 'Парфюм, табак, кофе, металл, бензин и тд.', type: 'textarea' },
+      { id: 'movementPlastics', label: 'Пластика движения', placeholder: 'Ходит тихо или топает, суетливый или плавный', type: 'textarea' },
+      { id: 'signatureDetail', label: 'Выразительная деталь', placeholder: 'Одна штука, по которой его всегда узнают в сцене', type: 'textarea' },
+    ],
+  },
+  {
     id: 'psychology',
     icon: '🧠',
     label: 'Характер и психология',
@@ -126,6 +150,18 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
     ],
   },
   {
+    id: 'plotPractical',
+    icon: '🎬',
+    label: 'Сценарий и сюжетная практика',
+    fieldCount: 4,
+    fields: [
+      { id: 'sceneTriggers', label: 'Триггеры и кнопки', placeholder: '3 конкретные вещи, которые моментально меняют его состояние', type: 'textarea' },
+      { id: 'genreLimits', label: 'Лимиты по жанру', placeholder: 'Что он никогда не сделает в рамках истории, даже если логично', type: 'textarea' },
+      { id: 'typicalSceneMoves', label: 'Типичные ходы в сцене', placeholder: 'Что он делает первым: говорит, молчит, шутит, давит, исчезает', type: 'textarea' },
+      { id: 'dramaPrice', label: 'Ось «чем платить за драму»', placeholder: 'Что у него можно отнять для усиления конфликта: репутация, тело, близкий', type: 'textarea' },
+    ],
+  },
+  {
     id: 'role',
     icon: '🎭',
     label: 'Роль в истории',
@@ -181,12 +217,15 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
     id: 'social',
     icon: '🏛️',
     label: 'Социальный слой',
-    fieldCount: 4,
+    fieldCount: 7,
     fields: [
       { id: 'socialMask', label: 'Социальная маска', placeholder: 'Невозмутимый профессионал', type: 'textarea' },
       { id: 'wantsToBeLike', label: 'На кого хочет быть похож?', placeholder: 'На деда, которого никогда не видел', type: 'textarea' },
       { id: 'despises', label: 'Кого презирает больше всего?', placeholder: 'Тех, кто ноет, но ничего не меняет', type: 'textarea' },
       { id: 'envies', label: 'Кому завидует?', placeholder: 'Тем, кто может уйти не оборачиваясь', type: 'textarea' },
+      { id: 'publicProfile', label: 'Профиль публичности', placeholder: 'Известен, анонимен, локально узнаваем, медийный', type: 'textarea' },
+      { id: 'powerAttitude', label: 'Отношение к власти и институтам', placeholder: 'Враг системы, лоялист, циничный пользователь', type: 'textarea' },
+      { id: 'cultureConsumption', label: 'Культура и медиа', placeholder: 'Какую музыку, кино, игры, книги он реально потребляет', type: 'textarea' },
     ],
   },
   {
@@ -338,6 +377,18 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
       { id: 'lastMinute', label: 'Что он скажет или сделает за минуту до гарантированной смерти — и кому это будет адресовано?', placeholder: 'Достанет телефон и напишет дочери: «В шкатулке письмо. Прочитай, когда будешь готова»', type: 'textarea' },
       { id: 'powerOverHelpless', label: 'Какую власть над беспомощным он употребит, если никто никогда не узнает? Милосердие, жестокость, равнодушие?', placeholder: 'Милосердие — но холодное, без тепла. Поможет и уйдёт. Не из доброты, а чтобы не стать тем, кого презирает', type: 'textarea' },
       { id: 'absoluteLimit', label: 'Где его предел — точка, в которой он скажет «нет, дальше не пойду» даже под страхом смерти? И что случается, когда его продавливают за эту точку?', placeholder: 'Не тронет ребёнка — никогда, ни при каких условиях. Если продавят — сломается тихо и необратимо', type: 'textarea' },
+    ],
+  },
+  {
+    id: 'authorMeta',
+    icon: '🛠️',
+    label: 'Метаданные автора',
+    fieldCount: 4,
+    fields: [
+      { id: 'archetype', label: 'Архетип или комбинация', placeholder: 'Например: «циник спасатель манипулятор»', type: 'textarea' },
+      { id: 'references', label: 'Референсы', placeholder: '2–3 персонажа из кино, игр, сериалов, которые близки по вайбу', type: 'textarea' },
+      { id: 'ensembleFunction', label: 'Функция в ансамбле', placeholder: 'Генератор конфликтов, зеркало героя, проводник в мир', type: 'textarea' },
+      { id: 'exploredThemes', label: 'Темы, исследуемые через персонажа', placeholder: 'Например: вина, зависимость, ответственность, выученная беспомощность', type: 'textarea' },
     ],
   },
 ];
