@@ -223,7 +223,7 @@ export default function CharacterForm({
 
         <div className="flex-1 flex overflow-hidden">
           <div 
-            className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32"
+            className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-[50vh]"
             ref={scrollRef}
             onScroll={handleScroll}
           >

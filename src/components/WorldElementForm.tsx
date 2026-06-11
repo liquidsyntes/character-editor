@@ -307,7 +307,7 @@ export default function WorldElementForm({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-[50vh]">
           <div className="max-w-[800px] mx-auto flex flex-col gap-6 pt-8 relative">
             {aiError && (
               <div className="bg-error/10 text-error p-4 rounded border border-error/20 flex items-center gap-2 mb-4">
