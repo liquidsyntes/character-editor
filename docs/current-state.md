@@ -11,7 +11,7 @@
 - [x] Word-level diff перед применением AI-изменений (DiffModal)
 - [x] SSE-стриминг в fill и analyze API-роутах
 - [x] Staged/Apply паттерн для AI-настроек
-- [x] Rate limiting (in-memory) на analyze и fix роутах
+- [x] Rate limiting (DB-backed) на AI API-роутах
 - [x] Экспорт в Markdown (ExportModal)
 - [x] Предпросмотр карточки (character/[id]/preview)
 - [x] История AI-анализов (AnalyzeHistorySidebar)
@@ -37,7 +37,6 @@
 - [x] Тесты для Server Actions
 - [x] Тесты компонентов (UI)
 - [x] Транзакционная целостность (атомарные Prisma-запросы)
-- [x] Механизм очистки старых записей rate-limit Map'а (утечка памяти при множестве IP)
 
 ## Риски и проблемные места
 
@@ -46,11 +45,10 @@
 
 ### 🟡 Значимые
 - **Дублирование SSE-логики** — `fill/route.ts` и `analyze/route.ts` содержат почти идентичный код (Хотя часть уже абстрагирована)
-- **Rate limiter in-memory** — сбрасывается при рестарте (теперь с ленивой очисткой старых записей)
 - **Prisma 7.8.0** и **Vercel AI SDK 6** — свежие мажорные версии, риск breaking changes
 
 ### 🟢 Некритичные
-- **AppSetting** в Prisma не используется в коде
+- **AppSetting** в Prisma активно используется для хранения настроек (в т.ч. системных промптов в `SystemPromptsEditor`).
 - **xAI и OpenAI** задекларированы но нет ключей в .env — не тестировались
 - **Отсутствует CORS** в API-роутах (для локального использования ок)
 - **SystemPromptsEditor** — неясно, сохраняются ли промпты между сессиями

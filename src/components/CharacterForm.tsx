@@ -286,17 +286,13 @@ export default function CharacterForm({
             </div>
 
             {/* Блок дополнительных функций (Нарратив и т.д.) */}
-            <div className="mt-16 pt-8 border-t border-outline-variant flex flex-col items-center justify-center">
-              <h3 className="text-xl font-medium text-on-surface mb-2">Художественное описание</h3>
-              <p className="text-on-surface-variant text-sm mb-6 text-center max-w-lg">
-                Сгенерируйте живое и атмосферное книжное описание на основе заполненной анкеты, которое раскроет персонажа в действии.
-              </p>
+            <div className="mt-16 pt-8 border-t border-outline-variant flex justify-center">
               <Link
                 href={`/character/${characterId}/narrative`}
-                className="flex items-center gap-2 px-8 py-3 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors shadow-sm font-medium"
+                className="px-6 py-3 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-[#0d9488] hover:text-white hover:border-[#0d9488] transition-colors flex items-center gap-3 shadow-sm font-label-caps uppercase tracking-wider text-sm"
               >
-                <span className="material-symbols-outlined">menu_book</span>
                 <span>Перейти к описанию</span>
+                <span className="material-symbols-outlined">arrow_forward</span>
               </Link>
             </div>
           </div>

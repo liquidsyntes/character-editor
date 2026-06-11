@@ -46,7 +46,8 @@ export default async function CharacterEditorPage({
         const catName = el.category === 'location' ? 'Локация' :
                         el.category === 'faction' ? 'Фракция' :
                         el.category === 'history' ? 'История/Событие' :
-                        el.category === 'rule' ? 'Закон мира' : 'Лор';
+                        el.category === 'rule' ? 'Закон мира' :
+                        el.category === 'dictionary' ? 'Словарь' : 'Лор';
         return `[${catName}] ${el.title}: ${el.content}`;
       }).join('\n');
 

@@ -46,6 +46,7 @@ export default async function WorldElementPage({
       projectEmoji={worldElement.project.emoji || '📁'}
       siblingCharacters={siblingCharacters}
       siblingElements={siblingElements}
+      projectContext={`Описание: ${worldElement.project.description || 'Нет'}. Жанр: ${worldElement.project.genre || 'Не указан'}. Сеттинг: ${worldElement.project.setting || 'Не указан'}. Формат: ${worldElement.project.format || 'Не указан'}`}
     />
   );
 }

@@ -9,7 +9,8 @@ import { generateText, streamText } from 'ai';
 import { env } from '../env';
 import { getServerSideApiKeys } from '../settingsActions';
 
-export type ProviderName = 'deepseek' | 'xai' | 'openai' | 'anthropic' | 'gemini' | 'openrouter';
+import { AiProvider, PROVIDER_MODELS } from './models';
+export type { AiProvider };
 
 interface ProviderConfig {
   apiKey: string;
@@ -19,67 +20,42 @@ interface ProviderConfig {
   models: { id: string; label: string }[];
 }
 
-export const PROVIDER_CONFIGS: Record<ProviderName, ProviderConfig> = {
+export const PROVIDER_CONFIGS: Record<AiProvider, ProviderConfig> = {
   deepseek: {
     apiKey: env.DEEPSEEK_API_KEY || '',
     baseUrl: env.DEEPSEEK_BASE_URL,
     defaultModel: 'deepseek-chat',
-    models: [
-      { id: 'deepseek-chat', label: 'DeepSeek Chat' },
-      { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
-      { id: 'deepseek-reasoner', label: 'DeepSeek Reasoner (R1)' },
-      { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
-    ],
+    models: PROVIDER_MODELS.deepseek,
   },
   xai: {
     apiKey: env.XAI_API_KEY || '',
     baseUrl: 'https://api.x.ai',
     defaultModel: 'grok-4.3',
-    models: [
-      { id: 'grok-4.3', label: 'Grok 4.3' },
-      { id: 'grok-4.20-0309-non-reasoning', label: 'Grok 4.20 (non-reasoning)' },
-      { id: 'grok-4.20-0309-reasoning', label: 'Grok 4.20 (reasoning)' },
-    ],
+    models: PROVIDER_MODELS.xai,
   },
   openai: {
     apiKey: env.OPENAI_API_KEY || '',
     baseUrl: 'https://api.openai.com',
     defaultModel: 'gpt-4o',
-    models: [
-      { id: 'gpt-4o', label: 'GPT-4o' },
-      { id: 'gpt-4o-mini', label: 'GPT-4o Mini (быстрый)' },
-      { id: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    ],
+    models: PROVIDER_MODELS.openai,
   },
   anthropic: {
     apiKey: env.ANTHROPIC_API_KEY || '',
     baseUrl: 'https://api.anthropic.com',
     defaultModel: 'claude-3-5-sonnet-20241022',
-    models: [
-      { id: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-      { id: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-      { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
-    ],
+    models: PROVIDER_MODELS.anthropic,
   },
   gemini: {
     apiKey: env.GEMINI_API_KEY || '',
     baseUrl: 'https://generativelanguage.googleapis.com',
     defaultModel: 'gemini-1.5-pro',
-    models: [
-      { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-      { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    ],
+    models: PROVIDER_MODELS.gemini,
   },
   openrouter: {
     apiKey: env.OPENROUTER_API_KEY || '',
     baseUrl: 'https://openrouter.ai/api',
     defaultModel: 'anthropic/claude-3.5-sonnet',
-    models: [
-      { id: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet (OR)' },
-      { id: 'meta-llama/llama-3.1-70b-instruct', label: 'Llama 3.1 70B' },
-      { id: 'google/gemini-pro-1.5', label: 'Gemini 1.5 Pro (OR)' },
-      { id: 'microsoft/wizardlm-2-8x22b', label: 'WizardLM-2 8x22B' },
-    ],
+    models: PROVIDER_MODELS.openrouter,
   },
 };
 
@@ -89,7 +65,7 @@ export interface ChatMessage {
 }
 
 export interface CompletionOptions {
-  provider?: ProviderName;
+  provider?: AiProvider;
   model?: string;
   temperature?: number;
   maxTokens?: number;
@@ -103,11 +79,11 @@ interface CompletionResult {
   usage?: { promptTokens: number; completionTokens: number };
 }
 
-export function getProviderConfig(provider: ProviderName): ProviderConfig {
+export function getProviderConfig(provider: AiProvider): ProviderConfig {
   return PROVIDER_CONFIGS[provider];
 }
 
-export function checkProviderAvailable(provider: ProviderName): boolean {
+export function checkProviderAvailable(provider: AiProvider): boolean {
   return !!PROVIDER_CONFIGS[provider].apiKey;
 }
 
@@ -115,7 +91,7 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: CompletionOptions = {}
 ): Promise<CompletionResult> {
-  const provider: ProviderName = options.provider || 'deepseek';
+  const provider: AiProvider = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
   
@@ -206,7 +182,7 @@ export async function chatCompletionStream(
   messages: ChatMessage[],
   options: CompletionOptions = {}
 ): Promise<ReadableStream<Uint8Array>> {
-  const provider: ProviderName = options.provider || 'deepseek';
+  const provider: AiProvider = options.provider || 'deepseek';
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
   
@@ -376,7 +352,7 @@ export async function chatCompletionStream(
   });
 }
 
-export function getDefaultProvider(): ProviderName {
+export function getDefaultProvider(): AiProvider {
   if (env.OPENAI_API_KEY) return 'openai';
   if (env.XAI_API_KEY) return 'xai';
   if (env.ANTHROPIC_API_KEY) return 'anthropic';

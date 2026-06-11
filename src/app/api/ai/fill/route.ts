@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { chatCompletion, chatCompletionStream, ProviderName } from '@/lib/ai/provider';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { chatCompletion, chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { buildFillPrompt, buildScratchpadPrompt, buildQuickCommandPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { sseResponse } from '@/lib/ai/streamUtils';
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     ];
 
     const options = {
-      provider: provider as ProviderName,
+      provider: provider as AiProvider,
       model,
       temperature: typeof temperature === 'number' ? temperature : 0.85,
       maxTokens: 16384,
@@ -83,11 +83,11 @@ export async function POST(req: NextRequest) {
       const partial = tryPartialParse(result.content);
       if (partial && Object.keys(partial).length > 0) {
         filledData = partial;
-        parseWarning = `Ответ AI был не полностью валидным JSON, но удалось извлечь ${Object.keys(partial).length} полей.`;
+        parseWarning = `РћС‚РІРµС‚ AI Р±С‹Р» РЅРµ РїРѕР»РЅРѕСЃС‚СЊСЋ РІР°Р»РёРґРЅС‹Рј JSON, РЅРѕ СѓРґР°Р»РѕСЃСЊ РёР·РІР»РµС‡СЊ ${Object.keys(partial).length} РїРѕР»РµР№.`;
       } else {
         return NextResponse.json(
           {
-            error: `Не удалось разобрать ответ AI. Попробуйте ещё раз.`,
+            error: `РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°Р·РѕР±СЂР°С‚СЊ РѕС‚РІРµС‚ AI. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р·.`,
             rawPreview: result.content.slice(0, 500),
           },
           { status: 422 }

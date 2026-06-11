@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { updateWorldElement } from '@/lib/actions';
+import { useAiSettings } from '@/lib/ai/useAiSettings';
+import TweaksPanel from '@/components/TweaksPanel';
+import { WorldExportModal } from '@/components/WorldExportModal';
 
 interface WorldElementFormProps {
   elementId: string;
@@ -14,6 +17,7 @@ interface WorldElementFormProps {
   projectEmoji: string;
   siblingCharacters: { id: string; name: string | null; emoji: string | null; }[];
   siblingElements: { id: string; title: string; category: string; }[];
+  projectContext?: string;
 }
 
 const CATEGORY_MAP: Record<string, { label: string; emoji: string }> = {
@@ -21,6 +25,7 @@ const CATEGORY_MAP: Record<string, { label: string; emoji: string }> = {
   faction: { label: 'Фракция', emoji: '🛡️' },
   history: { label: 'История', emoji: '⏳' },
   rule: { label: 'Закон мира', emoji: '✨' },
+  dictionary: { label: 'Словарь', emoji: '📖' },
   other: { label: 'Прочее', emoji: '📝' },
 };
 
@@ -34,6 +39,7 @@ export default function WorldElementForm({
   projectEmoji,
   siblingCharacters,
   siblingElements,
+  projectContext,
 }: WorldElementFormProps) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -41,6 +47,13 @@ export default function WorldElementForm({
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const aiState = useAiSettings();
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const aiAbortRef = useRef<AbortController | null>(null);
 
   const catInfo = CATEGORY_MAP[category] || CATEGORY_MAP.other;
 
@@ -75,6 +88,86 @@ export default function WorldElementForm({
   const handleContentChange = (val: string) => {
     setContent(val);
     saveElement(title, val);
+  };
+
+  const handleAiGenerate = async (isExpand: boolean) => {
+    if (aiLoading) {
+      if (aiAbortRef.current) aiAbortRef.current.abort();
+      return;
+    }
+    if (!title.trim()) {
+      setAiError('Введите название элемента перед генерацией');
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError(null);
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+
+    try {
+      const res = await fetch('/api/ai/world', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          category,
+          currentContent: content,
+          projectContext,
+          isExpand,
+          provider: aiState.saved.provider,
+          model: aiState.saved.model,
+          temperature: aiState.saved.temperature,
+          apiKey: aiState.saved.apiKeys[aiState.saved.provider],
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        let err = `Ошибка: ${res.status}`;
+        try { const j = await res.json(); if (j.error) err = j.error; } catch {}
+        throw new Error(err);
+      }
+      if (!res.body) throw new Error('No stream');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let generatedText = isExpand ? content + '\n\n' : '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const line = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const p = JSON.parse(dataStr);
+              if (p.error) throw new Error(p.error);
+              if (p.text) {
+                generatedText += p.text;
+                setContent(generatedText);
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') console.error(e);
+            }
+          }
+          boundary = buffer.indexOf('\n\n');
+        }
+      }
+      saveElement(title, generatedText);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') setAiError('Генерация остановлена');
+      else if (err instanceof Error) setAiError(err.message || 'Ошибка генерации');
+      else setAiError('Ошибка генерации');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -156,17 +249,73 @@ export default function WorldElementForm({
               </span>
             )}
             {saveStatus === 'saved' && (
-              <span className="text-green-500 flex items-center gap-1">
+              <span className="text-green-500 flex items-center gap-1 hidden md:flex">
                 <span className="material-symbols-outlined text-[16px]">check_circle</span>
                 Сохранено
               </span>
             )}
+
+            <div className="flex items-center gap-2 border-l border-outline-variant pl-4 ml-2">
+              {aiLoading ? (
+                <button
+                  onClick={() => handleAiGenerate(false)}
+                  className="px-3 py-1.5 bg-error text-on-error rounded hover:bg-error/90 transition-colors font-medium flex items-center gap-1 text-xs uppercase tracking-wider"
+                >
+                  <span className="material-symbols-outlined text-[16px]">stop_circle</span>
+                  <span className="hidden md:inline">Остановить</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleAiGenerate(false)}
+                    disabled={!title.trim()}
+                    className="px-3 py-1.5 bg-primary text-on-primary rounded hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-label-caps uppercase tracking-wider text-[10px] md:text-xs"
+                    title="Сгенерировать с нуля"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                    <span className="hidden md:inline">Сгенерировать</span>
+                  </button>
+                  <button
+                    onClick={() => handleAiGenerate(true)}
+                    disabled={!title.trim() || !content.trim()}
+                    className="px-3 py-1.5 bg-surface border border-outline-variant rounded text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-label-caps uppercase tracking-wider text-[10px] md:text-xs"
+                    title="Расширить ИИ"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit_note</span>
+                    <span className="hidden md:inline">Расширить</span>
+                  </button>
+                </>
+              )}
+            </div>
+            
+            <button
+              onClick={() => setShowExport(true)}
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container ml-2"
+              title="Экспорт"
+            >
+              <span className="material-symbols-outlined text-[20px]">ios_share</span>
+            </button>
+            
+            <button
+              onClick={() => setShowTweaks(true)}
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container"
+              title="Настройки ИИ"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+            </button>
           </div>
         </header>
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-32">
-          <div className="max-w-[800px] mx-auto flex flex-col gap-6 pt-8">
+          <div className="max-w-[800px] mx-auto flex flex-col gap-6 pt-8 relative">
+            {aiError && (
+              <div className="bg-error/10 text-error p-4 rounded border border-error/20 flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined">error</span>
+                <span>{aiError}</span>
+              </div>
+            )}
+            
             <input
               type="text"
               value={title}
@@ -187,6 +336,17 @@ export default function WorldElementForm({
             />
           </div>
         </main>
+        
+        <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
+        
+        {showExport && (
+          <WorldExportModal
+            title={title}
+            content={content}
+            categoryLabel={catInfo.label}
+            onClose={() => setShowExport(false)}
+          />
+        )}
       </div>
     </div>
   );

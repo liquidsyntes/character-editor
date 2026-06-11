@@ -79,7 +79,7 @@ export default function DashboardClient({
 
   // World Elements states
   const [worldElements, setWorldElements] = useState<WorldElementItem[]>(initialWorld);
-  const [worldFilter, setWorldFilter] = useState<'all' | 'location' | 'faction' | 'history' | 'rule' | 'other'>('all');
+  const [worldFilter, setWorldFilter] = useState<'all' | 'location' | 'faction' | 'history' | 'rule' | 'dictionary' | 'other'>('all');
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
@@ -519,6 +519,7 @@ export default function DashboardClient({
                 ['faction', '🛡️ Фракции'],
                 ['history', '⏳ История'],
                 ['rule', '✨ Законы мира'],
+                ['dictionary', '📖 Словарь'],
                 ['other', '📝 Разное'],
               ] as const).map(([key, label]) => (
                 <button
@@ -551,6 +552,7 @@ export default function DashboardClient({
                     faction: 'Фракция',
                     history: 'История',
                     rule: 'Закон мира',
+                    dictionary: 'Словарь',
                     other: 'Прочее',
                   };
                   const categoryEmojis: Record<string, string> = {
@@ -558,6 +560,7 @@ export default function DashboardClient({
                     faction: '🛡️',
                     history: '⏳',
                     rule: '✨',
+                    dictionary: '📖',
                     other: '📝',
                   };
                   const categoryColors: Record<string, string> = {
@@ -565,6 +568,7 @@ export default function DashboardClient({
                     faction: '#10b981',
                     history: '#f59e0b',
                     rule: '#8b5cf6',
+                    dictionary: '#ec4899',
                     other: '#6b7280',
                   };
 

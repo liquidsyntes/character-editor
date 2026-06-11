@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion } from '@/lib/ai/provider';
 import { buildFixPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse } from '@/lib/ai/prompt-parser';
-import { ProviderName } from '@/lib/ai/provider';
+import { AiProvider } from '@/lib/ai/provider';
 import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
 
 export const maxDuration = 300;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     ];
 
     const options = {
-      provider: provider as ProviderName,
+      provider: provider as AiProvider,
       model,
       temperature,
       apiKey,
