@@ -35,7 +35,7 @@ src/
 │   ├── prisma.ts                 # Singleton PrismaClient
 │   ├── schema.ts                 # CHARACTER_SCHEMA: 24 секции, 145 полей
 │   ├── actions.ts                # Server Actions: createCharacter, updateCharacter, ...
-│   ├── rateLimit.ts              # In-memory rate limiter (Map)
+│   ├── rateLimit.ts              # DB-backed rate limiter (Prisma)
 │   └── ai/
 │       ├── provider.ts           # chatCompletion, chatCompletionStream, PROVIDER_CONFIGS
 │       ├── prompt.ts             # buildFillPrompt, buildAnalyzePrompt, buildFixPrompt, парсеры
@@ -111,7 +111,7 @@ model Character {
 }
 
 model AppSetting {
-  id, value   // заготовка, не используется в коде
+  id, value   // используется для системных промптов и настроек
 }
 ```
 
@@ -120,6 +120,6 @@ model AppSetting {
 
 ## Rate limiting
 
-In-memory Map по IP. Используется в `/api/ai/analyze` и `/api/ai/analyze/fix`.
+DB-backed (через Prisma) по IP. Используется в `/api/ai/analyze` и `/api/ai/analyze/fix`.
 Лимит: 10 запросов в минуту с одного IP.
-Сбрасывается при перезапуске сервера.
+Сохраняет состояние при перезапуске сервера, автоматически очищает старые записи.
