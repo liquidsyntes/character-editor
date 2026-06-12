@@ -59,8 +59,15 @@ export default function WorldElementForm({
 
   useEffect(() => {
     if (contentRef.current) {
+      const scrollContainer = contentRef.current.closest('main');
+      const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+      
       contentRef.current.style.height = 'auto';
       contentRef.current.style.height = `${contentRef.current.scrollHeight}px`;
+      
+      if (scrollContainer) {
+        scrollContainer.scrollTop = currentScroll;
+      }
     }
   }, [content]);
 

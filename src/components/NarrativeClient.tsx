@@ -47,8 +47,15 @@ export function NarrativeClient({
 
   React.useEffect(() => {
     if (textareaRef.current) {
+      const scrollContainer = textareaRef.current.closest('main') || textareaRef.current.closest('.overflow-y-auto');
+      const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+      
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      
+      if (scrollContainer) {
+        scrollContainer.scrollTop = currentScroll;
+      }
     }
   }, [narrative]);
 
