@@ -24,7 +24,9 @@ src/
 │   ├── character/[id]/page.tsx   # Редактор (SSR → CharacterForm)
 │   └── project/[id]/page.tsx     # Дашборд проекта (SSR → DashboardClient)
 ├── components/
-│   ├── CharacterForm.tsx         # Главная форма (крупнейший файл)
+│   ├── CharacterForm.tsx         # Главная форма (объединяет компоненты ниже)
+│   ├── CharacterSidebar.tsx      # Сайдбар с навигацией по секциям и переключением персонажей
+│   ├── QuickCommands.tsx         # Быстрые команды AI (Scratchpad, Motive, Conflict)
 │   ├── AnalyzePanel.tsx          # Правая панель результатов анализа
 │   ├── AnalyzeHistorySidebar.tsx # Левая панель истории
 │   ├── TweaksPanel.tsx           # Настройки AI (провайдер, модель, t°, ключи)
@@ -33,7 +35,7 @@ src/
 │   └── ProjectDashboard.tsx      # Дашборд проектов
 ├── lib/
 │   ├── prisma.ts                 # Singleton PrismaClient
-│   ├── schema.ts                 # CHARACTER_SCHEMA: 24 секции, 145 полей
+│   ├── schema.ts                 # CHARACTER_SCHEMA: 24 секции, >145 полей
 │   ├── actions.ts                # Server Actions: createCharacter, updateCharacter, ...
 │   ├── rateLimit.ts              # DB-backed rate limiter (Prisma)
 │   └── ai/
@@ -52,7 +54,7 @@ src/
 3. fetch POST /api/ai/fill
    └─ body: { existingData, sectionIds?, context?, provider, model, apiKey, stream }
 4. fill/route.ts → buildFillPrompt() → chatCompletion() / chatCompletionStream()
-5. provider.ts → Vercel AI SDK → DeepSeek/xAI/OpenAI API
+5. provider.ts → Vercel AI SDK → DeepSeek/xAI/OpenAI/Anthropic/Gemini/OpenRouter API
 6. parseFillResponse() — парсинг JSON из ответа
 7. Ответ клиенту: { data: {...}, filledCount: N } или SSE stream
 8. DiffModal — пользователь видит изменения (word-level diff)
@@ -77,12 +79,15 @@ src/
 Конфигурация: `PROVIDER_CONFIGS` — apiKey, baseUrl, defaultModel, models[].
 
 ```typescript
-type ProviderName = 'deepseek' | 'xai' | 'openai';
+type AiProvider = 'deepseek' | 'xai' | 'openai' | 'anthropic' | 'gemini' | 'openrouter';
 ```
 
-- **DeepSeek** — основной, ключ из `DEEPSEEK_API_KEY` в .env
+- **DeepSeek** — основной, поддерживает reasoning, ключ из `DEEPSEEK_API_KEY` в .env
 - **xAI** — через `@ai-sdk/xai`, требует `XAI_API_KEY`
 - **OpenAI** — через Vercel AI SDK, требует `OPENAI_API_KEY`
+- **Anthropic** — через `@ai-sdk/anthropic`, требует `ANTHROPIC_API_KEY`
+- **Gemini** — через `@ai-sdk/google`, требует `GEMINI_API_KEY`
+- **OpenRouter** — универсальный провайдер, совместим с OpenAI форматом, требует `OPENROUTER_API_KEY`
 
 Приоритет API-ключа: ключ из настроек (localStorage) > переменная окружения.
 
@@ -111,15 +116,19 @@ model Character {
 }
 
 model AppSetting {
-  id, value   // используется для системных промптов и настроек
+  id, value   // активно используется для хранения System Prompts и других настроек
+}
+
+model RateLimit {
+  id, ip, endpoint, hits, resetAt
 }
 ```
 
-145 полей персонажа хранятся как JSON-строка в поле `data`.
-2 миграции: init (Character) → add_projects (Project + projectId).
+Более 145 полей персонажа хранятся как JSON-строка в поле `data`. Таблица `AppSetting` является критичной для работы кастомных системных промптов (SystemPromptsEditor).
 
 ## Rate limiting
 
-DB-backed (через Prisma) по IP. Используется в `/api/ai/analyze` и `/api/ai/analyze/fix`.
+DB-backed (сохраняет стейт в `RateLimit` SQLite таблице) по IP. 
+Используется в `/api/ai/analyze` и `/api/ai/analyze/fix`.
 Лимит: 10 запросов в минуту с одного IP.
-Сохраняет состояние при перезапуске сервера, автоматически очищает старые записи.
+Сохраняет состояние при перезапуске сервера (решает проблему in-memory), автоматически очищает устаревшие записи.
