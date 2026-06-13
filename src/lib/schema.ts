@@ -6,13 +6,15 @@ export const CHARACTER_SCHEMA: SectionDef[] = [
     id: 'basic',
     icon: '👤',
     label: 'Базовые данные',
-    fieldCount: 11,
+    fieldCount: 13,
     fields: [
       { id: 'firstName', label: 'Имя', placeholder: 'Анна', type: 'text', span: 2 },
       { id: 'lastName', label: 'Фамилия', placeholder: 'Ковалёва', type: 'text', span: 2 },
       { id: 'age', label: 'Возраст', placeholder: '34', type: 'text', span: 2 },
       { id: 'height', label: 'Рост', placeholder: '178 см', type: 'text', span: 3 },
       { id: 'gender', label: 'Пол', placeholder: '', type: 'select', options: ['мужчина', 'женщина'], span: 3 },
+      { id: 'coreValue', label: 'Главное для персонажа (Суть)', placeholder: 'Например: превыше всего ценит дружбу; ради близких пойдет на все.', type: 'textarea' },
+      { id: 'vibeOrMood', label: 'Общее настроение / Вайб', placeholder: 'Например: веселый и легкий, часто шутит; или мрачный и вечно недовольный.', type: 'textarea' },
       { id: 'build', label: 'Телосложение', placeholder: 'Худощавое, жилистое', type: 'textarea' },
       { id: 'posture', label: 'Осанка', placeholder: 'Сутулится', type: 'textarea' },
       { id: 'hair', label: 'Цвет волос', placeholder: 'Тёмно-русые, до плеч, вечно в пучке', type: 'textarea' },
@@ -428,7 +430,7 @@ export function parseCharacterData(dataStr: string): Record<string, string> {
   try {
     const raw = JSON.parse(dataStr);
     return CharacterDataSchema.parse(raw);
-  } catch (e) {
+  } catch {
     return CharacterDataSchema.parse({});
   }
 }

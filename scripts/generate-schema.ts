@@ -6,7 +6,7 @@ const schema = {
   $schema: "http://json-schema.org/draft-07/schema#",
   title: "Character Card",
   type: "object",
-  properties: {} as Record<string, any>,
+  properties: {} as Record<string, unknown>,
   additionalProperties: false
 };
 

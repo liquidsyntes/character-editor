@@ -28,7 +28,7 @@ export default async function NarrativePage({ params }: { params: Promise<{ id: 
   let data: CharacterData = {};
   try {
     data = JSON.parse(character.data);
-  } catch (e) {
+  } catch {
     // skip error
   }
 

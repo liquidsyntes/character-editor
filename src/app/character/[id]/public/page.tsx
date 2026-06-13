@@ -29,14 +29,14 @@ export default async function PublicOpinionsPage({ params }: { params: Promise<{
   let data: CharacterData;
   try {
     data = JSON.parse(character.data);
-  } catch (e) {
+  } catch {
     data = {} as CharacterData;
   }
 
   let opinions: Record<string, string> = {};
   try {
     opinions = JSON.parse(character.publicOpinions || "{}");
-  } catch (e) {
+  } catch {
     //
   }
 

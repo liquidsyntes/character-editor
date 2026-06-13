@@ -35,7 +35,7 @@ export function NarrativeClient({
   const [isLore, setIsLore] = useState(initialIsLore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [usage, setUsage] = useState<any>(null);
+  const [usage, setUsage] = useState<{ prompt_tokens?: number, promptTokens?: number, completion_tokens?: number, completionTokens?: number } | null>(null);
   
   const [showPrompts, setShowPrompts] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
@@ -144,11 +144,12 @@ export function NarrativeClient({
       // Окончательное сохранение в БД
       await updateCharacterNarrative(characterId, generatedText);
 
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (error.name === 'AbortError') {
         setError('Генерация отменена');
       } else {
-        setError(err.message || 'Ошибка генерации');
+        setError(error.message || 'Ошибка генерации');
       }
     } finally {
       setLoading(false);

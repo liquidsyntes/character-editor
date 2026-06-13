@@ -8,10 +8,7 @@ import {
   archiveCharacter, 
   deleteCharacter, 
   duplicateCharacter, 
-  updateProject,
-  createWorldElement,
-  updateWorldElement,
-  deleteWorldElement
+  updateProject
 } from '@/lib/actions';
 import TweaksPanel from '@/components/TweaksPanel';
 import PromptsPanel from '@/components/PromptsPanel';

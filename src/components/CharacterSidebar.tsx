@@ -15,9 +15,9 @@ interface CharacterSidebarProps {
   openSections: Set<string>;
   setOpenSections: React.Dispatch<React.SetStateAction<Set<string>>>;
   aiLoading: boolean;
-  handleAiScratchpad: (text: string) => Promise<Record<string, any>>;
-  handleQuickCommand: (cmd: 'lifeEvent' | 'hiddenMotive' | 'innerConflict') => Promise<Record<string, any>>;
-  setPendingDiff: (diff: Record<string, any>) => void;
+  handleAiScratchpad: (text: string) => Promise<Record<string, string>>;
+  handleQuickCommand: (cmd: 'lifeEvent' | 'hiddenMotive' | 'innerConflict') => Promise<Record<string, string>>;
+  setPendingDiff: (diff: Record<string, string> | null) => void;
 }
 
 export function CharacterSidebar({
@@ -39,7 +39,8 @@ export function CharacterSidebar({
 
   useEffect(() => {
     const saved = localStorage.getItem(`scratchpad_${characterId}`) || '';
-    setScratchpadText(saved);
+    const timer = setTimeout(() => setScratchpadText(saved), 0);
+    return () => clearTimeout(timer);
   }, [characterId]);
 
   const handleScratchpadChange = (text: string) => {
