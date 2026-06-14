@@ -6,6 +6,7 @@ import { updateWorldElement } from '@/lib/actions';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
 import TweaksPanel from '@/components/TweaksPanel';
 import { WorldExportModal } from '@/components/WorldExportModal';
+import { WorldPromptsPanel } from '@/components/WorldPromptsPanel';
 
 interface WorldElementFormProps {
   elementId: string;
@@ -53,6 +54,7 @@ export default function WorldElementForm({
   const [aiError, setAiError] = useState<string | null>(null);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
   const aiAbortRef = useRef<AbortController | null>(null);
 
   const catInfo = CATEGORY_MAP[category] || CATEGORY_MAP.other;
@@ -306,6 +308,14 @@ export default function WorldElementForm({
             </button>
             
             <button
+              onClick={() => setShowPrompts(true)}
+              className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container"
+              title="Настройки промптов"
+            >
+              <span className="material-symbols-outlined text-[20px]">code_blocks</span>
+            </button>
+
+            <button
               onClick={() => setShowTweaks(true)}
               className="text-on-surface-variant hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container"
               title="Настройки ИИ"
@@ -367,6 +377,7 @@ export default function WorldElementForm({
         </main>
         
         <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
+        <WorldPromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
         
         {showExport && (
           <WorldExportModal
