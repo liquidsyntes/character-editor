@@ -239,12 +239,17 @@ export default function WorldElementForm({
         {/* Header */}
         <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
           <div className="flex items-center gap-4">
-            <Link href={`/project/${projectId}`} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant md:hidden">
+            <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
               <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
+              <span className="font-label-caps text-[12px] hidden sm:inline">На главную</span>
             </Link>
-            <span className="font-label-caps text-[12px] text-on-surface-variant/70 lowercase flex items-center gap-1">
+            <button className="md:hidden text-on-surface hover:text-primary transition-colors">
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+            <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
+            <span className="font-label-caps text-[12px] text-on-surface-variant/70 lowercase flex items-center gap-1 ml-4 border-l border-outline-variant pl-4">
               <span>{catInfo.emoji}</span>
-              <span>Редактор: {catInfo.label}</span>
+              <span>{catInfo.label}</span>
             </span>
           </div>
           
@@ -266,30 +271,27 @@ export default function WorldElementForm({
               {aiLoading ? (
                 <button
                   onClick={() => handleAiGenerate(false)}
-                  className="px-3 py-1.5 bg-error text-on-error rounded hover:bg-error/90 transition-colors font-medium flex items-center gap-1 text-xs uppercase tracking-wider"
+                  className="bg-error text-on-error px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2"
                 >
-                  <span className="material-symbols-outlined text-[16px]">stop_circle</span>
-                  <span className="hidden md:inline">Остановить</span>
+                  <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить
                 </button>
               ) : (
                 <>
                   <button
                     onClick={() => handleAiGenerate(false)}
                     disabled={!title.trim()}
-                    className="px-3 py-1.5 bg-primary text-on-primary rounded hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-label-caps uppercase tracking-wider text-[10px] md:text-xs"
+                    className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     title="Сгенерировать с нуля"
                   >
-                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-                    <span className="hidden md:inline">Сгенерировать</span>
+                    <span className="material-symbols-outlined text-[16px]">auto_awesome</span> Сгенерировать
                   </button>
                   <button
                     onClick={() => handleAiGenerate(true)}
                     disabled={!title.trim() || !content.trim()}
-                    className="px-3 py-1.5 bg-surface border border-outline-variant rounded text-on-surface hover:bg-surface-container transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-label-caps uppercase tracking-wider text-[10px] md:text-xs"
+                    className="bg-surface border border-outline-variant px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform text-on-surface flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     title="Расширить ИИ"
                   >
-                    <span className="material-symbols-outlined text-[16px]">edit_note</span>
-                    <span className="hidden md:inline">Расширить</span>
+                    <span className="material-symbols-outlined text-[16px]">edit_note</span> Расширить
                   </button>
                 </>
               )}
@@ -315,7 +317,7 @@ export default function WorldElementForm({
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-[50vh]">
-          <div className="max-w-[800px] mx-auto flex flex-col gap-6 pt-8 relative">
+          <div className="max-w-[1200px] mx-auto flex flex-col gap-6 pt-8 relative">
             {aiError && (
               <div className="bg-error/10 text-error p-4 rounded border border-error/20 flex items-center gap-2 mb-4">
                 <span className="material-symbols-outlined">error</span>
@@ -323,20 +325,40 @@ export default function WorldElementForm({
               </div>
             )}
             
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="font-headline-lg text-[32px] md:text-[40px] font-bold bg-transparent border-none outline-none text-on-surface placeholder:text-on-surface-variant/30 w-full"
-              placeholder="Название элемента (например: Великий Лес)"
-              spellCheck={false}
-            />
+            <section className="flex flex-col md:flex-row gap-gutter items-start mb-8">
+              <div className="shrink-0 flex flex-col gap-2">
+                <div className="group cursor-pointer">
+                  <div className="w-32 h-40 bg-surface-container-high border border-outline-variant flex flex-col items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors relative overflow-hidden">
+                    <span className="material-symbols-outlined text-[32px] mb-2 opacity-50">add_a_photo</span>
+                    <span className="font-label-caps text-[10px] uppercase tracking-widest opacity-50">Фото</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 w-full space-y-4 pt-2">
+                <div>
+                  <input 
+                    className="w-full text-display-lg font-display-lg text-primary bg-transparent input-underline placeholder:text-outline focus:ring-0 px-0 focus:outline-none uppercase" 
+                    placeholder="НАЗВАНИЕ ЭЛЕМЕНТА" 
+                    type="text" 
+                    value={title}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    spellCheck={false}
+                  />
+                  <div className="text-[12px] text-outline mt-1 font-label-caps">Название или заголовок элемента лора</div>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="bg-surface border border-outline-variant text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded uppercase">
+                    {catInfo.label}
+                  </span>
+                </div>
+              </div>
+            </section>
             
             <textarea
               ref={contentRef}
               value={content}
               onChange={(e) => handleContentChange(e.target.value)}
-              className="font-body-lg text-[16px] leading-relaxed bg-transparent border-none outline-none text-on-surface-variant placeholder:text-on-surface-variant/30 w-full resize-none min-h-[300px]"
+              className="w-full min-h-[600px] bg-surface-container-lowest border-[0.5px] border-outline-variant/30 rounded-xl p-8 shadow-sm text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 overflow-hidden text-on-surface"
               placeholder="Опишите детальнее этот элемент мира. Вы можете вставить сюда историю, особенности, правила или любую другую важную информацию, которую ИИ должен учитывать..."
               spellCheck={false}
               rows={1}
