@@ -22,5 +22,4 @@ services:
       # - DEEPSEEK_API_KEY=your_key
 
 volumes:
-  sqlite_data:
-    description: "Volume для хранения базы данных SQLite"
+  sqlite_data: {}

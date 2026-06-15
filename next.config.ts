@@ -15,7 +15,7 @@ const cspHeader = `
 `;
 
 const nextConfig: NextConfig = {
-  // output: 'standalone',
+      output: 'standalone',
   serverExternalPackages: ['@libsql/client', '@prisma/adapter-libsql', '@prisma/client', 'prisma'],
   async headers() {
     return [
