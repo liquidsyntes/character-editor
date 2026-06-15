@@ -336,3 +336,15 @@ export async function updateCharacterPublicOpinions(characterId: string, publicO
   revalidatePath('/');
   revalidatePath(`/character/${characterId}/public`);
 }
+
+export async function updateCharacterVoice(characterId: string, voice: string) {
+  const userId = await getUserId();
+  const result = await prisma.character.updateMany({
+    where: { id: characterId, userId },
+    data: { voice },
+  });
+  
+  if (result.count === 0) throw new Error('Персонаж не найден или нет прав на изменение');
+  revalidatePath('/');
+  revalidatePath(`/character/${characterId}/voice`);
+}

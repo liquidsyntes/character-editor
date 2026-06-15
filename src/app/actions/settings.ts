@@ -17,3 +17,14 @@ export async function setAppSetting(key: string, value: string) {
   revalidatePath('/');
   return { success: true };
 }
+
+export async function getDefaultVoicePrompt() {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
+    return fs.readFileSync(promptPath, 'utf8');
+  } catch (err) {
+    return 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен...';
+  }
+}

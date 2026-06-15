@@ -30,14 +30,26 @@ export function NarrativeHeader({
   return (
     <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
       <div className="flex items-center gap-4">
-        <Link href={projectId ? `/project/${projectId}` : '/'} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant" title={projectId ? 'Вернуться к проекту' : 'На главную'}>
-          <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
-          <span className="font-label-caps text-[12px] hidden sm:inline">На главную</span>
-        </Link>
-        <button className="md:hidden text-on-surface hover:text-primary transition-colors">
-          <span className="material-symbols-outlined">menu</span>
-        </button>
-        <div className="font-label-caps text-[14px] font-medium text-on-surface-variant/70 uppercase tracking-widest">{projectName || 'Без проекта'}</div>
+        {projectId ? (
+          <Link href={`/project/${projectId}`} className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant">
+            <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
+            <span className="font-label-caps text-[12px]">{projectName || 'Проект'}</span>
+          </Link>
+        ) : (
+          <Link href="/" className="text-on-surface-variant hover:text-primary transition-colors flex items-center pr-4 border-r border-outline-variant">
+            <span className="material-symbols-outlined mr-1 text-[18px]">arrow_back</span>
+            <span className="font-label-caps text-[12px]">Персонажи</span>
+          </Link>
+        )}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          <Link href={`/character/${characterId}`} className="text-on-surface-variant hover:text-on-surface transition-colors font-label-caps text-[12px]">Анкета</Link>
+          <span className="text-on-surface-variant/50 material-symbols-outlined text-[14px]">chevron_right</span>
+          <span className="text-on-surface font-label-caps text-[12px] font-bold">Описание</span>
+          <span className="text-on-surface-variant/50 material-symbols-outlined text-[14px]">chevron_right</span>
+          <Link href={`/character/${characterId}/public`} className="text-on-surface-variant hover:text-on-surface transition-colors font-label-caps text-[12px]">Мнения</Link>
+          <span className="text-on-surface-variant/50 material-symbols-outlined text-[14px]">chevron_right</span>
+          <Link href={`/character/${characterId}/voice`} className="text-on-surface-variant hover:text-on-surface transition-colors font-label-caps text-[12px]">Голос персонажа</Link>
+        </div>
       </div>
       
       <div className="flex items-center gap-4">

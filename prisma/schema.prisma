@@ -48,6 +48,7 @@ model Character {
   isLore     Boolean  @default(false)
   narrative  String   @default("")
   publicOpinions String @default("{}")
+  voice      String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   project    Project? @relation(fields: [projectId], references: [id])
