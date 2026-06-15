@@ -6,6 +6,7 @@ import Link from 'next/link';
 export interface SiblingCharacter {
   id: string;
   name: string;
+  nickname?: string;
   emoji: string;
   color: string;
   summary?: string;
@@ -48,7 +49,8 @@ export default function CharacterListPanel({
         <div className="charlist-items">
           {characters.map((char, i) => {
             const isCurrent = char.id === currentId;
-            const displayName = char.name || 'Безымянный';
+            let displayName = char.name || 'Безымянный';
+            if (char.nickname) displayName += ` «${char.nickname}»`;
             return (
               <Link
                 key={char.id}

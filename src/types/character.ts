@@ -23,6 +23,7 @@ export interface CharacterData {
 export interface CharacterRecord {
   id: string;
   name: string;
+  nickname: string;
   data: CharacterData;
   emoji: string;
   color: string;

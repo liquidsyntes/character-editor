@@ -38,6 +38,7 @@ model WorldElement {
 model Character {
   id         String   @id @default(cuid())
   name       String   @default("")
+  nickname   String   @default("")
   data       String   @default("{}")
   emoji      String   @default("👤")
   color      String   @default("#d4a853")

@@ -175,7 +175,11 @@ export default function CharacterForm({
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
   const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
-  const charName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Без имени';
+  let charName = [data.firstName, data.lastName].filter(Boolean).join(' ');
+  if (data.nickname) {
+    charName = charName ? `${charName} «${data.nickname}»` : data.nickname;
+  }
+  charName = charName || 'Без имени';
 
   return (
     <div className="flex w-full h-screen overflow-hidden bg-background">

@@ -27,6 +27,7 @@ export interface WorldElementItem {
 interface CharacterItem {
   id: string;
   name: string;
+  nickname?: string;
   data: string;
   emoji: string;
   color: string;
@@ -456,7 +457,7 @@ export default function DashboardClient({
                           </div>
                           
                           <div className="font-headline-sm font-bold text-on-surface group-hover:text-primary transition-colors truncate">
-                            {char.name || 'Безымянный персонаж'}
+                            {char.name ? (char.nickname ? `${char.name} «${char.nickname}»` : char.name) : (char.nickname || 'Безымянный персонаж')}
                           </div>
                           <div className="font-body-md text-on-surface-variant mt-1 line-clamp-2 text-sm flex-1">
                             {char.summary || 'Нет описания'}
