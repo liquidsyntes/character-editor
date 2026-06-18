@@ -107,6 +107,34 @@ export async function createCharacter(projectId?: string | null) {
   redirect(`/character/${character.id}`);
 }
 
+export async function importCharacter(projectId: string | null | undefined, formData: CharacterData) {
+  const userId = await getUserId();
+  
+  if (projectId) {
+    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    if (project?.userId !== userId) throw new Error('Unauthorized');
+  }
+
+  const firstName = formData.firstName || '';
+  const lastName = formData.lastName || '';
+  const nickname = formData.nickname || '';
+  const name = [firstName, lastName].filter(Boolean).join(' ');
+  const summary = formData.oneLiner || '';
+
+  const character = await prisma.character.create({
+    data: {
+      projectId: projectId || null,
+      userId,
+      name,
+      nickname,
+      summary,
+      data: JSON.stringify(formData),
+      isDraft: false,
+    },
+  });
+  redirect(`/character/${character.id}`);
+}
+
 export async function updateCharacter(id: string, formData: CharacterData) {
   const userId = await getUserId();
 

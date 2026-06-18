@@ -138,9 +138,9 @@ export function CharacterFormHeader({
           </button>
         )}
         <div className="h-6 w-px bg-outline-variant mx-2"></div>
-        <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт JSON">
+        <label className="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center" title="Импорт из файла (JSON, MD, TXT)">
           <span className="material-symbols-outlined">upload_file</span>
-          <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+          <input type="file" accept=".json,.md,.txt" className="hidden" onChange={handleImport} />
         </label>
         <button onClick={() => setShowExport(true)} className="text-on-surface-variant hover:text-primary transition-colors" title="Экспорт">
           <span className="material-symbols-outlined">share</span>

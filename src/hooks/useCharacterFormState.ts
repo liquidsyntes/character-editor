@@ -67,18 +67,11 @@ export function useCharacterFormState(characterId: string, initialData: Characte
     reader.onload = async (evt) => {
       try {
         const text = evt.target?.result as string;
-        const importedData = JSON.parse(text);
-        if (typeof importedData !== 'object' || !importedData) throw new Error("Неверный формат JSON");
-        
-        const newRecord: Record<string, string> = {};
-        for (const [k, v] of Object.entries(importedData)) {
-          if (typeof v === 'string' && v.trim() && k !== 'characterId' && k !== 'projectId') {
-            newRecord[k] = v.trim();
-          }
-        }
+        const { parseImportedFile } = await import('@/lib/import');
+        const importedData = parseImportedFile(text);
         
         setData(prev => {
-          const next = { ...prev, ...newRecord };
+          const next = { ...prev, ...importedData } as CharacterData;
           doSave(next);
           return next;
         });
