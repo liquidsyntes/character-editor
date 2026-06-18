@@ -89,7 +89,7 @@ export function useAiFill({
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let usageData: any = null;
+      let usageData = null as { promptTokens: number; completionTokens: number } | null;
       
       await fetchSseStream(res, (dataStr) => {
         try {
@@ -125,7 +125,8 @@ export function useAiFill({
       }
 
       const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
+      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
       setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
       
       setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
@@ -174,7 +175,7 @@ export function useAiFill({
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let usageData: any = null;
+      let usageData = null as { promptTokens: number; completionTokens: number } | null;
       
       await fetchSseStream(res, (dataStr) => {
         try {
@@ -210,7 +211,8 @@ export function useAiFill({
       }
       
       const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
+      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
       setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
       
       setOpenSections(prev => new Set(prev).add(sectionId));
@@ -257,7 +259,7 @@ export function useAiFill({
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let usageData: any = null;
+      let usageData = null as { promptTokens: number; completionTokens: number } | null;
       
       await fetchSseStream(res, (dataStr) => {
         try {
@@ -293,7 +295,8 @@ export function useAiFill({
       }
       
       const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
+      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
       setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
       
       setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);

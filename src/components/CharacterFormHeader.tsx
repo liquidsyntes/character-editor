@@ -25,6 +25,7 @@ interface CharacterFormHeaderProps {
   setShowPrompts: (show: boolean) => void;
   showTweaks: boolean;
   setShowTweaks: (show: boolean) => void;
+  saveStatus: 'idle' | 'saving' | 'saved';
 }
 
 export function CharacterFormHeader({
@@ -50,6 +51,7 @@ export function CharacterFormHeader({
   setShowPrompts,
   showTweaks,
   setShowTweaks,
+  saveStatus,
 }: CharacterFormHeaderProps) {
   return (
     <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
@@ -103,6 +105,21 @@ export function CharacterFormHeader({
       <nav className="hidden md:flex gap-8">
       </nav>
       <div className="flex items-center gap-4">
+        {saveStatus !== 'idle' && (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full border border-outline-variant text-[12px] font-medium mr-2 animate-in fade-in duration-300 shrink-0">
+            {saveStatus === 'saving' ? (
+              <>
+                <span className="material-symbols-outlined text-[14px] animate-spin text-primary">sync</span>
+                <span className="text-on-surface-variant hidden xl:inline">Сохранение...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
+                <span className="text-green-500 hidden xl:inline">Сохранено</span>
+              </>
+            )}
+          </div>
+        )}
         {aiUndoStackLength > 0 && (
           <button onClick={handleUndo} className="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 bg-surface-container px-3 py-1.5 rounded-full text-sm" title="Отменить изменения ИИ">
             <span className="material-symbols-outlined text-[16px]">undo</span> Отменить

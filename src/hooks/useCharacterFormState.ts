@@ -7,11 +7,13 @@ export function useCharacterFormState(characterId: string, initialData: Characte
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [, startTransition] = useTransition();
   const [aiUndoStack, setAiUndoStack] = useState<CharacterData[]>([]);
+  const [aiRedoStack, setAiRedoStack] = useState<CharacterData[]>([]);
   const [fixedFields, setFixedFields] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pushUndo = useCallback((stateToSave: CharacterData) => {
     setAiUndoStack(prev => [...prev, stateToSave].slice(-10)); // Keep last 10 states
+    setAiRedoStack([]); // Clear redo stack on new action
   }, []);
 
   const doSave = useCallback((newData: CharacterData) => {
@@ -31,9 +33,23 @@ export function useCharacterFormState(characterId: string, initialData: Characte
     if (aiUndoStack.length === 0) return;
     const previous = aiUndoStack[aiUndoStack.length - 1];
     setAiUndoStack(prev => prev.slice(0, -1));
-    setData(previous);
+    setData(current => {
+      setAiRedoStack(prev => [...prev, current]);
+      return previous;
+    });
     doSave(previous);
   }, [aiUndoStack, doSave]);
+
+  const handleRedo = useCallback(() => {
+    if (aiRedoStack.length === 0) return;
+    const nextState = aiRedoStack[aiRedoStack.length - 1];
+    setAiRedoStack(prev => prev.slice(0, -1));
+    setData(current => {
+      setAiUndoStack(prev => [...prev, current]);
+      return nextState;
+    });
+    doSave(nextState);
+  }, [aiRedoStack, doSave]);
 
   const handleChange = useCallback((fieldId: string, value: string) => {
     setData(prev => {
@@ -81,8 +97,10 @@ export function useCharacterFormState(characterId: string, initialData: Characte
     saveStatus,
     doSave,
     aiUndoStack,
+    aiRedoStack,
     pushUndo,
     handleUndo,
+    handleRedo,
     handleChange,
     handleImport,
     fixedFields,

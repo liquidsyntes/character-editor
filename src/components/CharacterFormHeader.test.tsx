@@ -27,6 +27,7 @@ describe('CharacterFormHeader', () => {
     setShowPrompts: vi.fn(),
     showTweaks: false,
     setShowTweaks: vi.fn(),
+    saveStatus: 'idle' as const,
   };
 
   beforeEach(() => {
