@@ -9,6 +9,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
+let cachedDialogPrompt: string | null = null;
+
 async function generateHandler(req: NextRequest) {
   try {
     const body = await req.json();
@@ -31,12 +33,17 @@ async function generateHandler(req: NextRequest) {
     if (savedPrompt) {
       systemPrompt = savedPrompt;
     } else {
-      try {
-        const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
-        systemPrompt = fs.readFileSync(promptPath, 'utf-8');
-      } catch (err) {
-        console.warn('Could not read promt_dialog.md, using minimal fallback', err);
-        systemPrompt = 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен, показывающих манеру общения персонажа в разных ситуациях (спокойствие, раздражение, ложь и т.д.).';
+      if (cachedDialogPrompt) {
+        systemPrompt = cachedDialogPrompt;
+      } else {
+        try {
+          const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
+          cachedDialogPrompt = fs.readFileSync(promptPath, 'utf-8');
+          systemPrompt = cachedDialogPrompt;
+        } catch (err) {
+          console.warn('Could not read promt_dialog.md, using minimal fallback', err);
+          systemPrompt = 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен, показывающих манеру общения персонажа в разных ситуациях (спокойствие, раздражение, ложь и т.д.).';
+        }
       }
     }
 
