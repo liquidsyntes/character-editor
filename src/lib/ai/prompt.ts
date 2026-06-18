@@ -29,12 +29,33 @@ interface FillRequest {
 
 export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT' | 'SCRATCHPAD_PROMPT' | 'USER_SCRATCHPAD_PROMPT' | 'QUICK_COMMAND_PROMPT' | 'USER_QUICK_COMMAND_PROMPT';
 
+type CacheEntry = { value: string | null; expiresAt: number };
+const promptCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60000;
+
+export function clearPromptCache(key?: PromptKey | string) {
+  if (key) {
+    promptCache.delete(key);
+  } else {
+    promptCache.clear();
+  }
+}
+
 export async function getPromptTemplate(key: PromptKey): Promise<string> {
-  try {
-    const setting = await prisma.appSetting.findUnique({ where: { id: key } });
-    if (setting?.value) return setting.value;
-  } catch (err) {
-    console.error('Error fetching prompt from DB', err);
+  const now = Date.now();
+  const cached = promptCache.get(key);
+  
+  if (cached && cached.expiresAt > now) {
+    if (cached.value) return cached.value;
+    // if cached.value is null, it means there is no custom setting in DB, fall through to default switch
+  } else {
+    try {
+      const setting = await prisma.appSetting.findUnique({ where: { id: key } });
+      promptCache.set(key, { value: setting?.value || null, expiresAt: now + CACHE_TTL_MS });
+      if (setting?.value) return setting.value;
+    } catch (err) {
+      console.error('Error fetching prompt from DB', err);
+    }
   }
   
   switch(key) {
