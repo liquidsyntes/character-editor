@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CharacterData } from '@/types/character';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
 import { updateCharacterVoice, updateCharacterMeta } from '@/lib/actions';
+import { useStreamingTextGenerator } from '@/hooks/useStreamingTextGenerator';
 import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { VoiceHeader } from '@/components/VoiceHeader';
 import { CharacterFormSummary } from '@/components/CharacterFormSummary';
@@ -35,17 +36,20 @@ export function VoiceClient({
 }: VoiceClientProps) {
   const [voice, setVoice] = useState(initialVoice);
   const [isLore, setIsLore] = useState(initialIsLore);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [usage, setUsage] = useState<{ prompt_tokens?: number, promptTokens?: number, completion_tokens?: number, completionTokens?: number } | null>(null);
-  
   const [showPrompts, setShowPrompts] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showExport, setShowExport] = useState(false);
   
   const aiSettings = useAiSettings();
-  const abortRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { generate, stop, loading, error, usage } = useStreamingTextGenerator({
+    endpoint: '/api/ai/voice',
+    onChunk: setVoice,
+    onFinish: async (text) => {
+      await updateCharacterVoice(characterId, text);
+    }
+  });
 
   React.useEffect(() => {
     if (textareaRef.current) {
@@ -70,92 +74,20 @@ export function VoiceClient({
     await updateCharacterMeta(characterId, { isLore: val });
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (loading) {
-      if (abortRef.current) abortRef.current.abort();
+      stop();
       return;
     }
-
-    setLoading(true);
-    setError(null);
     setVoice('');
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const res = await fetch('/api/ai/voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: initialData,
-          provider: aiSettings.saved.provider,
-          model: aiSettings.saved.model,
-          temperature: aiSettings.saved.temperature || 0.8,
-          apiKey: aiSettings.saved.apiKeys[aiSettings.saved.provider],
-          projectContext
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
-        throw new Error(errMsg);
-      }
-      if (!res.body) throw new Error('No body in response');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let generatedText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        let boundary = buffer.indexOf('\n\n');
-        
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                generatedText += parsedChunk.text;
-                setVoice(generatedText);
-              }
-              if (parsedChunk.usage) {
-                setUsage(parsedChunk.usage);
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
-      }
-
-      await updateCharacterVoice(characterId, generatedText);
-
-    } catch (err: unknown) {
-      const error = err as Error;
-      if (error.name === 'AbortError') {
-        setError('Генерация отменена');
-      } else {
-        setError(error.message || 'Ошибка генерации');
-      }
-    } finally {
-      setLoading(false);
-    }
+    generate({
+      existingData: initialData,
+      provider: aiSettings.saved.provider,
+      model: aiSettings.saved.model,
+      temperature: aiSettings.saved.temperature || 0.8,
+      apiKey: aiSettings.saved.apiKeys[aiSettings.saved.provider],
+      projectContext
+    });
   };
 
   return (
