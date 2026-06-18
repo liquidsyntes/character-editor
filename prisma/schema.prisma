@@ -38,6 +38,7 @@ model WorldElement {
 model Character {
   id         String   @id @default(cuid())
   name       String   @default("")
+  nickname   String   @default("")
   data       String   @default("{}")
   emoji      String   @default("👤")
   color      String   @default("#d4a853")
@@ -47,6 +48,7 @@ model Character {
   isLore     Boolean  @default(false)
   narrative  String   @default("")
   publicOpinions String @default("{}")
+  voice      String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   project    Project? @relation(fields: [projectId], references: [id])

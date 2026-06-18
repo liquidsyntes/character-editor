@@ -112,6 +112,7 @@ export async function updateCharacter(id: string, formData: CharacterData) {
 
   const firstName = formData.firstName || '';
   const lastName = formData.lastName || '';
+  const nickname = formData.nickname || '';
   const name = [firstName, lastName].filter(Boolean).join(' ');
   const summary = formData.oneLiner || '';
 
@@ -119,6 +120,7 @@ export async function updateCharacter(id: string, formData: CharacterData) {
     where: { id, userId },
     data: {
       name,
+      nickname,
       summary,
       data: JSON.stringify(formData),
       isDraft: false,
@@ -188,6 +190,7 @@ export async function duplicateCharacter(id: string) {
   const copy = await prisma.character.create({
     data: {
       name: original.name ? `${original.name} (копия)` : '',
+      nickname: original.nickname,
       data: original.data,
       emoji: original.emoji,
       color: original.color,
@@ -242,6 +245,7 @@ export async function getSiblingCharacters(projectId?: string | null) {
     select: {
       id: true,
       name: true,
+      nickname: true,
       emoji: true,
       color: true,
       summary: true,
@@ -331,4 +335,16 @@ export async function updateCharacterPublicOpinions(characterId: string, publicO
   if (result.count === 0) throw new Error('Персонаж не найден или нет прав на изменение');
   revalidatePath('/');
   revalidatePath(`/character/${characterId}/public`);
+}
+
+export async function updateCharacterVoice(characterId: string, voice: string) {
+  const userId = await getUserId();
+  const result = await prisma.character.updateMany({
+    where: { id: characterId, userId },
+    data: { voice },
+  });
+  
+  if (result.count === 0) throw new Error('Персонаж не найден или нет прав на изменение');
+  revalidatePath('/');
+  revalidatePath(`/character/${characterId}/voice`);
 }

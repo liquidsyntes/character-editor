@@ -291,6 +291,11 @@ export function PublicClient({
             <span className="text-sm">Художественное описание</span>
           </Link>
 
+          <Link href={`/character/${characterId}/voice`} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all hover:bg-white/5 text-white/70 hover:text-white">
+            <span className="material-symbols-outlined text-[16px]">record_voice_over</span>
+            <span className="text-sm">Голос персонажа</span>
+          </Link>
+
           <Link href={projectId ? `/project/${projectId}` : "/"} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all hover:bg-white/5 text-white/70 hover:text-white mt-auto">
             <span className="material-symbols-outlined text-[16px]">dashboard</span>
             <span className="text-sm">Дашборд проекта</span>
@@ -360,6 +365,18 @@ export function PublicClient({
                   <p className="text-sm opacity-70 mt-2 text-center max-w-md">
                     Нажмите кнопку в шапке окна «Сформировать мнения», чтобы ИИ составил мини-монологи от лиц из окружения персонажа.
                   </p>
+                </div>
+              )}
+
+              {hasOpinions && (
+                <div className="flex justify-center mt-12 border-t border-outline-variant pt-8">
+                  <Link
+                    href={`/character/${characterId}/voice`}
+                    className="px-6 py-3 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-[#0d9488] hover:text-white hover:border-[#0d9488] transition-colors flex items-center gap-3 shadow-sm font-label-caps uppercase tracking-wider text-sm"
+                  >
+                    <span>Голос персонажа</span>
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </Link>
                 </div>
               )}
             </div>

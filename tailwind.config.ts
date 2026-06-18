@@ -87,7 +87,7 @@ const config: Config = {
         "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
         "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "500" }],
         "headline-sm": ["24px", { lineHeight: "32px", fontWeight: "600" }],
-        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "display-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }],
         "mono-data": ["14px", { lineHeight: "20px", fontWeight: "400" }],
         "headline-md": ["32px", { lineHeight: "40px", fontWeight: "600" }],
       },
