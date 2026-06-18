@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { CharacterData } from '@/types/character';
 import { CHARACTER_SCHEMA, getTotalFieldCount } from '@/lib/schema';
 import { AiSettings } from '@/lib/ai/useAiSettings';
+import { fetchSseStream } from '@/lib/ai/prompt-parser';
 
 export interface AiProgressData {
   isVisible: boolean;
@@ -85,52 +86,32 @@ export function useAiFill({
         try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
         throw new Error(errMsg);
       }
-      if (!res.body) throw new Error('No body');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let buffer = '';
-      let usageData: { promptTokens: number; completionTokens: number } | null = null;
+      let usageData: any = null;
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.usage) usageData = parsedChunk.usage;
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                const partial = parsePartialJson(rawJson);
-                finalParsed = partial;
-                setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
-                setData(prev => {
-                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-                  return { ...prev, ...partial };
-                });
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.usage) usageData = parsedChunk.usage;
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            const partial = parsePartialJson(rawJson);
+            finalParsed = partial;
+            setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
+            setData(prev => {
+              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+              return { ...prev, ...partial };
+            });
           }
-          boundary = buffer.indexOf('\n\n');
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+             console.error(e);
+          }
         }
-      }
+      });
 
       setData(prev => {
          if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -190,48 +171,32 @@ export function useAiFill({
       });
       clearTimeout(timeoutId);
       if (!res.ok) throw new Error('Ошибка сервера');
-      if (!res.body) throw new Error('No body');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let buffer = '';
-      let usageData: { promptTokens: number; completionTokens: number } | null = null;
+      let usageData: any = null;
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.usage) usageData = parsedChunk.usage;
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                const partial = parsePartialJson(rawJson);
-                finalParsed = partial;
-                setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
-                setData(prev => {
-                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-                  return { ...prev, ...partial };
-                });
-              }
-            } catch {}
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.usage) usageData = parsedChunk.usage;
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            const partial = parsePartialJson(rawJson);
+            finalParsed = partial;
+            setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
+            setData(prev => {
+              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+              return { ...prev, ...partial };
+            });
           }
-          boundary = buffer.indexOf('\n\n');
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+             console.error(e);
+          }
         }
-      }
+      });
       
       setData(prev => {
          if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -289,48 +254,32 @@ export function useAiFill({
       });
       clearTimeout(timeoutId);
       if (!res.ok) throw new Error('Ошибка сервера');
-      if (!res.body) throw new Error('No body');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
-      let buffer = '';
-      let usageData: { promptTokens: number; completionTokens: number } | null = null;
+      let usageData: any = null;
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.usage) usageData = parsedChunk.usage;
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                const partial = parsePartialJson(rawJson);
-                finalParsed = partial;
-                setAiProgress(prev => prev ? { ...prev, current: 1, label: 'Генерация...' } : prev);
-                setData(prev => {
-                  if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-                  return { ...prev, ...partial };
-                });
-              }
-            } catch {}
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.usage) usageData = parsedChunk.usage;
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            const partial = parsePartialJson(rawJson);
+            finalParsed = partial;
+            setAiProgress(prev => prev ? { ...prev, current: 1, label: 'Генерация...' } : prev);
+            setData(prev => {
+              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+              return { ...prev, ...partial };
+            });
           }
-          boundary = buffer.indexOf('\n\n');
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+             console.error(e);
+          }
         }
-      }
+      });
       
       setData(prev => {
          if (saveTimer.current) clearTimeout(saveTimer.current);
