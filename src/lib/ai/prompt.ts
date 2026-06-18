@@ -58,7 +58,57 @@ export async function buildFillPrompt(
 ): Promise<{ system: string; user: string }> {
   const { existingData, sectionIds, fieldIds, context } = request;
 
-  // Always show the whole schema so the AI has full context of the character
+  // 1. Determine which fields need to be filled and which sections they belong to
+  const fieldsToFill: string[] = [];
+  const targetSections = new Set<string>();
+
+  for (const section of CHARACTER_SCHEMA) {
+    let sectionHasFieldsToFill = false;
+    if (sectionIds && !sectionIds.includes(section.id) && !fieldIds) continue;
+    
+    for (const field of section.fields) {
+      if (fieldIds) {
+        if (fieldIds.includes(field.id)) {
+          fieldsToFill.push(field.id);
+          sectionHasFieldsToFill = true;
+        }
+      } else {
+        if (!existingData[field.id] || !existingData[field.id].trim()) {
+          fieldsToFill.push(field.id);
+          sectionHasFieldsToFill = true;
+        }
+      }
+    }
+    if (sectionHasFieldsToFill) {
+      targetSections.add(section.id);
+    }
+  }
+
+  // 2. Build COMPRESSED_CONTEXT: Only filled string fields, no empty values, as pure JSON
+  const compressedContext: Record<string, string> = {};
+  for (const [key, value] of Object.entries(existingData)) {
+    if (typeof value === 'string' && value.trim()) {
+      compressedContext[key] = value.trim();
+    }
+  }
+  const compressedContextStr = JSON.stringify(compressedContext, null, 2);
+
+  // 3. Build TARGET_SCHEMA: Only include sections that contain fields we need to fill
+  const targetSchemaStr = CHARACTER_SCHEMA
+    .filter(section => targetSections.has(section.id))
+    .map((section) => {
+      const fields = section.fields
+        .map((f) => {
+          return `  "${f.id}": "" // ${f.label}${
+            f.placeholder ? ` (пример: ${f.placeholder})` : ''
+          }`;
+        })
+        .join('\n');
+      return `## ${section.icon} ${section.label}\n${fields}`;
+    })
+    .join('\n\n');
+
+  // Legacy fallback: Full schema with inline existing data (for old DB templates)
   const schemaDesc = CHARACTER_SCHEMA
     .map((section) => {
       const fields = section.fields
@@ -75,22 +125,6 @@ export async function buildFillPrompt(
     })
     .join('\n\n');
 
-  const fieldsToFill: string[] = [];
-  for (const section of CHARACTER_SCHEMA) {
-    if (sectionIds && !sectionIds.includes(section.id) && !fieldIds) continue;
-    for (const field of section.fields) {
-      if (fieldIds) {
-        if (fieldIds.includes(field.id)) {
-          fieldsToFill.push(field.id);
-        }
-      } else {
-        if (!existingData[field.id] || !existingData[field.id].trim()) {
-          fieldsToFill.push(field.id);
-        }
-      }
-    }
-  }
-
   const gender = existingData.gender?.trim();
   const genderInstruction = gender 
     ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
@@ -99,12 +133,20 @@ export async function buildFillPrompt(
   const contextInstruction = context ? `Дополнительный контекст от автора: ${context}\n` : '';
 
   const userTemplate = await getPromptTemplate('USER_FILL_PROMPT');
-  const userPrompt = userTemplate
+  
+  let userPrompt = userTemplate
     .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
     .replace('{{CONTEXT}}', contextInstruction)
-    .replace('{{SCHEMA_DESC}}', schemaDesc)
     .replace('{{FIELDS_TO_FILL_COUNT}}', String(fieldsToFill.length))
     .replace('{{FIELDS_TO_FILL}}', fieldsToFill.join(', '));
+
+  if (userPrompt.includes('{{SCHEMA_DESC}}')) {
+    userPrompt = userPrompt.replace('{{SCHEMA_DESC}}', schemaDesc);
+  } else {
+    userPrompt = userPrompt
+      .replace('{{COMPRESSED_CONTEXT}}', compressedContextStr)
+      .replace('{{TARGET_SCHEMA}}', targetSchemaStr);
+  }
 
   const system = await getPromptTemplate('FILL_PROMPT');
   return { system, user: userPrompt };
