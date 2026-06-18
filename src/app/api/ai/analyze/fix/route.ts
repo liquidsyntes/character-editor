@@ -1,20 +1,14 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion } from '@/lib/ai/provider';
 import { buildFixPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { AiProvider } from '@/lib/ai/provider';
-import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
+import { handleAiError, validateExistingData, withAiMiddleware } from '@/lib/ai/routeUtils';
 
 export const maxDuration = 300;
 
-export async function POST(req: NextRequest) {
+async function generateHandler(req: NextRequest) {
   try {
-    const authError = await requireAuth();
-    if (authError) return authError;
-
-    const rateLimitError = await checkApiRateLimit(req, 10);
-    if (rateLimitError) return rateLimitError;
-
     const body = await req.json();
     const validationError = validateExistingData(body);
     if (validationError) return validationError;
@@ -55,3 +49,5 @@ export async function POST(req: NextRequest) {
     return handleAiError(err, 'AI Fix');
   }
 }
+
+export const POST = withAiMiddleware(generateHandler, { limit: 10 });

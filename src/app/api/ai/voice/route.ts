@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { sseResponse } from '@/lib/ai/streamUtils';
-import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
+import { handleAiError, validateExistingData, withAiMiddleware } from '@/lib/ai/routeUtils';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,14 +9,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-export async function POST(req: NextRequest) {
+let cachedDialogPrompt: string | null = null;
+
+async function generateHandler(req: NextRequest) {
   try {
-    const authError = await requireAuth();
-    if (authError) return authError;
-
-    const rateLimitError = await checkApiRateLimit(req, 10);
-    if (rateLimitError) return rateLimitError;
-
     const body = await req.json();
     const validationError = validateExistingData(body);
     if (validationError) return validationError;
@@ -37,12 +33,17 @@ export async function POST(req: NextRequest) {
     if (savedPrompt) {
       systemPrompt = savedPrompt;
     } else {
-      try {
-        const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
-        systemPrompt = fs.readFileSync(promptPath, 'utf-8');
-      } catch (err) {
-        console.warn('Could not read promt_dialog.md, using minimal fallback', err);
-        systemPrompt = 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен, показывающих манеру общения персонажа в разных ситуациях (спокойствие, раздражение, ложь и т.д.).';
+      if (cachedDialogPrompt) {
+        systemPrompt = cachedDialogPrompt;
+      } else {
+        try {
+          const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
+          cachedDialogPrompt = fs.readFileSync(promptPath, 'utf-8');
+          systemPrompt = cachedDialogPrompt;
+        } catch (err) {
+          console.warn('Could not read promt_dialog.md, using minimal fallback', err);
+          systemPrompt = 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен, показывающих манеру общения персонажа в разных ситуациях (спокойствие, раздражение, ложь и т.д.).';
+        }
       }
     }
 
@@ -68,3 +69,5 @@ export async function POST(req: NextRequest) {
     return handleAiError(err, 'AI Voice');
   }
 }
+
+export const POST = withAiMiddleware(generateHandler, { limit: 10 });

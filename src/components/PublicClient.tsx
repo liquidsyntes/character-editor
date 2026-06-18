@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CharacterData } from '@/types/character';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
 import { updateCharacterPublicOpinions, updateCharacterMeta } from '@/lib/actions';
+import { useStreamingTextGenerator } from '@/hooks/useStreamingTextGenerator';
 import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
 import { PublicHeader } from '@/components/PublicHeader';
 import { CharacterFormSummary } from '@/components/CharacterFormSummary';
@@ -137,16 +138,33 @@ export function PublicClient({
 }: PublicClientProps) {
   const [opinions, setOpinions] = useState<Record<string, string>>({ ...DEFAULT_OPINIONS, ...initialOpinions });
   const [isLore, setIsLore] = useState(initialIsLore);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [usage, setUsage] = useState<{ prompt_tokens?: number; promptTokens?: number; completion_tokens?: number; completionTokens?: number } | null>(null);
   
   const [showPrompts, setShowPrompts] = useState(false);
   const [showTweaks, setShowTweaks] = useState(false);
   const [showExport, setShowExport] = useState(false);
   
   const aiSettings = useAiSettings();
-  const abortRef = useRef<AbortController | null>(null);
+
+  const { generate, stop, loading, error, usage } = useStreamingTextGenerator({
+    endpoint: '/api/ai/public',
+    onChunk: (text) => {
+      const parsed = parseMarkdownToOpinions(text);
+      setOpinions(prev => {
+        return {
+          friend: parsed.friend || prev.friend,
+          acquaintance: parsed.acquaintance || prev.acquaintance,
+          colleague: parsed.colleague || prev.colleague,
+          partner: parsed.partner || prev.partner,
+          ex: parsed.ex || prev.ex,
+        };
+      });
+    },
+    onFinish: async (text) => {
+      const finalOpinions = parseMarkdownToOpinions(text);
+      setOpinions(finalOpinions);
+      await updateCharacterPublicOpinions(characterId, JSON.stringify(finalOpinions));
+    }
+  });
 
   const filledFields = getFilledFieldCount(initialData);
   const totalFields = getTotalFieldCount();
@@ -161,107 +179,20 @@ export function PublicClient({
     await updateCharacterPublicOpinions(characterId, JSON.stringify(opinions));
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (loading) {
-      if (abortRef.current) abortRef.current.abort();
+      stop();
       return;
     }
-
-    setLoading(true);
-    setError(null);
     setOpinions({ ...DEFAULT_OPINIONS });
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const res = await fetch('/api/ai/public', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: initialData,
-          narrative: initialNarrative,
-          provider: aiSettings.saved.provider,
-          model: aiSettings.saved.model,
-          temperature: aiSettings.saved.temperature || 0.8,
-          apiKey: aiSettings.saved.apiKeys[aiSettings.saved.provider]
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
-        throw new Error(errMsg);
-      }
-      if (!res.body) throw new Error('No body in response');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let generatedText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        let boundary = buffer.indexOf('\n\n');
-        
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                generatedText += parsedChunk.text;
-                // Parse text on the fly
-                const parsed = parseMarkdownToOpinions(generatedText);
-                setOpinions(prev => {
-                  return {
-                    friend: parsed.friend || prev.friend,
-                    acquaintance: parsed.acquaintance || prev.acquaintance,
-                    colleague: parsed.colleague || prev.colleague,
-                    partner: parsed.partner || prev.partner,
-                    ex: parsed.ex || prev.ex,
-                  };
-                });
-              }
-              if (parsedChunk.usage) {
-                setUsage(parsedChunk.usage);
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
-      }
-
-      // Final parse just in case
-      const finalOpinions = parseMarkdownToOpinions(generatedText);
-      setOpinions(finalOpinions);
-
-      await updateCharacterPublicOpinions(characterId, JSON.stringify(finalOpinions));
-
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        setError('Генерация отменена');
-      } else if (err instanceof Error) {
-        setError(err.message || 'Ошибка генерации');
-      } else {
-        setError('Ошибка генерации');
-      }
-    } finally {
-      setLoading(false);
-    }
+    generate({
+      existingData: initialData,
+      narrative: initialNarrative,
+      provider: aiSettings.saved.provider,
+      model: aiSettings.saved.model,
+      temperature: aiSettings.saved.temperature || 0.8,
+      apiKey: aiSettings.saved.apiKeys[aiSettings.saved.provider]
+    });
   };
 
   const hasOpinions = Object.values(opinions).some(v => v.trim().length > 0);

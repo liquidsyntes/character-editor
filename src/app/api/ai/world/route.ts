@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { sseResponse } from '@/lib/ai/streamUtils';
-import { handleAiError, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
+import { handleAiError, withAiMiddleware } from '@/lib/ai/routeUtils';
 import { getAppSetting } from '@/app/actions/settings';
 import { 
   DEFAULT_WORLD_SYSTEM_PROMPT, 
@@ -13,14 +13,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-export async function POST(req: NextRequest) {
+async function generateHandler(req: NextRequest) {
   try {
-    const authError = await requireAuth();
-    if (authError) return authError;
-
-    const rateLimitError = await checkApiRateLimit(req, 15);
-    if (rateLimitError) return rateLimitError;
-
     const body = await req.json();
     const {
       title,
@@ -92,6 +86,8 @@ ${instruction}
     const aiStream = await chatCompletionStream(messages, options);
     return sseResponse(aiStream);
   } catch (err) {
-    return handleAiError(err, 'AI World Element Generation');
+    return handleAiError(err, 'AI World');
   }
 }
+
+export const POST = withAiMiddleware(generateHandler, { limit: 15 });

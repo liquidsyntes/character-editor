@@ -1,22 +1,16 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion, chatCompletionStream, AiProvider } from '@/lib/ai/provider';
 import { buildFillPrompt, buildScratchpadPrompt, buildQuickCommandPrompt } from '@/lib/ai/prompt';
-import { parseFillResponse } from '@/lib/ai/prompt-parser';
+import { parseFillResponse, parsePartialJson } from '@/lib/ai/prompt-parser';
 import { sseResponse } from '@/lib/ai/streamUtils';
-import { handleAiError, validateExistingData, checkApiRateLimit, requireAuth } from '@/lib/ai/routeUtils';
+import { handleAiError, validateExistingData, withAiMiddleware } from '@/lib/ai/routeUtils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-export async function POST(req: NextRequest) {
+async function generateHandler(req: NextRequest) {
   try {
-    const authError = await requireAuth();
-    if (authError) return authError;
-
-    const rateLimitError = await checkApiRateLimit(req, 20); // allow more requests for fill
-    if (rateLimitError) return rateLimitError;
-
     const body = await req.json();
     const validationError = validateExistingData(body);
     if (validationError) return validationError;
@@ -80,8 +74,8 @@ export async function POST(req: NextRequest) {
       filledData = parseFillResponse(result.content);
     } catch (parseErr) {
       console.error('Parse error:', parseErr);
-      const partial = tryPartialParse(result.content);
-      if (partial && Object.keys(partial).length > 0) {
+      const partial = parsePartialJson(result.content);
+      if (Object.keys(partial).length > 0) {
         filledData = partial;
         parseWarning = `РћС‚РІРµС‚ AI Р±С‹Р» РЅРµ РїРѕР»РЅРѕСЃС‚СЊСЋ РІР°Р»РёРґРЅС‹Рј JSON, РЅРѕ СѓРґР°Р»РѕСЃСЊ РёР·РІР»РµС‡СЊ ${Object.keys(partial).length} РїРѕР»РµР№.`;
       } else {
@@ -108,16 +102,4 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function tryPartialParse(raw: string): Record<string, string> | null {
-  const result: Record<string, string> = {};
-  const kvPattern = /"([^"]+)"\s*:\s*"([^"]*)"/g;
-  let match;
-  while ((match = kvPattern.exec(raw)) !== null) {
-    const key = match[1];
-    const value = match[2];
-    if (key && value && value.trim()) {
-      result[key] = value.trim();
-    }
-  }
-  return Object.keys(result).length > 0 ? result : null;
-}
+export const POST = withAiMiddleware(generateHandler, { limit: 20 });

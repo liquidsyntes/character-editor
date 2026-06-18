@@ -13,6 +13,7 @@ interface CharacterSectionProps {
   aiAbortRef: React.MutableRefObject<AbortController | null>;
   handleAiFillSection: (sectionId: string) => void;
   handleAiFillField: (fieldId: string) => void;
+  handleAiCondenseField: (fieldId: string, text: string) => void;
   handleChange: (fieldId: string, value: string) => void;
   toggleSection: () => void;
 }
@@ -55,6 +56,7 @@ export function CharacterSection({
   aiAbortRef,
   handleAiFillSection,
   handleAiFillField,
+  handleAiCondenseField,
   handleChange,
   toggleSection,
 }: CharacterSectionProps) {
@@ -106,30 +108,52 @@ export function CharacterSection({
               const fieldCode = `${prefix}${String(index + 1).padStart(2, '0')}`;
               
               return (
-                <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading || isFieldLoading ? 'animate-pulse bg-surface-container/50' : ''}`}>
+                <div key={field.id} id={field.id} className={`p-4 border rounded w-full ${spanClass} transition-all duration-500 ${isFixed ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : 'bg-surface border-outline-variant'} ${isSectionLoading || isFieldLoading || aiFieldLoading === field.id + '-condense' ? 'animate-pulse bg-surface-container/50' : ''}`}>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                    <label className="block font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider flex-grow">
                       <span className="font-bold text-primary/70 mr-3">{fieldCode} |</span>
                       {field.label}
                     </label>
-                    <button
-                      type="button"
-                      className={`text-[12px] p-0.5 rounded transition-colors ${isFieldLoading ? 'bg-error text-on-error' : 'text-on-surface-variant/50 hover:bg-primary/10 hover:text-primary'} ${isSectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={isSectionLoading || (aiFieldLoading !== null && !isFieldLoading)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isFieldLoading) {
-                           aiAbortRef.current?.abort();
-                        } else {
-                           handleAiFillField(field.id);
-                        }
-                      }}
-                      title={isFieldLoading ? "Отменить генерацию поля" : "Сгенерировать/расширить это поле (Magic Wand)"}
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {isFieldLoading ? 'close' : 'magic_button'}
-                      </span>
-                    </button>
+                    <div className="flex gap-1 ml-2">
+                      {data[field.id] && data[field.id].length > 10 && (
+                        <button
+                          type="button"
+                          className={`text-[12px] p-0.5 rounded transition-colors ${aiFieldLoading === field.id + '-condense' ? 'bg-error text-on-error' : 'text-on-surface-variant/50 hover:bg-primary/10 hover:text-primary'} ${isSectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isSectionLoading || (aiFieldLoading !== null && aiFieldLoading !== field.id + '-condense')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (aiFieldLoading === field.id + '-condense') {
+                              aiAbortRef.current?.abort();
+                            } else {
+                              handleAiCondenseField(field.id, data[field.id]);
+                            }
+                          }}
+                          title={aiFieldLoading === field.id + '-condense' ? "Отменить сжатие" : "Ужать текст (оставить суть)"}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            {aiFieldLoading === field.id + '-condense' ? 'close' : 'compress'}
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className={`text-[12px] p-0.5 rounded transition-colors ${isFieldLoading && aiFieldLoading !== field.id + '-condense' ? 'bg-error text-on-error' : 'text-on-surface-variant/50 hover:bg-primary/10 hover:text-primary'} ${isSectionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={isSectionLoading || (aiFieldLoading !== null && aiFieldLoading !== field.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isFieldLoading && aiFieldLoading !== field.id + '-condense') {
+                             aiAbortRef.current?.abort();
+                          } else {
+                             handleAiFillField(field.id);
+                          }
+                        }}
+                        title={isFieldLoading && aiFieldLoading !== field.id + '-condense' ? "Отменить генерацию поля" : "Сгенерировать/расширить это поле (Magic Wand)"}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          {isFieldLoading && aiFieldLoading !== field.id + '-condense' ? 'close' : 'magic_button'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
                   {field.type === 'select' ? (
                     <select

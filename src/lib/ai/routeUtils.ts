@@ -62,3 +62,22 @@ export async function requireAuth(): Promise<NextResponse | null> {
   }
   return null;
 }
+
+
+/**
+ * Higher Order Function to wrap AI routes with Auth and Rate Limiting
+ */
+export function withAiMiddleware(
+  handler: (req: NextRequest, params?: any) => Promise<Response | NextResponse>,
+  options: { limit?: number; windowMs?: number } = {}
+) {
+  return async (req: NextRequest, params?: any) => {
+    const authError = await requireAuth();
+    if (authError) return authError;
+
+    const rateLimitError = await checkApiRateLimit(req, options.limit || 10, options.windowMs || 60000);
+    if (rateLimitError) return rateLimitError;
+
+    return handler(req, params);
+  };
+}

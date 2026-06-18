@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { clearPromptCache } from '@/lib/ai/prompt';
 
 export async function getAppSetting(key: string) {
   const setting = await prisma.appSetting.findUnique({ where: { id: key } });
@@ -14,6 +15,7 @@ export async function setAppSetting(key: string, value: string) {
     update: { value },
     create: { id: key, value },
   });
+  clearPromptCache(key);
   revalidatePath('/');
   return { success: true };
 }
