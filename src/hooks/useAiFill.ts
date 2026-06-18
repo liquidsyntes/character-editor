@@ -300,6 +300,86 @@ export function useAiFill({
     }
   }, [data, doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, saveTimer]);
 
+  const handleAiCondenseField = useCallback(async (fieldId: string, text: string) => {
+    if (aiFieldLoading || aiSectionLoading || aiLoading) return;
+    setAiFieldLoading(fieldId + '-condense');
+    setAiError(null);
+    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Ужатие...' });
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    try {
+      const res = await fetch('/api/ai/condense', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          fieldId,
+          text,
+          provider: aiSettings.provider, 
+          model: aiSettings.model, 
+          apiKey: aiSettings.apiKeys[aiSettings.provider] 
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error('Ошибка сервера');
+      let rawJson = '';
+      let finalParsed: Record<string, string> = {};
+      let pushedUndo = false;
+      let usageData = null as { promptTokens: number; completionTokens: number } | null;
+      
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.usage) usageData = parsedChunk.usage;
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            const partial = parsePartialJson(rawJson);
+            finalParsed = partial;
+            setData(prev => {
+              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
+              return { ...prev, ...partial };
+            });
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+             console.error(e);
+          }
+        }
+      });
+      
+      setData(prev => {
+         if (saveTimer.current) clearTimeout(saveTimer.current);
+         saveTimer.current = setTimeout(() => doSave(prev), 800);
+         return prev;
+      });
+      
+      if (Object.keys(finalParsed).length > 0) {
+        setFixedFields(Object.keys(finalParsed));
+        setTimeout(() => setFixedFields([]), 5000);
+      }
+      
+      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
+      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
+      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
+      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
+      
+      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);
+    } catch (err: unknown) {
+      clearTimeout(timeoutId); 
+      setAiFieldLoading(null);
+      setAiProgress(null);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (isAbort) {
+        setAiError('Запрос отменён');
+      } else {
+        setAiError(errMsg || 'Ошибка при ужатии текста');
+      }
+    }
+  }, [doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, pushUndo, setData, setFixedFields, saveTimer]);
+
   const handleAiScratchpad = useCallback(async (scratchpadText: string): Promise<Record<string, string>> => {
     if (aiLoading) return {};
     setAiLoading(true);
@@ -398,6 +478,7 @@ export function useAiFill({
     handleAiFill,
     handleAiFillSection,
     handleAiFillField,
+    handleAiCondenseField,
     handleAiScratchpad,
     handleQuickCommand,
   };

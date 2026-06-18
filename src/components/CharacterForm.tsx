@@ -90,6 +90,7 @@ export default function CharacterForm({
     handleAiFill,
     handleAiFillSection,
     handleAiFillField,
+    handleAiCondenseField,
     handleAiScratchpad,
     handleQuickCommand,
   } = useAiFill({
@@ -298,6 +299,7 @@ export default function CharacterForm({
                   aiAbortRef={aiAbortRef}
                   handleAiFillSection={handleAiFillSection}
                   handleAiFillField={handleAiFillField}
+                  handleAiCondenseField={handleAiCondenseField}
                   handleChange={handleChange}
                   toggleSection={() => setOpenSections(prev => { 
                     const n = new Set(prev); 
