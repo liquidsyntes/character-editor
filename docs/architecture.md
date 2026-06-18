@@ -20,7 +20,10 @@ src/
 │   ├── api/ai/
 │   │   ├── fill/route.ts         # POST — AI-заполнение (stream + non-stream)
 │   │   ├── analyze/route.ts      # POST — AI-анализ (SSE stream)
-│   │   └── analyze/fix/route.ts  # POST — AI-исправление проблем
+│   │   ├── analyze/fix/route.ts  # POST — AI-исправление проблем
+│   │   ├── condense/route.ts     # POST — AI-ужатие текста (stream)
+│   │   ├── models/route.ts       # GET  — Получение списка доступных моделей
+│   │   └── voice/..., narrative/..., public/..., world/... # Специфичные роуты (stream)
 │   ├── character/[id]/page.tsx   # Редактор (SSR → CharacterForm)
 │   └── project/[id]/page.tsx     # Дашборд проекта (SSR → DashboardClient)
 ├── components/
@@ -40,7 +43,11 @@ src/
 │   ├── rateLimit.ts              # DB-backed rate limiter (Prisma)
 │   └── ai/
 │       ├── provider.ts           # chatCompletion, chatCompletionStream, PROVIDER_CONFIGS
-│       ├── prompt.ts             # buildFillPrompt, buildAnalyzePrompt, buildFixPrompt, парсеры
+│       ├── prompt.ts             # buildFillPrompt, buildAnalyzePrompt, buildFixPrompt
+│       ├── prompt-parser.ts      # parsePartialJson, fetchSseStream (универсальный парсинг)
+│       ├── routeUtils.ts         # withAiMiddleware (HOC для auth и rate-limit)
+│       ├── streamUtils.ts        # sseResponse (серверный стриминг)
+│       ├── models.ts             # Единый список моделей (PROVIDER_MODELS)
 │       └── useAiSettings.ts      # Клиентский хук: staged/saved/apply/revert
 └── types/
     └── character.ts              # TypeScript-типы: FieldDef, SectionDef, AnalyzeIssue, ...
