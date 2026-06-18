@@ -222,3 +222,36 @@ function validateAndClean(parsed: Record<string, unknown>): CharacterData {
 
   return result;
 }
+
+export async function fetchSseStream(
+  response: Response,
+  onData: (dataStr: string) => void
+) {
+  if (!response.body) throw new Error('No body in response');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let boundary = buffer.indexOf('\n\n');
+      while (boundary !== -1) {
+        const line = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+
+        if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6);
+          if (dataStr === '[DONE]') return;
+          onData(dataStr);
+        }
+        boundary = buffer.indexOf('\n\n');
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}

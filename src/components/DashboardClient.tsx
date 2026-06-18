@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import Link from 'next/link';
 import { CharacterData } from '@/types/character';
 import { getFilledFieldCount, getTotalFieldCount } from '@/lib/schema';
@@ -65,6 +65,7 @@ export default function DashboardClient({
   const [filter, setFilter] = useState<'all' | 'story' | 'lore' | 'drafts' | 'archived'>('all');
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const aiState = useAiSettings();
   const [visibleCount, setVisibleCount] = useState(24);
   const total = getTotalFieldCount();
@@ -387,6 +388,26 @@ export default function DashboardClient({
                     Новый персонаж
                   </button>
                 </form>
+                <label className={`bg-surface border border-outline-variant text-on-surface-variant px-4 py-2 flex items-center gap-2 rounded font-label-caps text-label-caps transition-colors whitespace-nowrap ${isPending ? 'opacity-50 cursor-wait' : 'hover:bg-surface-container hover:text-on-surface cursor-pointer'}`}>
+                  <span className={`material-symbols-outlined text-[16px] ${isPending ? 'animate-spin' : ''}`}>{isPending ? 'sync' : 'upload_file'}</span>
+                  Импорт
+                  <input type="file" accept=".json,.md,.txt" className="hidden" disabled={isPending} onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    startTransition(async () => {
+                      try {
+                        const text = await file.text();
+                        const { parseImportedFile } = await import('@/lib/import');
+                        const parsed = parseImportedFile(text);
+                        const { importCharacter } = await import('@/lib/actions');
+                        await importCharacter(projectId, parsed as CharacterData);
+                      } catch (err) {
+                        alert("Ошибка импорта: " + (err as Error).message);
+                      }
+                      e.target.value = '';
+                    });
+                  }} />
+                </label>
               </div>
             </div>
 

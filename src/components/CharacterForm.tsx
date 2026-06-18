@@ -20,6 +20,7 @@ import { CharacterSidebar } from './CharacterSidebar';
 import { useCharacterFormState } from '@/hooks/useCharacterFormState';
 import { useAiFill } from '@/hooks/useAiFill';
 import { useCharacterAnalysis } from '@/hooks/useCharacterAnalysis';
+import { useKeyboard } from '@/hooks/useKeyboard';
 
 export default function CharacterForm({
   characterId,
@@ -57,6 +58,7 @@ export default function CharacterForm({
     aiUndoStack,
     pushUndo,
     handleUndo,
+    handleRedo,
     handleChange,
     handleImport,
     fixedFields,
@@ -164,13 +166,12 @@ export default function CharacterForm({
     }, 150);
   };
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 's') { e.preventDefault(); doSave(data); }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [data, doSave]);
+  useKeyboard({
+    onSave: () => doSave(data),
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    onGenerate: handleAiFill
+  });
 
   const filled = getFilledFieldCount(data);
   const total = getTotalFieldCount();
@@ -223,9 +224,31 @@ export default function CharacterForm({
           setShowPrompts={setShowPrompts}
           showTweaks={showTweaks}
           setShowTweaks={setShowTweaks}
+          saveStatus={saveStatus}
         />
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Hotkeys Reference (Left Workspace Area) */}
+          <div className="hidden 2xl:flex flex-col gap-3 absolute left-8 top-8 w-[180px] text-on-surface-variant/40 text-[11px] select-none pointer-events-none z-10">
+            <div className="font-label-caps text-[10px] tracking-widest opacity-50 mb-1">Горячие клавиши</div>
+            <div className="flex items-center justify-between">
+              <span>Сохранение</span>
+              <kbd className="font-sans px-1.5 py-0.5 rounded-md border border-outline-variant/30 bg-surface-container/50 text-[10px] tracking-widest shadow-sm">Ctrl+S</kbd>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>AI Генерация</span>
+              <kbd className="font-sans px-1.5 py-0.5 rounded-md border border-outline-variant/30 bg-surface-container/50 text-[10px] tracking-widest shadow-sm">Ctrl+Enter</kbd>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Отмена AI</span>
+              <kbd className="font-sans px-1.5 py-0.5 rounded-md border border-outline-variant/30 bg-surface-container/50 text-[10px] tracking-widest shadow-sm">Ctrl+Z</kbd>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Повтор AI</span>
+              <kbd className="font-sans px-1.5 py-0.5 rounded-md border border-outline-variant/30 bg-surface-container/50 text-[10px] tracking-widest shadow-sm">Ctrl+Shift+Z</kbd>
+            </div>
+          </div>
+
           <div 
             className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-[50vh]"
             ref={scrollRef}
@@ -345,22 +368,7 @@ export default function CharacterForm({
           <ExportModal data={data} name={charName} onClose={() => setShowExport(false)} />
         )}
 
-        {saveStatus !== 'idle' && (
-          <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full shadow border border-outline-variant text-sm font-medium z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {saveStatus === 'saving' ? (
-              <>
-                <span className="material-symbols-outlined text-[16px] animate-spin text-primary">sync</span>
-                <span className="text-on-surface-variant">Сохранение...</span>
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
-                <span className="text-green-500">Сохранено</span>
-              </>
-            )}
-          </div>
-        )}
-        
+
         <PromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />
         <TweaksPanel isOpen={showTweaks} onClose={() => setShowTweaks(false)} aiState={aiState} />
       </div>

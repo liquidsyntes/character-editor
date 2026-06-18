@@ -12,7 +12,8 @@
 - [x] SSE-стриминг в fill и analyze API-роутах
 - [x] Staged/Apply паттерн для AI-настроек
 - [x] Rate limiting **(SQLite-backed, персистентный)** на AI API-роутах
-- [x] Экспорт в Markdown (ExportModal)
+- [x] Экспорт в Markdown, JSON, Text, Obsidian (Dataview) и SillyTavern (Character Card V2)
+- [x] Импорт карточек из JSON, Markdown, SillyTavern на дашборде и в редакторе
 - [x] Предпросмотр карточки (character/[id]/preview)
 - [x] История AI-анализов (AnalyzeHistorySidebar)
 - [x] Редактор системных промптов (SystemPromptsEditor с реальным сохранением в базу `AppSetting`)

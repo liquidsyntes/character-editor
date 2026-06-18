@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { CharacterData } from '@/types/character';
 import { AnalysisRecord } from '@/components/AnalyzeHistorySidebar';
 import { AiSettings } from '@/lib/ai/useAiSettings';
+import { fetchSseStream } from '@/lib/ai/prompt-parser';
 
 interface UseCharacterAnalysisProps {
   characterId: string;
@@ -89,44 +90,23 @@ export function useCharacterAnalysis({
         try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
         throw new Error(errMsg);
       }
-      if (!res.body) throw new Error('No body in response');
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let rawJson = '';
-      let buffer = '';
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const line = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            if (dataStr === '[DONE]') break;
-            try {
-              const parsedChunk = JSON.parse(dataStr);
-              if (parsedChunk.error) throw new Error(parsedChunk.error);
-              if (parsedChunk.text) {
-                rawJson += parsedChunk.text;
-                // Optional: update some UI loading state here if desired
-                setAnalyzeProgress(prev => (prev + parsedChunk.text).slice(-150));
-              }
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-                 console.error(e);
-              }
-            }
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            // Optional: update some UI loading state here if desired
+            setAnalyzeProgress(prev => (prev + parsedChunk.text).slice(-150));
           }
-          boundary = buffer.indexOf('\n\n');
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+             console.error(e);
+          }
         }
-      }
+      });
 
       // Try to parse the complete JSON response
       let result;

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { exportToMarkdown, exportToJSON, exportToPlainText } from '@/lib/export';
+import { exportToMarkdown, exportToJSON, exportToPlainText, exportToObsidian, exportToSillyTavern } from '@/lib/export';
 import { CharacterData } from '@/types/character';
 
-type ExportFormat = 'markdown' | 'json' | 'text';
+type ExportFormat = 'markdown' | 'json' | 'text' | 'obsidian' | 'sillytavern';
 
 export default function ExportModal({
   data,
@@ -23,6 +23,8 @@ export default function ExportModal({
       case 'markdown': return exportToMarkdown(data, name);
       case 'json': return exportToJSON(data, name);
       case 'text': return exportToPlainText(data, name);
+      case 'obsidian': return exportToObsidian(data, name);
+      case 'sillytavern': return exportToSillyTavern(data, name);
     }
   };
 
@@ -35,7 +37,7 @@ export default function ExportModal({
   };
 
   const handleDownload = () => {
-    const ext = format === 'markdown' ? 'md' : format === 'json' ? 'json' : 'txt';
+    const ext = format === 'markdown' || format === 'obsidian' ? 'md' : format === 'json' || format === 'sillytavern' ? 'json' : 'txt';
     const fileName = `${name || 'character'}.${ext}`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -58,11 +60,13 @@ export default function ExportModal({
           </button>
         </div>
         <div className="overflow-y-auto flex-1 custom-scrollbar">
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
             {([
               ['markdown', 'Markdown'],
               ['json', 'JSON'],
               ['text', 'Текст'],
+              ['obsidian', 'Obsidian'],
+              ['sillytavern', 'SillyTavern (V2)'],
             ] as [ExportFormat, string][]).map(([key, label]) => (
               <button
                 key={key}
@@ -91,7 +95,7 @@ export default function ExportModal({
           </button>
           <button className="px-4 py-2 rounded font-label-caps text-label-caps bg-primary text-on-primary hover:bg-primary/90 transition-colors flex items-center gap-2" onClick={handleDownload}>
             <span className="material-symbols-outlined text-[16px]">file_download</span>
-            Скачать .{format === 'markdown' ? 'md' : format === 'json' ? 'json' : 'txt'}
+            Скачать .{format === 'markdown' || format === 'obsidian' ? 'md' : format === 'json' || format === 'sillytavern' ? 'json' : 'txt'}
           </button>
         </div>
       </div>

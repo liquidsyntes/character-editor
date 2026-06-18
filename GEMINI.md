@@ -21,22 +21,14 @@
 
 ## Добавление AI-модели
 
-Обновлять **два** файла (не один!):
-1. `src/lib/ai/useAiSettings.ts` — массив `PROVIDER_MODELS` (UI-селектор)
-2. `src/lib/ai/provider.ts` — `PROVIDER_CONFIGS[provider].models` (серверная валидация)
+Модели теперь загружаются динамически через единый источник истины (`/api/ai/models`).
+Для добавления новой модели достаточно обновить **один** файл:
+- `src/lib/ai/models.ts` — добавить нужную модель в массив `PROVIDER_MODELS` для вашего провайдера.
 
 ## Git workflow
 
 Строго по `docs/git-workflow.md`:
 - Одна задача = одна ветка (`feat/...`, `fix/...`, `refactor/...`, `chore/...`)
-- Никогда не коммитить в main напрямую
-- `git merge --no-ff` при вливании
-- Влил → удалил ветку
-
-## Git workflow
-
-Строго по `docs/git-workflow.md`:
-- Одна задача = одна ветка (`feat/`, `fix/`, `refactor/`, `chore/`)
 - Никогда не коммитить в main напрямую
 - `git merge --no-ff` при вливании
 - Влил → удалил ветку
