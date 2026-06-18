@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Analyze Fix" id="analyze-fix">
+    <mxGraphModel dx="1000" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="AI Analyze &amp; Fix — Character Analysis Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="170" y="15" width="540" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- PHASE 1 header -->
+        <mxCell id="t_phase1" value="PHASE 1: ANALYZE" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="65" width="250" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Trigger -->
+        <mxCell id="e_trigger" value="User clicks Analyze" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="160" y="105" width="180" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_t1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="150" as="sourcePoint"/><mxPoint x="250" y="175" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Cache check -->
+        <mxCell id="d_cache" value="Cached analysis exists&lt;br&gt;for same data + provider?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="175" width="220" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Yes → cached -->
+        <mxCell id="a_cache_yes" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="245" as="sourcePoint"/><mxPoint x="250" y="275" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_yes" value="Yes" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#2d7d2d;" vertex="1" parent="1">
+          <mxGeometry x="260" y="248" width="40" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_cached" value="Return cached result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="190" y="275" width="120" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- No → API call -->
+        <mxCell id="a_cache_no" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="140" y="210" as="sourcePoint"/><mxPoint x="50" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_no" value="No" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#cc0000;" vertex="1" parent="1">
+          <mxGeometry x="80" y="195" width="40" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- API -->
+        <mxCell id="r_api" value="POST /api/ai/analyze&lt;br&gt;SSE stream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="175" width="90" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_api" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="40" y="220" as="sourcePoint"/><mxPoint x="40" y="250" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Parse -->
+        <mxCell id="r_parse" value="parseAnalyzeResponse&lt;br&gt;→ AnalyzeResult" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="275" width="150" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_parse" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="40" y="320" as="sourcePoint"/><mxPoint x="40" y="350" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Save -->
+        <mxCell id="r_save" value="Save to localStorage&lt;br&gt;+ setActiveAnalysisId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="150" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_save" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="40" y="395" as="sourcePoint"/><mxPoint x="40" y="425" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Panel -->
+        <mxCell id="r_panel" value="AnalyzePanel&lt;br&gt;categories + issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="425" width="150" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- Result structure -->
+        <mxCell id="r_result" value="Result: AnalyzeCategory[]&lt;br&gt;with AnalyzeIssue[] each&lt;br&gt;(contradiction, gap, cliche,&lt;br&gt;inconsistency, opportunity)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="495" width="230" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- PHASE 2 header -->
+        <mxCell id="t_phase2" value="PHASE 2: FIX" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="65" width="250" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Fix trigger -->
+        <mxCell id="e_fix_trigger" value="User selects issues → Fix" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="570" y="105" width="220" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_fix1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="680" y="150" as="sourcePoint"/><mxPoint x="680" y="175" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Fix API -->
+        <mxCell id="r_fix_api" value="POST /api/ai/analyze/fix&lt;br&gt;{ issues: AnalyzeIssue[] }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="550" y="175" width="240" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_fix2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="680" y="225" as="sourcePoint"/><mxPoint x="680" y="260" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- Fix result -->
+        <mxCell id="r_fix_result" value="Server returns { data: {...} }&lt;br&gt;→ setPendingDiff(data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="550" y="260" width="240" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_fix3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="680" y="310" as="sourcePoint"/><mxPoint x="680" y="345" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- DiffModal -->
+        <mxCell id="r_diff" value="DiffModal opens&lt;br&gt;Word-level diff&lt;br&gt;Accept or Reject" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="560" y="345" width="220" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Accept branch -->
+        <mxCell id="a_accept" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="670" y="405" as="sourcePoint"/><mxPoint x="600" y="455" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_accept_label" value="Accept" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#2d7d2d;" vertex="1" parent="1">
+          <mxGeometry x="610" y="415" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_accept" value="pushUndo → merge data&lt;br&gt;→ doSave → clear diff" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="455" width="170" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Reject branch -->
+        <mxCell id="a_reject" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="670" y="405" as="sourcePoint"/><mxPoint x="750" y="455" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_reject_label" value="Reject" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#cc0000;" vertex="1" parent="1">
+          <mxGeometry x="725" y="415" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_reject" value="setPendingDiff(null)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="455" width="120" height="50" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

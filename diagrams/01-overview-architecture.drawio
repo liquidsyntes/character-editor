@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Overview Architecture" id="overview">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="t_title" value="Character Editor — AI Autofill Architecture Overview" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="600" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Browser zone -->
+        <mxCell id="r_browser" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=18;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="880" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_browser" value="Browser (React Client Components)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="85" width="400" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- CharacterForm -->
+        <mxCell id="r_charform" value="CharacterForm (+CharacterSection)&lt;br&gt;AI Fill · Section · Field&lt;br&gt;Ctrl+Enter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="100" y="140" width="190" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Sidebar -->
+        <mxCell id="r_sidebar" value="CharacterSidebar + QuickCommands&lt;br&gt;Scratchpad → AI&lt;br&gt;Quick: event/motive/conflict" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="330" y="140" width="200" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Analyze -->
+        <mxCell id="r_analyze" value="CharacterFormHeader + AnalyzePanel&lt;br&gt;AI Analyze → Fix&lt;br&gt;DiffModal Accept/Reject" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="570" y="140" width="210" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Voice -->
+        <mxCell id="r_voice" value="VoiceClient&lt;br&gt;AI Voice&lt;br&gt;Диалоги персонажа" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="100" y="255" width="150" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Narrative -->
+        <mxCell id="r_narrative" value="NarrativeClient&lt;br&gt;AI Narrative&lt;br&gt;Худ. описание" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="280" y="255" width="150" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Public -->
+        <mxCell id="r_public" value="PublicClient&lt;br&gt;AI Public&lt;br&gt;Мнения" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="460" y="255" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- World -->
+        <mxCell id="r_world" value="WorldElementForm&lt;br&gt;AI World&lt;br&gt;Лор · генерация" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="630" y="255" width="150" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Server zone -->
+        <mxCell id="r_server" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=16;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="380" width="880" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_server" value="Next.js API Routes (Server)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="385" width="320" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- API Fill -->
+        <mxCell id="r_api_fill" value="/api/ai/fill&lt;br&gt;POST&lt;br&gt;SSE stream + JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="430" width="140" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- API Analyze -->
+        <mxCell id="r_api_analyze" value="/api/ai/analyze&lt;br&gt;POST SSE&lt;br&gt;+ /fix (JSON)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="250" y="430" width="140" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- API Voice -->
+        <mxCell id="r_api_voice" value="/api/ai/voice&lt;br&gt;POST SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="430" width="110" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- API Narrative -->
+        <mxCell id="r_api_narrative" value="/api/ai/narrative&lt;br&gt;POST SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="560" y="430" width="110" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- API World -->
+        <mxCell id="r_api_world" value="/api/ai/world&lt;br&gt;POST SSE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="700" y="430" width="110" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Provider Layer -->
+        <mxCell id="r_provider" value="AI Provider Layer (lib/ai/provider.ts) — chatCompletion / chatCompletionStream&lt;br&gt;DeepSeek · OpenAI · Anthropic · Gemini · xAI · OpenRouter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c3fae8;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="60" y="550" width="880" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- DB -->
+        <mxCell id="r_db" value="Prisma + SQLite&lt;br&gt;Character, Project, WorldElement, AppSetting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="60" y="650" width="420" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Middleware -->
+        <mxCell id="r_rate" value="Middleware: requireAuth, Rate Limiting (SQLite), Cookie API keys" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="650" width="420" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows from clients to APIs -->
+        <mxCell id="a_fill_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_charform" target="r_api_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sidebar_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_sidebar" target="r_api_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_analyze_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_analyze" target="r_api_analyze">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_voice_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_voice" target="r_api_voice">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_narrative_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_narrative" target="r_api_narrative">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_public_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="r_public">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="530" y="430" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_world_api" style="endArrow=classic;html=1;strokeColor=#757575;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_world" target="r_api_world">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_provider_api" style="endArrow=classic;html=1;strokeColor=#757575;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="500" y="500" as="sourcePoint"/>
+            <mxPoint x="500" y="550" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

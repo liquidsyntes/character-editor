@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="AI Fill Full Flow" id="fill-flow">
+    <mxGraphModel dx="900" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="AI Fill — Full Autogeneration Flow (handleAiFill)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="15" width="600" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- Start -->
+        <mxCell id="e_start" value="User clicks ✨ or Ctrl+Enter" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="70" width="240" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a0" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="120" as="sourcePoint"/>
+            <mxPoint x="420" y="150" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Trigger box -->
+        <mxCell id="r_triggers" value="Triggers: ✨ button in header / Ctrl+Enter / Keyboard shortcut" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="220" y="150" width="400" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="190" as="sourcePoint"/>
+            <mxPoint x="420" y="220" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Hook -->
+        <mxCell id="r_hook" value="useAiFill.handleAiFill() — abort previous, set loading" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="220" y="220" width="400" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="260" as="sourcePoint"/>
+            <mxPoint x="420" y="290" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Prepare -->
+        <mxCell id="r_prep" value="Prepare: { existingData, context, stream: true, provider, model, apiKey }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="180" y="290" width="480" height="55" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="345" as="sourcePoint"/>
+            <mxPoint x="420" y="375" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- POST -->
+        <mxCell id="r_post" value="fetch('/api/ai/fill', POST) — with AbortController (90s timeout)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="375" width="440" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a4" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="420" as="sourcePoint"/>
+            <mxPoint x="420" y="455" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Server -->
+        <mxCell id="r_server" value="Server: requireAuth → rate limit → buildFillPrompt → chatCompletionStream → sseResponse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="160" y="455" width="520" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="515" as="sourcePoint"/>
+            <mxPoint x="420" y="550" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- SSE -->
+        <mxCell id="r_sse" value="SSE Stream: fetchSseStream → parse JSON chunks → parsePartialJson (regex KV)&lt;br&gt;→ setData(prev => { ...prev, ...partial }) incrementally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="550" width="560" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="610" as="sourcePoint"/>
+            <mxPoint x="420" y="640" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Progress -->
+        <mxCell id="r_progress" value="setAiProgress({ current: N, total: 145, label: 'Генерация...' })" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="640" width="440" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a7" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="680" as="sourcePoint"/>
+            <mxPoint x="420" y="710" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Undo -->
+        <mxCell id="r_undo" value="First chunk triggers pushUndo(prev) — save state for Ctrl+Z" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="710" width="440" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a8" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="750" as="sourcePoint"/>
+            <mxPoint x="420" y="780" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Final -->
+        <mxCell id="r_finish" value="Stream ends → Final steps:&lt;br&gt;1. doSave(prev) — debounced 800ms save to SQLite&lt;br&gt;2. setFixedFields(Object.keys(data)) — animate 5s&lt;br&gt;3. setOpenSections(ALL) — expand all sections&lt;br&gt;4. setAiProgress({ label: '✓ Model • N tokens' })&lt;br&gt;5. Clean up after 6s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="780" width="560" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- Timeout branch -->
+        <mxCell id="d_timeout" value="90s timeout?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="375" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a_timeout" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="405" as="sourcePoint"/>
+            <mxPoint x="740" y="405" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_abort" value="Abort!&lt;br&gt;setAiError('Отменён')" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="740" y="385" width="140" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_yes" value="Yes →" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#cc0000;" vertex="1" parent="1">
+          <mxGeometry x="690" y="390" width="45" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Branch arrow from POST to timeout -->
+        <mxCell id="a_post_timeout" style="endArrow=classic;html=1;strokeColor=#757575;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="640" y="397" as="sourcePoint"/>
+            <mxPoint x="620" y="397" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

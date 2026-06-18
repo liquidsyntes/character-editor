@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Fill Section Field" id="fill-granular">
+    <mxGraphModel dx="1000" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="AI Fill — Section &amp; Field Granular Generation" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="160" y="15" width="600" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- SECTION side -->
+        <mxCell id="r_section_header" value="SECTION autofill (✨ on section header)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="440" height="35" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_s1" value="1. User clicks ✨ on section header" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="380" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="145" as="sourcePoint"/><mxPoint x="250" y="165" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s2" value="2. CharacterSection calls handleAiFillSection(sectionId)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="165" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="190" as="sourcePoint"/><mxPoint x="250" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s3" value="3. Check: if aiSectionLoading → return (mutex)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="235" as="sourcePoint"/><mxPoint x="250" y="255" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s4" value="4. POST /api/ai/fill with { sectionIds: [sectionId], stream: true }" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="255" width="430" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s4" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="280" as="sourcePoint"/><mxPoint x="250" y="300" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s5" value="5. Server: buildFillPrompt filters schema to sections fields only" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="300" width="430" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="325" as="sourcePoint"/><mxPoint x="250" y="345" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s6" value="6. SSE → parsePartialJson → setData incrementally" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="345" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="370" as="sourcePoint"/><mxPoint x="250" y="390" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_s7" value="7. Stream ends → doSave → add section to openSections" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="390" width="420" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Section key diff -->
+        <mxCell id="r_section_key" value="Key difference from full fill:&lt;br&gt;– Only sections fields generated&lt;br&gt;– Other sections keep existing data&lt;br&gt;– openSections adds (not replaces)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="450" width="400" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- FIELD side -->
+        <mxCell id="r_field_header" value="FIELD autofill (magic_button on each field)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="510" y="70" width="440" height="35" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_f1" value="1. User clicks magic_button on field" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="120" width="380" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="145" as="sourcePoint"/><mxPoint x="730" y="165" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f2" value="2. CharacterSection calls handleAiFillField(fieldId)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="165" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="190" as="sourcePoint"/><mxPoint x="730" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f3" value="3. Check: if aiFieldLoading || aiSectionLoading || aiLoading → return" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="210" width="430" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="235" as="sourcePoint"/><mxPoint x="730" y="255" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f4" value="4. POST /api/ai/fill with { fieldIds: [fieldId], stream: true }" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="255" width="430" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f4" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="280" as="sourcePoint"/><mxPoint x="730" y="300" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f5" value="5. Server: buildFillPrompt generates prompt for single field" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="300" width="430" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="325" as="sourcePoint"/><mxPoint x="730" y="345" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f6" value="6. SSE → parsePartialJson → setData (only 1 field)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="345" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="730" y="370" as="sourcePoint"/><mxPoint x="730" y="390" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_f7" value="7. Stream ends → doSave → highlight field (5s animation)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="540" y="390" width="420" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Field key -->
+        <mxCell id="r_field_key" value="Key constraints:&lt;br&gt;– Mutually exclusive: field blocks during section fill&lt;br&gt;– Abort button replaces magic_button during loading" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="530" y="450" width="400" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Shared section below -->
+        <mxCell id="t_shared_title" value="SHARED post-processing (all 3 levels: full / section / field):" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="180" y="560" width="600" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_shared_items" value="• All go through the same /api/ai/fill endpoint&lt;br&gt;• All use SSE streaming with fetchSseStream + parsePartialJson&lt;br&gt;• First chunk triggers pushUndo (for Ctrl+Z)&lt;br&gt;• Stream ends → doSave (800ms debounce) → SQLite via Server Action&lt;br&gt;• FixedFields animation (5s highlight on changed fields)&lt;br&gt;• Error → setAiError; Abort → setAiError('Request cancelled')" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="80" y="600" width="800" height="110" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

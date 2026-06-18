@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Prompt Connectivity Map" id="prompt-map">
+    <mxGraphModel dx="1600" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="t_title" value="Character Editor — System Prompts Connectivity Map" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="15" width="800" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ LAYER 0: AppSetting / Database ============ -->
+        <mxCell id="r_layer0" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;dashed=1;dashPattern=8 8;" vertex="1" parent="1">
+          <mxGeometry x="30" y="65" width="1420" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_layer0_label" value="AppSetting (Database) — Prompt Storage" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;fontColor=#999999;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="45" y="68" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Prompt keys in DB -->
+        <mxCell id="r_p_fill" value="FILL_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_analyze" value="ANALYZE_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="180" y="100" width="120" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_fix" value="FIX_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="320" y="100" width="100" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_scratch" value="SCRATCHPAD_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="440" y="100" width="130" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_qcmd" value="QUICK_COMMAND_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="590" y="100" width="150" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_voice" value="VOICE_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="155" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_narrative" value="NARRATIVE_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="180" y="155" width="130" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_public" value="PUBLIC_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="330" y="155" width="110" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_wsys" value="WORLD_SYSTEM_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="460" y="155" width="150" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_wgen" value="WORLD_GENERATE_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="630" y="155" width="160" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_wexp" value="WORLD_EXPAND_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="810" y="155" width="150" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_file" value="promt/promt_dialog.md&lt;br&gt;(fallback file)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=11;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="155" width="110" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- User prompts -->
+        <mxCell id="r_p_ufill" value="USER_FILL_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="100" width="120" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_uregen" value="USER_REGENERATE_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="100" width="140" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_p_uscratch" value="USER_SCRATCHPAD_PROMPT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="100" width="140" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ LAYER 1: Prompt Builders (lib/ai/prompt.ts) ============ -->
+        <mxCell id="r_layer1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#e6a817;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="245" width="1420" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_layer1_label" value="Prompt Builders (lib/ai/prompt.ts) — compose system + user prompts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;fontColor=#e6a817;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="45" y="248" width="400" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_builder_fill" value="buildFillPrompt()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="285" width="150" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_builder_analyze" value="buildAnalyzePrompt()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="230" y="285" width="150" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_builder_fix" value="buildFixPrompt()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="410" y="285" width="140" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_builder_scratch" value="buildScratchpadPrompt()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="580" y="285" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_builder_qcmd" value="buildQuickCommandPrompt()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="770" y="285" width="170" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_builder_inline" value="Inline system prompt&lt;br&gt;(Voice: fs.readFileSync&lt;br&gt;Narrative/Public/World:&lt;br&gt;getAppSetting + DEFAULT_*)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="970" y="278" width="250" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ LAYER 2: API Routes ============ -->
+        <mxCell id="r_layer2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#cc7a00;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="380" width="1420" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_layer2_label" value="API Routes — handle requests, call prompt builders, stream to client" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;fontColor=#cc7a00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="45" y="383" width="450" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_api_fill" value="/api/ai/fill&lt;br&gt;(main + section + field&lt;br&gt;+ scratchpad&lt;br&gt;+ quickCommand)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="420" width="160" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_analyze" value="/api/ai/analyze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="240" y="420" width="140" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_fix" value="/api/ai/analyze/fix" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="410" y="420" width="140" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_voice" value="/api/ai/voice" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="580" y="420" width="130" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_narrative" value="/api/ai/narrative" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="740" y="420" width="130" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_public" value="/api/ai/public" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="900" y="420" width="120" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_api_world" value="/api/ai/world" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="420" width="120" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ LAYER 3: Client Components / Pages ============ -->
+        <mxCell id="r_layer3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#8844cc;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="525" width="1420" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_layer3_label" value="Client Components &amp; Page Routes" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;fontColor=#8844cc;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="45" y="528" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_page_char" value="/character/[id]&lt;br&gt;CharacterForm&lt;br&gt;+ CharacterSection&lt;br&gt;+ CharacterSidebar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c9a8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="565" width="200" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_page_voice" value="/character/[id]/voice&lt;br&gt;VoiceClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c9a8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="290" y="580" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_page_narrative" value="/character/[id]/narrative&lt;br&gt;NarrativeClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c9a8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="480" y="580" width="170" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_page_public" value="/character/[id]/public&lt;br&gt;PublicClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c9a8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="680" y="580" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_page_world" value="/project/[id]/world/[eid]&lt;br&gt;WorldElementForm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c9a8ff;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="870" y="580" width="180" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ LAYER 4: Prompt Editors ============ -->
+        <mxCell id="r_layer4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c3fae8;strokeColor=#2d7d2d;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="690" width="1420" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_layer4_label" value="Prompt Editors — UI for editing prompts" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=12;fontColor=#2d7d2d;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="45" y="693" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_edit_system" value="SystemPromptsEditor&lt;br&gt;(TweaksPanel → gear icon)&lt;br&gt;Edits: FILL, ANALYZE, FIX,&lt;br&gt;SCRATCHPAD, QUICK_COMMAND&lt;br&gt;+ their USER_* variants" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="725" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_edit_voice" value="VoicePromptsPanel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="370" y="735" width="130" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_edit_narrative" value="NarrativePromptsPanel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="530" y="735" width="150" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_edit_public" value="PublicPromptsPanel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="710" y="735" width="130" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_edit_world" value="WorldPromptsPanel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="870" y="735" width="130" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_edit_prompts" value="PromptsPanel&lt;br&gt;(CharacterForm →&lt;br&gt;«Prompts» button)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#1e1e1e;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="725" width="160" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ CONNECTIONS ============ -->
+
+        <!-- Prompt DB → Builders -->
+        <mxCell id="c_pfill_bfill" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="r_p_fill" target="r_builder_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_panalyze_banalyze" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="r_p_analyze" target="r_builder_analyze">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_pfix_bfix" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="r_p_fix" target="r_builder_fix">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_pscratch_bscratch" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="r_p_scratch" target="r_builder_scratch">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_pqcmd_bqcmd" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="r_p_qcmd" target="r_builder_qcmd">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Prompt DB → Inline builders -->
+        <mxCell id="c_pvoice_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="105" y="190" as="sourcePoint"/>
+            <mxPoint x="1050" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_pnarr_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="245" y="190" as="sourcePoint"/>
+            <mxPoint x="1080" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_ppub_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="385" y="190" as="sourcePoint"/>
+            <mxPoint x="1110" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_pwsys_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="535" y="190" as="sourcePoint"/>
+            <mxPoint x="1140" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_pwgen_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="710" y="190" as="sourcePoint"/>
+            <mxPoint x="1170" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_pwexp_bi" style="endArrow=classic;html=1;strokeColor=#5a9fd4;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="885" y="190" as="sourcePoint"/>
+            <mxPoint x="1200" y="278" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Builders → API -->
+        <mxCell id="c_bfill_apifill" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="r_builder_fill" target="r_api_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_banalyze_apianalyze" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="r_builder_analyze" target="r_api_analyze">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_bfix_apifix" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="r_builder_fix" target="r_api_fix">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_bscratch_apifill" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.7;entryY=0;" edge="1" parent="1" source="r_builder_scratch" target="r_api_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_bqcmd_apifill" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.9;entryY=0;" edge="1" parent="1" source="r_builder_qcmd" target="r_api_fill">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_bi_apivoice" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1040" y="333" as="sourcePoint"/>
+            <mxPoint x="645" y="420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_bi_apinarr" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1070" y="333" as="sourcePoint"/>
+            <mxPoint x="805" y="420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_bi_apipub" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1100" y="333" as="sourcePoint"/>
+            <mxPoint x="960" y="420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_bi_apiworld" style="endArrow=classic;html=1;strokeColor=#e6a817;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1130" y="333" as="sourcePoint"/>
+            <mxPoint x="1110" y="420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User prompts → builders -->
+        <mxCell id="c_ufill_bfill" style="endArrow=classic;html=1;strokeColor=#cc7a00;strokeWidth=1;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="135" as="sourcePoint"/>
+            <mxPoint x="125" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_uregen_bfill" style="endArrow=classic;html=1;strokeColor=#cc7a00;strokeWidth=1;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1200" y="135" as="sourcePoint"/>
+            <mxPoint x="150" y="285" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- API → Pages -->
+        <mxCell id="c_apifill_pagechar" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.25;entryY=0;" edge="1" parent="1" source="r_api_fill" target="r_page_char">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_apianalyze_pagechar" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="r_api_analyze" target="r_page_char">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_apifix_pagechar" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.75;entryY=0;" edge="1" parent="1" source="r_api_fix" target="r_page_char">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="c_apivoice_pagevoice" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="645" y="465" as="sourcePoint"/>
+            <mxPoint x="370" y="580" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_apinarr_pagenarr" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805" y="465" as="sourcePoint"/>
+            <mxPoint x="565" y="580" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_apipub_pagepub" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="960" y="465" as="sourcePoint"/>
+            <mxPoint x="760" y="580" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_apiworld_pageworld" style="endArrow=classic;html=1;strokeColor=#8844cc;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1110" y="465" as="sourcePoint"/>
+            <mxPoint x="960" y="580" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Editors → Prompt DB (save) -->
+        <mxCell id="c_e_sys_db" style="endArrow=classic;html=1;strokeColor=#2d7d2d;strokeWidth=2;dashed=1;dashPattern=4 4;startArrow=classic;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="725" as="sourcePoint"/>
+            <mxPoint x="190" y="215" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_e_voice_db" style="endArrow=classic;html=1;strokeColor=#2d7d2d;strokeWidth=2;dashed=1;dashPattern=4 4;startArrow=classic;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="435" y="735" as="sourcePoint"/>
+            <mxPoint x="105" y="215" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_e_narr_db" style="endArrow=classic;html=1;strokeColor=#2d7d2d;strokeWidth=2;dashed=1;dashPattern=4 4;startArrow=classic;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="735" as="sourcePoint"/>
+            <mxPoint x="245" y="215" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_e_pub_db" style="endArrow=classic;html=1;strokeColor=#2d7d2d;strokeWidth=2;dashed=1;dashPattern=4 4;startArrow=classic;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="775" y="735" as="sourcePoint"/>
+            <mxPoint x="385" y="215" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_e_world_db" style="endArrow=classic;html=1;strokeColor=#2d7d2d;strokeWidth=2;dashed=1;dashPattern=4 4;startArrow=classic;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="935" y="735" as="sourcePoint"/>
+            <mxPoint x="535" y="215" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ============ LEGEND ============ -->
+        <mxCell id="r_legend" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#cccccc;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="830" width="1420" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_legend_title" value="LEGEND" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="835" width="100" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_leg1" value="Prompt DB → Builder" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#5a9fd4;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="870" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_leg2" value="Builder → API Route" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe066;strokeColor=#e6a817;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="240" y="870" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_leg3" value="API → Page/Component" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffb366;strokeColor=#8844cc;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="870" width="160" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_leg4" value="Editor saves prompt to DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#82c89a;strokeColor=#2d7d2d;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="870" width="180" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_leg5" value="User-facing prompt variant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#cc7a00;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="830" y="870" width="180" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_leg6" value="API accepts multiple prompt modes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#8844cc;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="870" width="200" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Notes -->
+        <mxCell id="t_note1" value="Note: /api/ai/fill is the SWISS ARMY KNIFE endpoint — it handles 5 different prompt modes (full fill, section, field, scratchpad, quickCommand)&lt;br&gt;based on which parameters are sent. Voice has a fallback: if VOICE_PROMPT is not in DB, reads promt/promt_dialog.md from disk." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="50" y="920" width="1380" height="30" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

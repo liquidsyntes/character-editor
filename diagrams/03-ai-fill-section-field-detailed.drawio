@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="AI Fill Section &amp; Field — Detailed Block Diagram" id="fill-granular-detailed">
+    <mxGraphModel dx="1400" dy="2200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TITLE -->
+        <mxCell id="t_title" value="AI Fill — Section &amp; Field Autofill: Detailed Block Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="180" y="15" width="900" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ============== LEFT COLUMN: SECTION FILL ============== -->
+        <mxCell id="r_col_left_label" value="SECTION AUTOFILL — handleAiFillSection(sectionId)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="620" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- S1: User click -->
+        <mxCell id="e_s1" value="User clicks ✨ on section header" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="180" y="130" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s1_s2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="180" as="sourcePoint"/><mxPoint x="320" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S2: onClick -->
+        <mxCell id="r_s2" value="CharacterSection.onClick(e)&lt;br&gt;e.stopPropagation()&lt;br&gt;handleAiFillSection(section.id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="210" width="240" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s2_s3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="265" as="sourcePoint"/><mxPoint x="320" y="295" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S3: Check mutex -->
+        <mxCell id="d_s3" value="aiSectionLoading&lt;br&gt;!== null ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="230" y="295" width="180" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- S3-Yes: return -->
+        <mxCell id="a_s3_yes" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="410" y="335" as="sourcePoint"/><mxPoint x="510" y="335" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_s3_yes" value="Yes" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#cc0000;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="425" y="318" width="40" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_s3_yes" value="return&lt;br&gt;(already loading)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="510" y="315" width="130" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- S3-No: continue -->
+        <mxCell id="a_s3_no" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="375" as="sourcePoint"/><mxPoint x="320" y="405" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_s3_no" value="No" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#2d7d2d;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="378" width="40" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- S4: Lock -->
+        <mxCell id="r_s4" value="setAiSectionLoading(sectionId)&lt;br&gt;setAiError(null)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="405" width="240" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s4_s5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="450" as="sourcePoint"/><mxPoint x="320" y="480" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S5: Find section + progress -->
+        <mxCell id="r_s5" value="section = CHARACTER_SCHEMA.find(s.id === sectionId)&lt;br&gt;setAiProgress({ current: 0, total: section.fields.length })" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="480" width="360" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s5_s6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="525" as="sourcePoint"/><mxPoint x="320" y="555" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S6: AbortController -->
+        <mxCell id="r_s6" value="controller = new AbortController()&lt;br&gt;aiAbortRef.current = controller&lt;br&gt;timeoutId = setTimeout(abort, 90000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="150" y="555" width="340" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s6_s7" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="610" as="sourcePoint"/><mxPoint x="320" y="645" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S7: POST -->
+        <mxCell id="r_s7" value="fetch('/api/ai/fill', { POST, signal: controller.signal })&lt;br&gt;body: { existingData, sectionIds: [sectionId],&lt;br&gt;stream: true, provider, model, apiKey }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="100" y="645" width="440" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s7_s8" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="700" as="sourcePoint"/><mxPoint x="320" y="730" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S8: Check HTTP -->
+        <mxCell id="d_s8" value="res.ok ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="270" y="730" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s8_no" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="270" y="760" as="sourcePoint"/><mxPoint x="160" y="760" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_s8_no_label" value="No" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=12;fontColor=#cc0000;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="743" width="30" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_s8_no" value="throw Error('HTTP ' + status)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="745" width="100" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- S8-Yes: SSE stream -->
+        <mxCell id="a_s8_yes" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="790" as="sourcePoint"/><mxPoint x="320" y="820" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_s8_yes" value="Yes" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=12;fontColor=#2d7d2d;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="793" width="30" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- S9: SSE Loop -->
+        <mxCell id="r_s9" value="fetchSseStream(res, callback) — streaming loop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="140" y="820" width="360" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s9_s9a" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="860" as="sourcePoint"/><mxPoint x="320" y="890" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S9a: For each chunk -->
+        <mxCell id="r_s9a" value="For each SSE chunk:&lt;br&gt;parsedChunk = JSON.parse(dataStr)&lt;br&gt;if (parsedChunk.error) → throw&lt;br&gt;if (parsedChunk.text) → accumulate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="150" y="890" width="340" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s9a_s9b" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="955" as="sourcePoint"/><mxPoint x="320" y="985" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S9b: Parse + setData -->
+        <mxCell id="r_s9b" value="rawJson += parsedChunk.text&lt;br&gt;partial = parsePartialJson(rawJson) // regex KV&lt;br&gt;setAiProgress({ current: Object.keys(partial).length })&lt;br&gt;&lt;br&gt;if (!pushedUndo) { pushUndo(prev); pushedUndo = true }&lt;br&gt;setData(prev =&gt; ({ ...prev, ...partial }))" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="110" y="985" width="420" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s9b_s10" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1085" as="sourcePoint"/><mxPoint x="320" y="1120" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S10: Stream ends — finalize -->
+        <mxCell id="r_s10" value="STREAM ENDS — FINALIZE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="200" y="1120" width="240" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s10_s10a" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1155" as="sourcePoint"/><mxPoint x="320" y="1185" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S10a: Save -->
+        <mxCell id="r_s10a" value="clearTimeout(saveTimer)&lt;br&gt;saveTimer = setTimeout(doSave, 800) // debounced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="170" y="1185" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s10a_s10b" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1235" as="sourcePoint"/><mxPoint x="320" y="1265" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S10b: Fixed fields -->
+        <mxCell id="r_s10b" value="setFixedFields(Object.keys(finalParsed))&lt;br&gt;setTimeout(() =&gt; setFixedFields([]), 5000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="170" y="1265" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s10b_s10c" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1315" as="sourcePoint"/><mxPoint x="320" y="1345" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S10c: Open section -->
+        <mxCell id="r_s10c" value="setOpenSections(prev =&gt; new Set(prev).add(sectionId))" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="170" y="1345" width="300" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s10c_s10d" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1385" as="sourcePoint"/><mxPoint x="320" y="1415" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S10d: Complete -->
+        <mxCell id="r_s10d" value="setAiProgress({ isVisible: false,&lt;br&gt;label: '✓ ' + modelName + ' • N tokens' })&lt;br&gt;setTimeout(clear, 6000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="160" y="1415" width="320" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_s10d_s11" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="320" y="1470" as="sourcePoint"/><mxPoint x="320" y="1500" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- S11: Done -->
+        <mxCell id="e_s11" value="DONE" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="270" y="1500" width="100" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- S-Error path -->
+        <mxCell id="r_s_catch" value="CATCH block:&lt;br&gt;clearTimeout(timeoutId)&lt;br&gt;AbortError? → setAiError('Запрос отменён')&lt;br&gt;Otherwise → setAiError(errMsg)&lt;br&gt;setAiProgress(null)&lt;br&gt;setAiSectionLoading(null)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#cc0000;fontSize=13;align=center;dashed=1;dashPattern=4 4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1550" width="620" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ============== RIGHT COLUMN: FIELD FILL ============== -->
+        <mxCell id="r_col_right_label" value="FIELD AUTOFILL — handleAiFillField(fieldId)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="720" y="70" width="620" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- F1: User click -->
+        <mxCell id="e_f1" value="User clicks magic_button on field" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=15;align=center;" vertex="1" parent="1">
+          <mxGeometry x="870" y="130" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f1_f2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="180" as="sourcePoint"/><mxPoint x="1010" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F2: onClick -->
+        <mxCell id="r_f2" value="CharacterSection.onClick(e)&lt;br&gt;e.stopPropagation()&lt;br&gt;handleAiFillField(field.id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="890" y="210" width="240" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f2_f3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="265" as="sourcePoint"/><mxPoint x="1010" y="295" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F3: Check triple mutex -->
+        <mxCell id="d_f3" value="aiFieldLoading&lt;br&gt;|| aiSectionLoading&lt;br&gt;|| aiLoading ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="910" y="295" width="200" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- F3-Yes: return -->
+        <mxCell id="a_f3_yes" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1110" y="340" as="sourcePoint"/><mxPoint x="1210" y="340" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_f3_yes" value="Yes" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#cc0000;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1125" y="323" width="40" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_f3_yes" value="return&lt;br&gt;(anything is loading)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="320" width="130" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- F3-No: continue -->
+        <mxCell id="a_f3_no" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="385" as="sourcePoint"/><mxPoint x="1010" y="420" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_f3_no" value="No" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#2d7d2d;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="390" width="40" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- F4: Lock -->
+        <mxCell id="r_f4" value="setAiFieldLoading(fieldId)&lt;br&gt;setAiError(null)&lt;br&gt;setAiProgress({ current: 0, total: 1 })" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="870" y="420" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f4_f5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="470" as="sourcePoint"/><mxPoint x="1010" y="500" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F5: AbortController -->
+        <mxCell id="r_f5" value="controller = new AbortController()&lt;br&gt;aiAbortRef.current = controller&lt;br&gt;timeoutId = setTimeout(abort, 90000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="840" y="500" width="340" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f5_f6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="555" as="sourcePoint"/><mxPoint x="1010" y="590" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F6: POST -->
+        <mxCell id="r_f6" value="fetch('/api/ai/fill', { POST, signal: controller.signal })&lt;br&gt;body: { existingData, fieldIds: [fieldId],&lt;br&gt;stream: true, provider, model, apiKey }" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="780" y="590" width="460" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f6_f7" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="645" as="sourcePoint"/><mxPoint x="1010" y="675" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F7: Check HTTP -->
+        <mxCell id="d_f7" value="res.ok ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="960" y="675" width="100" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f7_no" style="endArrow=classic;html=1;strokeColor=#cc0000;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="960" y="705" as="sourcePoint"/><mxPoint x="850" y="705" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_f7_no" value="throw Error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="770" y="690" width="70" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- F7-Yes: SSE stream -->
+        <mxCell id="a_f7_yes" style="endArrow=classic;html=1;strokeColor=#2d7d2d;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="735" as="sourcePoint"/><mxPoint x="1010" y="770" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="t_f7_yes" value="Yes" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=12;fontColor=#2d7d2d;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="740" width="30" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- F8: SSE Loop -->
+        <mxCell id="r_f8" value="fetchSseStream(res, callback) — streaming loop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=15;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="830" y="770" width="360" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f8_f8a" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="810" as="sourcePoint"/><mxPoint x="1010" y="840" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F8a: Process chunk -->
+        <mxCell id="r_f8a" value="For each SSE chunk:&lt;br&gt;parsedChunk = JSON.parse(dataStr)&lt;br&gt;if (parsedChunk.text) → accumulate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="840" y="840" width="340" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f8a_f8b" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="895" as="sourcePoint"/><mxPoint x="1010" y="925" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F8b: Parse + setData -->
+        <mxCell id="r_f8b" value="rawJson += parsedChunk.text&lt;br&gt;partial = parsePartialJson(rawJson)&lt;br&gt;if (!pushedUndo) { pushUndo(prev); pushedUndo = true }&lt;br&gt;setData(prev =&gt; ({ ...prev, ...partial }))" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="800" y="925" width="420" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f8b_f9" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="1005" as="sourcePoint"/><mxPoint x="1010" y="1040" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F9: Finalize -->
+        <mxCell id="r_f9" value="STREAM ENDS — FINALIZE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="890" y="1040" width="240" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- F9a-F9d same as section but for field -->
+        <mxCell id="a_f9_f9a" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="1075" as="sourcePoint"/><mxPoint x="1010" y="1105" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_f9a" value="clearTimeout(saveTimer)&lt;br&gt;saveTimer = setTimeout(doSave, 800) // debounced" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="860" y="1105" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f9a_f9b" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="1155" as="sourcePoint"/><mxPoint x="1010" y="1185" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_f9b" value="setFixedFields(Object.keys(finalParsed))&lt;br&gt;setTimeout(() =&gt; setFixedFields([]), 5000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="860" y="1185" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f9b_f9c" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="1235" as="sourcePoint"/><mxPoint x="1010" y="1265" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_f9c" value="setAiProgress({ isVisible: false,&lt;br&gt;label: '✓ ' + modelName + ' • N tokens' })&lt;br&gt;setTimeout(clear, 6000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="850" y="1265" width="320" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_f9c_f10" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="1320" as="sourcePoint"/><mxPoint x="1010" y="1350" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- F10: Done -->
+        <mxCell id="e_f10" value="DONE" style="ellipse;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="960" y="1350" width="100" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- F-Error path -->
+        <mxCell id="r_f_catch" value="CATCH block:&lt;br&gt;clearTimeout(timeoutId)&lt;br&gt;AbortError? → setAiError('Запрос отменён')&lt;br&gt;Otherwise → setAiError(errMsg)&lt;br&gt;setAiProgress(null)&lt;br&gt;setAiFieldLoading(null)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffc9c9;strokeColor=#cc0000;fontSize=13;align=center;dashed=1;dashPattern=4 4;" vertex="1" parent="1">
+          <mxGeometry x="720" y="1420" width="620" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- ============== SHARED NOTES SECTION ============== -->
+        <mxCell id="r_notes_bg" value="KEY DIFFERENCES: Section vs Field Autofill" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c3fae8;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1700" width="1310" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- Note 1 -->
+        <mxCell id="r_note1" value="MUTEX CHECK&lt;br&gt;&lt;br&gt;Section: only checks aiSectionLoading&lt;br&gt;(allows concurrent field + section)&lt;br&gt;&lt;br&gt;Field: checks aiFieldLoading&lt;br&gt;|| aiSectionLoading || aiLoading&lt;br&gt;(blocks during any AI operation)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1740" width="290" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- Note 2 -->
+        <mxCell id="r_note2" value="PROMPT SCOPE&lt;br&gt;&lt;br&gt;Section: buildFillPrompt&lt;br&gt;filters CHARACTER_SCHEMA to&lt;br&gt;only the section's fields&lt;br&gt;&lt;br&gt;Field: buildFillPrompt&lt;br&gt;generates prompt for&lt;br&gt;a single field only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1740" width="290" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- Note 3 -->
+        <mxCell id="r_note3" value="PROGRESS TRACKING&lt;br&gt;&lt;br&gt;Section: total = section.fields.length&lt;br&gt;current updates per parsed field&lt;br&gt;&lt;br&gt;Field: total = 1&lt;br&gt;current stays at 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="690" y="1740" width="290" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- Note 4 -->
+        <mxCell id="r_note4" value="POST-PROCESSING&lt;br&gt;&lt;br&gt;Section: setOpenSections adds&lt;br&gt;the section to visible set&lt;br&gt;&lt;br&gt;Field: no openSections change&lt;br&gt;(field is already visible in&lt;br&gt;its open section)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="1740" width="290" height="140" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

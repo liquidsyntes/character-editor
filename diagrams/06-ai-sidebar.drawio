@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Sidebar" id="sidebar">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="Sidebar AI — Scratchpad &amp; Quick Commands" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="160" y="15" width="600" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- SCRATCHPAD -->
+        <mxCell id="r_sp_header" value="SCRATCHPAD — Free text → Auto-field mapping" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="420" height="35" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_sp1" value="1. User types free-form thoughts about character" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="145" as="sourcePoint"/><mxPoint x="250" y="165" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp2" value="2. Text auto-saved to localStorage (per character)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="165" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="190" as="sourcePoint"/><mxPoint x="250" y="210" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp3" value="3. User clicks «Раскидать по анкете»" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="210" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="235" as="sourcePoint"/><mxPoint x="250" y="255" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp4" value="4. handleAiScratchpad(text) called" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="255" width="400" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp4" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="280" as="sourcePoint"/><mxPoint x="250" y="300" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp5" value="5. POST /api/ai/fill with { scratchpadText, stream: false }" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="300" width="420" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp5" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="325" as="sourcePoint"/><mxPoint x="250" y="345" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp6" value="6. Server: buildScratchpadPrompt(existingData, text, context)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="345" width="420" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp6" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="370" as="sourcePoint"/><mxPoint x="250" y="390" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp7" value="7. AI maps free text to relevant schema fields → JSON response" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="390" width="420" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_sp7" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="250" y="415" as="sourcePoint"/><mxPoint x="250" y="435" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="t_sp8" value="8. setPendingDiff(proposed) → DiffModal opens for review" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="435" width="420" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_sp_note" value="Note: Scratchpad uses NON-streaming mode (stream: false)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="490" width="340" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- QUICK COMMANDS -->
+        <mxCell id="r_qc_header" value="QUICK COMMANDS — 3 one-click scenarios" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="510" y="70" width="440" height="35" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_life" value="lifeEvent&lt;br&gt;→ Random past event that shaped&lt;br&gt;the character's personality&lt;br&gt;→ Fields: keyEvent, childhoodMemory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="125" width="380" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_motive" value="hiddenMotive&lt;br&gt;→ Secret need that contradicts&lt;br&gt;the stated goal&lt;br&gt;→ Fields: statedVsHiddenGoal, hiddenNeedFromOthers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="210" width="380" height="65" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_conflict" value="innerConflict&lt;br&gt;→ Struggle between beliefs&lt;br&gt;and actions&lt;br&gt;→ Fields: coreContradiction, conflictType, hypocrisy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="295" width="380" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- QC flow -->
+        <mxCell id="t_qc_flow" value="Flow for each command:" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="385" width="300" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_qc_flow_items" value="1. Click command button&lt;br&gt;2. handleQuickCommand('lifeEvent' | 'hiddenMotive' | 'innerConflict')&lt;br&gt;3. POST /api/ai/fill with { quickCommand, stream: false }&lt;br&gt;4. Server: buildQuickCommandPrompt(existingData, commandType, context)&lt;br&gt;5. AI returns JSON with relevant fields&lt;br&gt;6. setPendingDiff(proposed) → DiffModal&lt;br&gt;7. User reviews → Accept (merge + save) or Reject" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="540" y="420" width="400" height="150" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_qc_note" value="Note: QuickCommands also use NON-streaming mode (stream: false)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3bf;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="590" width="380" height="35" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

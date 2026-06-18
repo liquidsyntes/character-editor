@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Prompt Data Sources" id="prompt-sources">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="What Data Goes Into Each AI Prompt?" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="15" width="700" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== LEFT: DATA SOURCES ===== -->
+        <mxCell id="t_left_label" value="DATA SOURCES" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#1a5276;" vertex="1" parent="1">
+          <mxGeometry x="60" y="70" width="280" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 1: CHARACTER_SCHEMA -->
+        <mxCell id="r_src1" value="CHARACTER_SCHEMA&lt;br&gt;(24 sections, 145 fields)&lt;br&gt;Static code in schema.ts&lt;br&gt;Not in DB, not editable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5f5e3;strokeColor=#27ae60;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="115" width="250" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 2: existingData -->
+        <mxCell id="r_src2" value="existingData&lt;br&gt;(all 145 field values)&lt;br&gt;Sent from frontend on every request&lt;br&gt;Key-value: firstName, age, ..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d6eaf8;strokeColor=#2980b9;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="205" width="250" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 3: context -->
+        <mxCell id="r_src3" value="context (projectContext)&lt;br&gt;Project description&lt;br&gt;+ sibling characters summary&lt;br&gt;Built on frontend, sent to API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="295" width="250" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 4: gender -->
+        <mxCell id="r_src4" value="gender&lt;br&gt;(extracted from existingData.gender)&lt;br&gt;Generates: «Следи за окончаниями&lt;br&gt;он/она/оно»" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fadbd8;strokeColor=#c0392b;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="385" width="250" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 5: template from DB -->
+        <mxCell id="r_src5" value="Prompt templates (AppSetting)&lt;br&gt;SYSTEM prompt + USER template&lt;br&gt;Saved in DB, editable via UI&lt;br&gt;Fallback: DEFAULT_* constants" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8daef;strokeColor=#8e44ad;fontSize=13;align=center;" vertex="1" parent="1">
+          <mxGeometry x="30" y="475" width="250" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 6: scratchpad -->
+        <mxCell id="r_src6" value="scratchpadText&lt;br&gt;Free text from sidebar&lt;br&gt;Saved in localStorage&lt;br&gt;(per character)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="575" width="250" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 7: commandType -->
+        <mxCell id="r_src7" value="commandType&lt;br&gt;'lifeEvent' | 'hiddenMotive'&lt;br&gt;| 'innerConflict'&lt;br&gt;Hardcoded instruction per type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="660" width="250" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 8: issues -->
+        <mxCell id="r_src8" value="issues (AnalyzeIssue[])&lt;br&gt;User-selected problems from&lt;br&gt;analysis results&lt;br&gt;title + severity + fields + suggestion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="745" width="250" height="65" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 9: narrative -->
+        <mxCell id="r_src9" value="narrative (for Public)&lt;br&gt;Pre-generated literary&lt;br&gt;description of character" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="830" width="250" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 10: world params -->
+        <mxCell id="r_src10" value="title + category + currentContent&lt;br&gt;(for World)&lt;br&gt;World element name&lt;br&gt;+ category (location, faction etc)&lt;br&gt;+ existing text (for expand)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="905" width="250" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- Source 11: file -->
+        <mxCell id="r_src11" value="promt/promt_dialog.md&lt;br&gt;(Voice fallback file)&lt;br&gt;Used only if VOICE_PROMPT&lt;br&gt;is not in DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9e79f;strokeColor=#d4ac0d;fontSize=13;align=center;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="995" width="250" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== RIGHT: PROMPT SCENARIOS ===== -->
+        <mxCell id="t_right_label" value="PROMPT SCENARIOS" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#1a5276;" vertex="1" parent="1">
+          <mxGeometry x="560" y="70" width="400" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Col headers -->
+        <mxCell id="r_col_fill" value="Fill&lt;br&gt;(full / section / field)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="360" y="115" width="120" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_analyze" value="Analyze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="500" y="115" width="100" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_fix" value="Fix" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="620" y="115" width="80" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_scratch" value="Scratchpad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="720" y="115" width="105" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_qcmd" value="QuickCmd" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="845" y="115" width="85" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_voice" value="Voice" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="950" y="115" width="70" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_narr" value="Narrative" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="115" width="85" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_pub" value="Public" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1145" y="115" width="70" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r_col_world" value="World" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1235" y="115" width="70" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== CONNECTION MATRIX ===== -->
+
+        <!-- Row 1: CHARACTER_SCHEMA → Fill, Scratchpad, QuickCmd -->
+        <mxCell id="m1_fill" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#27ae60;" vertex="1" parent="1">
+          <mxGeometry x="405" y="172" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#27ae60;" vertex="1" parent="1">
+          <mxGeometry x="757" y="172" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#27ae60;" vertex="1" parent="1">
+          <mxGeometry x="872" y="172" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 2: existingData → ALL except World -->
+        <mxCell id="m2_fill" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="405" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_analyze" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="535" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_fix" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="645" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="757" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="872" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_voice" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="970" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_narr" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="1067" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_pub" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2_world" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="252" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 3: context → Fill, Analyze, Fix, Scratchpad, QuickCmd, World -->
+        <mxCell id="m3_fill" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="405" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_analyze" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="535" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_fix" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="645" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="757" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="872" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3_world" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="342" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 4: gender → Fill, Fix, Scratchpad, QuickCmd -->
+        <mxCell id="m4_fill" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#c0392b;strokeColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="405" y="432" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_fix" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#c0392b;strokeColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="645" y="432" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#c0392b;strokeColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="757" y="432" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#c0392b;strokeColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="872" y="432" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 5: templates → ALL -->
+        <mxCell id="m5_fill" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="405" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_analyze" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="535" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_fix" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="645" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="757" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="872" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_voice" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="970" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_narr" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="1067" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_pub" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="m5_world" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="527" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 6: scratchpadText → Scratchpad only -->
+        <mxCell id="m6_scratch" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="757" y="615" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 7: commandType → QuickCmd only -->
+        <mxCell id="m7_qcmd" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="872" y="700" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 8: issues → Fix only -->
+        <mxCell id="m8_fix" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="645" y="785" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 9: narrative → Public only -->
+        <mxCell id="m9_pub" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="865" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 10: world params → World only -->
+        <mxCell id="m10_world" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="1255" y="955" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Row 11: file → Voice only -->
+        <mxCell id="m11_voice" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="970" y="1030" width="30" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== FLOW DIAGRAM (bottom) ===== -->
+        <mxCell id="r_flow_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="360" y="600" width="0" height="0" as="geometry"/>
+        </mxCell>
+
+        <!-- Bottom: example flow for Fill -->
+        <mxCell id="t_flow_title" value="Example: Full Fill prompt assembly" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=16;fontStyle=1;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="360" y="600" width="400" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_flow1" value="1. getPromptTemplate('FILL_PROMPT')&lt;br&gt;→ system prompt from DB&lt;br&gt;(or DEFAULT_FILL_SYSTEM_PROMPT)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="635" width="320" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="520" y="680" as="sourcePoint"/><mxPoint x="520" y="700" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_flow2" value="2. Build schemaDesc: all 145 fields with&lt;br&gt;current values (or null) + placeholders" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="700" width="400" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="560" y="740" as="sourcePoint"/><mxPoint x="560" y="760" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_flow3" value="3. Calculate fieldsToFill: filter empty fields&lt;br&gt;(or sectionIds/fieldIds if specified)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="760" width="400" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="560" y="800" as="sourcePoint"/><mxPoint x="560" y="820" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_flow4" value="4. getPromptTemplate('USER_FILL_PROMPT')&lt;br&gt;→ user template from DB&lt;br&gt;5. Replace {{SCHEMA_DESC}}, {{FIELDS_TO_FILL}},&lt;br&gt;{{GENDER_INSTRUCTION}}, {{CONTEXT}}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="820" width="420" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow4" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="570" y="875" as="sourcePoint"/><mxPoint x="570" y="895" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="r_flow5" value="6. Return { system, user }&lt;br&gt;→ POST to AI provider as messages array&lt;br&gt;[{role: 'system', content: system}, {role: 'user', content: user}]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#27ae60;fontSize=12;align=center;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="895" width="420" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- LEGEND -->
+        <mxCell id="r_legend" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#cccccc;" vertex="1" parent="1">
+          <mxGeometry x="960" y="600" width="340" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_legend_title" value="LEGEND" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="975" y="608" width="80" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#27ae60;strokeColor=#27ae60;" vertex="1" parent="1">
+          <mxGeometry x="975" y="635" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt1" value="Static code (schema)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="630" width="200" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2980b9;strokeColor=#2980b9;" vertex="1" parent="1">
+          <mxGeometry x="975" y="660" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt2" value="Character data (existingData)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="655" width="250" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e67e22;strokeColor=#e67e22;" vertex="1" parent="1">
+          <mxGeometry x="975" y="685" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt3" value="Project context + siblings" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="680" width="250" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#c0392b;strokeColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="975" y="710" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt4" value="Gender instruction" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="705" width="250" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l5" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#8e44ad;strokeColor=#8e44ad;" vertex="1" parent="1">
+          <mxGeometry x="975" y="735" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt5" value="Prompt templates from DB" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="730" width="250" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="l6" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d4ac0d;strokeColor=#d4ac0d;" vertex="1" parent="1">
+          <mxGeometry x="975" y="760" width="20" height="14" as="geometry"/>
+        </mxCell>
+        <mxCell id="lt6" value="Scenario-specific data" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="755" width="250" height="20" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

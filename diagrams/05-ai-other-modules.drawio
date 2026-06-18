@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-18T00:00:00.000Z" agent="hermes-agent">
+  <diagram name="Other Modules" id="other-modules">
+    <mxGraphModel dx="1000" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="1050" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t_title" value="AI Modules — Voice, Narrative, World, Public Opinion" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="15" width="600" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- Common pattern -->
+        <mxCell id="t_common" value="Common pattern (all 4 modules):" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="70" width="400" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="t_common_list" value="• Each has its own page route (e.g. /character/[id]/voice)&lt;br&gt;• Each has its own Client component + API route&lt;br&gt;• All use SSE streaming with chatCompletionStream&lt;br&gt;• All use useAiSettings() for provider/model/apiKey&lt;br&gt;• All have custom system prompts (editable in AppSetting)&lt;br&gt;• All have AbortController + 90s timeout&lt;br&gt;• All have their own PromptsPanel for prompt editing&lt;br&gt;• All save to database via Server Actions" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="800" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- VOICE -->
+        <mxCell id="r_voice_bg" value="VOICE MODULE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="270" width="430" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_voice_items" value="• VoiceClient.tsx&lt;br&gt;• API: /api/ai/voice (POST SSE)&lt;br&gt;• Prompt: promt/promt_dialog.md or VOICE_PROMPT&lt;br&gt;• Generates: 8-10 dialogue scenes showing&lt;br&gt;character voice in different situations&lt;br&gt;• Output: raw markdown in textarea&lt;br&gt;auto-saved to character.voice&lt;br&gt;• Typewriter effect with scroll lock" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="305" width="400" height="170" as="geometry"/>
+        </mxCell>
+
+        <!-- NARRATIVE -->
+        <mxCell id="r_narrative_bg" value="NARRATIVE MODULE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="510" y="270" width="430" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_narrative_items" value="• NarrativeClient.tsx&lt;br&gt;• API: /api/ai/narrative (POST SSE)&lt;br&gt;• Prompt: NARRATIVE_PROMPT from AppSetting&lt;br&gt;• Generates: literary prose description&lt;br&gt;of character&lt;br&gt;• Output: HTML/markdown with typewriter&lt;br&gt;• Saved to character.narrative&lt;br&gt;via updateCharacterNarrative" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="525" y="305" width="400" height="170" as="geometry"/>
+        </mxCell>
+
+        <!-- WORLD -->
+        <mxCell id="r_world_bg" value="WORLD MODULE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="40" y="520" width="430" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_world_items" value="• WorldElementForm.tsx&lt;br&gt;• API: /api/ai/world (POST SSE)&lt;br&gt;• 2 modes: Generate (new) + Expand&lt;br&gt;• Categories: location, faction, history,&lt;br&gt;rule, dictionary, other&lt;br&gt;• Prompts: WORLD_SYSTEM_PROMPT,&lt;br&gt;WORLD_GENERATE_PROMPT,&lt;br&gt;WORLD_EXPAND_PROMPT&lt;br&gt;• Output: free text, auto-saved&lt;br&gt;via updateWorldElement" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="555" width="400" height="175" as="geometry"/>
+        </mxCell>
+
+        <!-- PUBLIC -->
+        <mxCell id="r_public_bg" value="PUBLIC OPINION MODULE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=18;fontStyle=1;align=center;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="510" y="520" width="430" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="t_public_items" value="• PublicClient.tsx&lt;br&gt;• API: /api/ai/public (POST SSE)&lt;br&gt;• Prompt: PUBLIC_PROMPT from AppSetting&lt;br&gt;• 5 roles: friend, acquaintance,&lt;br&gt;colleague, partner, ex&lt;br&gt;• Input: full character data + narrative&lt;br&gt;• Output: opinions per role in markdown&lt;br&gt;→ parsed to form fields&lt;br&gt;• Saved via updateCharacterPublicOpinions" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="525" y="555" width="400" height="175" as="geometry"/>
+        </mxCell>
+
+        <!-- Shared data flow -->
+        <mxCell id="t_flow_label" value="All 4 share the same data flow pattern:" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="240" y="780" width="400" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r_flow1" value="User clicks Generate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a5d8ff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="100" y="825" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow1" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="260" y="845" as="sourcePoint"/><mxPoint x="300" y="845" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_flow2" value="POST /api/ai/[module]&lt;br&gt;SSE stream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd8a8;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="825" width="170" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow2" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="470" y="845" as="sourcePoint"/><mxPoint x="510" y="845" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_flow3" value="Typewriter append&lt;br&gt;to textarea" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0bfff;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="510" y="825" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="a_flow3" style="endArrow=classic;html=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="590" y="865" as="sourcePoint"/><mxPoint x="590" y="900" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="r_flow4" value="Save to database&lt;br&gt;via Server Action" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b2f2bb;strokeColor=#1e1e1e;fontSize=14;align=center;" vertex="1" parent="1">
+          <mxGeometry x="510" y="900" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
