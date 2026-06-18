@@ -9,6 +9,23 @@ export function removeThinking(text: string): string {
   return result.trim();
 }
 
+export function parsePartialJson(raw: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const kvPattern = /"([^"]+)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/g;
+  let match;
+  while ((match = kvPattern.exec(raw)) !== null) {
+    if (match[1] && match[2] !== undefined) {
+      try {
+        const val = match[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
+        if (val.trim()) {
+          result[match[1]] = val.trim();
+        }
+      } catch {}
+    }
+  }
+  return result;
+}
+
 export function extractFirstJsonObject(text: string): string | null {
   const objStart = text.indexOf('{');
   if (objStart < 0) return null;

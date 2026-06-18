@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { CharacterData } from '@/types/character';
 import { CHARACTER_SCHEMA, getTotalFieldCount } from '@/lib/schema';
 import { AiSettings } from '@/lib/ai/useAiSettings';
-import { fetchSseStream } from '@/lib/ai/prompt-parser';
+import { fetchSseStream, parsePartialJson } from '@/lib/ai/prompt-parser';
 
 export interface AiProgressData {
   isVisible: boolean;
@@ -40,20 +40,6 @@ export function useAiFill({
   const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
   const [aiFieldLoading, setAiFieldLoading] = useState<string | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
-
-  const parsePartialJson = (raw: string): Record<string, string> => {
-    const result: Record<string, string> = {};
-    const kvPattern = /"([^"]+)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)/g;
-    let match;
-    while ((match = kvPattern.exec(raw)) !== null) {
-      if (match[1] && match[2] !== undefined) {
-        try {
-          result[match[1]] = match[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-        } catch {}
-      }
-    }
-    return result;
-  };
 
   const handleAiFill = useCallback(async () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
