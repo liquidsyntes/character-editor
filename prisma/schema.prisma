@@ -58,6 +58,7 @@ model Character {
   projectId  String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String?
+  analyses   AnalysisRecord[]
 
   @@index([projectId, isArchived])
   @@index([userId])
@@ -80,6 +81,7 @@ model User {
   sessions      Session[]
   projects      Project[]
   characters    Character[]
+  analyses      AnalysisRecord[]
 }
 
 model Account {
@@ -121,4 +123,20 @@ model RateLimit {
   ip        String   @id
   count     Int      @default(1)
   resetAt   DateTime
+}
+
+model AnalysisRecord {
+  id            String    @id @default(cuid())
+  characterId   String
+  userId        String?
+  provider      String?
+  result        String    // JSON string
+  dataSnapshot  String?   // JSON string
+  createdAt     DateTime  @default(now())
+
+  character     Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+  @@index([userId])
 }

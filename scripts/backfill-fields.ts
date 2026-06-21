@@ -16,7 +16,7 @@ async function main() {
       gender = data.gender || '';
       archetype = data.archetype || '';
       age = data.age || '';
-    } catch (err) {
+    } catch {
       console.warn(`Failed to parse data for character ${char.id}`);
       continue;
     }
