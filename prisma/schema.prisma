@@ -49,12 +49,19 @@ model Character {
   narrative  String   @default("")
   publicOpinions String @default("{}")
   voice      String   @default("")
+  gender     String   @default("")
+  archetype  String   @default("")
+  age        String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   project    Project? @relation(fields: [projectId], references: [id])
   projectId  String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String?
+
+  @@index([projectId, isArchived])
+  @@index([userId])
+  @@index([name])
 }
 
 model AppSetting {
