@@ -17,7 +17,7 @@
 - [x] Предпросмотр карточки (character/[id]/preview)
 - [x] История AI-анализов (AnalyzeHistorySidebar)
 - [x] Редактор системных промптов (SystemPromptsEditor с реальным сохранением в базу `AppSetting`)
-- [x] Проходят все 28 юнит-тестов (Vitest), полное отсутствие ошибок линтера (0 errors, 0 warnings) и TypeScript
+- [x] Проходят все 37 юнит-тестов (Vitest), полное отсутствие ошибок линтера (0 errors, 0 warnings) и TypeScript
 - [x] Tailwind с кастомной Material Design цветовой схемой
 - [x] Безопасное хранение API-ключей в HttpOnly cookies
 - [x] Поддержка reasoning-моделей (стриминг мыслей, защита от таймаутов)
