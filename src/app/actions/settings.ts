@@ -26,7 +26,7 @@ export async function getDefaultVoicePrompt() {
     const path = await import('path');
     const promptPath = path.join(process.cwd(), 'promt', 'promt_dialog.md');
     return fs.readFileSync(promptPath, 'utf8');
-  } catch (err) {
+  } catch {
     return 'Вы сценарист. Ваша задача написать 8-10 диалоговых сцен...';
   }
 }

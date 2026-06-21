@@ -84,7 +84,7 @@ export function parseImportedFile(fileText: string): Partial<CharacterData> {
       }
       return result as Partial<CharacterData>;
     }
-  } catch (_e) {
+  } catch {
     // Not a valid JSON, fall through to try parsing as Markdown
   }
 

@@ -68,10 +68,10 @@ export async function requireAuth(): Promise<NextResponse | null> {
  * Higher Order Function to wrap AI routes with Auth and Rate Limiting
  */
 export function withAiMiddleware(
-  handler: (req: NextRequest, params?: any) => Promise<Response | NextResponse>,
+  handler: (req: NextRequest, params?: unknown) => Promise<Response | NextResponse>,
   options: { limit?: number; windowMs?: number } = {}
 ) {
-  return async (req: NextRequest, params?: any) => {
+  return async (req: NextRequest, params?: unknown) => {
     const authError = await requireAuth();
     if (authError) return authError;
 

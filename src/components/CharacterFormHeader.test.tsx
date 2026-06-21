@@ -39,9 +39,9 @@ describe('CharacterFormHeader', () => {
     expect(screen.getByText('Test Project')).toBeInTheDocument();
   });
 
-  it('renders "Без проекта" if projectName is empty', () => {
+  it('renders "Персонажи" if projectName is empty', () => {
     render(<CharacterFormHeader {...defaultProps} projectName="" projectId="" />);
-    expect(screen.getByText('Без проекта')).toBeInTheDocument();
+    expect(screen.getByText('Персонажи')).toBeInTheDocument();
   });
 
   it('calls handleAnalyze when Analyze button is clicked', () => {

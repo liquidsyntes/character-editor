@@ -17,7 +17,7 @@
 - [x] Предпросмотр карточки (character/[id]/preview)
 - [x] История AI-анализов (AnalyzeHistorySidebar)
 - [x] Редактор системных промптов (SystemPromptsEditor с реальным сохранением в базу `AppSetting`)
-- [x] Юнит-тесты и полное отсутствие ошибок линтера / TypeScript
+- [x] Проходят все 28 юнит-тестов (Vitest), полное отсутствие ошибок линтера (0 errors, 0 warnings) и TypeScript
 - [x] Tailwind с кастомной Material Design цветовой схемой
 - [x] Безопасное хранение API-ключей в HttpOnly cookies
 - [x] Поддержка reasoning-моделей (стриминг мыслей, защита от таймаутов)
@@ -31,7 +31,7 @@
 
 - [x] Аутентификация (NextAuth)
 - [x] Валидация .env-переменных при старте
-- [x] Docker / docker-compose
+- [x] Docker / docker-compose (node:22-slim, multi-stage, standalone output, SQLite volume)
 - [x] CI/CD (GitHub Actions)
 - [x] Тесты для `/api/ai/analyze/fix`
 - [x] Тесты для Server Actions

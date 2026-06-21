@@ -28,7 +28,7 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
     }
   }, []);
 
-  const generate = useCallback(async (bodyPayload: any) => {
+  const generate = useCallback(async (bodyPayload: Record<string, unknown>) => {
     if (loading) {
       stop();
       return;
