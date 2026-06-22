@@ -23,6 +23,17 @@ interface UseAiFillProps {
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 }
 
+interface ExecuteStreamConfig {
+  url: string;
+  body: Record<string, unknown>;
+  progressLabel: string;
+  progressTotal: number;
+  errorLabelFallback: string;
+  onStart: () => void;
+  onSuccess: () => void;
+  onFinish: () => void;
+}
+
 export function useAiFill({
   data,
   setData,
@@ -41,42 +52,35 @@ export function useAiFill({
   const [aiFieldLoading, setAiFieldLoading] = useState<string | null>(null);
   const aiAbortRef = useRef<AbortController | null>(null);
 
-  const handleAiFill = useCallback(async () => {
-    if (aiAbortRef.current) aiAbortRef.current.abort();
-    setAiLoading(true); setAiError(null); 
-    const totalFields = getTotalFieldCount();
-    setAiProgress({ isVisible: true, current: 0, total: totalFields, label: 'Думаю...' });
-    const controller = new AbortController(); aiAbortRef.current = controller;
+  const executeAiStreamRequest = useCallback(async (config: ExecuteStreamConfig) => {
+    config.onStart();
+    setAiError(null);
+    setAiProgress({ isVisible: true, current: 0, total: config.progressTotal, label: config.progressLabel });
+    
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-
-      const res = await fetch('/api/ai/fill', {
+      const res = await fetch(config.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingData: data, 
-          context: projectContext,
-          stream: true,
-          provider: aiSettings.provider,
-          model: aiSettings.model, 
-          temperature: aiSettings.temperature,
-          apiKey: aiSettings.apiKeys[aiSettings.provider],
-        }),
+        body: JSON.stringify(config.body),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
       if (!res.ok) {
         let errMsg = `Ошибка сервера (HTTP ${res.status})`;
-        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
+        try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch {}
         throw new Error(errMsg);
       }
+
       let rawJson = '';
       let finalParsed: Record<string, string> = {};
       let pushedUndo = false;
       let usageData = null as { promptTokens: number; completionTokens: number } | null;
-      
+
       await fetchSseStream(res, (dataStr) => {
         try {
           const parsedChunk = JSON.parse(dataStr);
@@ -86,7 +90,10 @@ export function useAiFill({
             rawJson += parsedChunk.text;
             const partial = parsePartialJson(rawJson);
             finalParsed = partial;
-            setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
+            
+            const curLength = config.progressTotal > 1 ? Object.keys(partial).length : 1;
+            setAiProgress(prev => prev ? { ...prev, current: curLength, label: 'Генерация...' } : prev);
+            
             setData(prev => {
               if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
               return { ...prev, ...partial };
@@ -94,15 +101,15 @@ export function useAiFill({
           }
         } catch (e) {
           if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-             console.error(e);
+            console.error(e);
           }
         }
       });
 
       setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => doSave(prev), 800);
+        return prev;
       });
 
       if (Object.keys(finalParsed).length > 0) {
@@ -111,274 +118,116 @@ export function useAiFill({
       }
 
       const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
-      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
-      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
-      
-      setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id)));
-      setTimeout(() => { setAiLoading(false); setAiProgress(null); }, 6000);
+      const usageStr = usageData ? ` • ${usageData.promptTokens + usageData.completionTokens} токенов` : '';
+      const finalLength = config.progressTotal > 1 ? Object.keys(finalParsed).length : 1;
+      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: finalLength, label: `✓ ${modelInfo}${usageStr}` } : null);
+
+      config.onSuccess();
+      setTimeout(() => { config.onFinish(); setAiProgress(null); }, 6000);
     } catch (err: unknown) {
       clearTimeout(timeoutId);
+      config.onFinish();
+      setAiProgress(null);
       const isAbort = err instanceof Error && err.name === 'AbortError';
       const errMsg = err instanceof Error ? err.message : String(err);
       if (isAbort) {
         setAiError('Запрос отменён');
       } else {
-        setAiError(errMsg || 'Ошибка');
+        setAiError(errMsg || config.errorLabelFallback);
       }
-      setAiProgress(null);
-      setAiLoading(false);
     }
-  }, [data, doSave, aiSettings, projectContext, pushUndo, setData, setFixedFields, setOpenSections, saveTimer]);
+  }, [aiSettings.model, aiSettings.provider, doSave, pushUndo, saveTimer, setData, setFixedFields]);
+
+  const handleAiFill = useCallback(async () => {
+    if (aiAbortRef.current) aiAbortRef.current.abort();
+    
+    await executeAiStreamRequest({
+      url: '/api/ai/fill',
+      body: {
+        existingData: data,
+        context: projectContext,
+        stream: true,
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        temperature: aiSettings.temperature,
+        apiKey: aiSettings.apiKeys[aiSettings.provider],
+      },
+      progressLabel: 'Думаю...',
+      progressTotal: getTotalFieldCount(),
+      errorLabelFallback: 'Ошибка',
+      onStart: () => setAiLoading(true),
+      onSuccess: () => setOpenSections(new Set(CHARACTER_SCHEMA.map(s => s.id))),
+      onFinish: () => setAiLoading(false),
+    });
+  }, [data, projectContext, aiSettings, executeAiStreamRequest, setOpenSections]);
 
   const handleAiFillSection = useCallback(async (sectionId: string) => {
     if (aiSectionLoading) return;
-    setAiSectionLoading(sectionId);
-    setAiError(null);
     const section = CHARACTER_SCHEMA.find(s => s.id === sectionId);
-    const totalFields = section ? section.fields.length : 1;
-    setAiProgress({ isVisible: true, current: 0, total: totalFields, label: 'Анализ секции...' });
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const res = await fetch('/api/ai/fill', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          existingData: data, 
-          sectionIds: [sectionId], 
-          context: projectContext,
-          stream: true,
-          provider: aiSettings.provider, 
-          model: aiSettings.model, 
-          apiKey: aiSettings.apiKeys[aiSettings.provider] 
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error('Ошибка сервера');
-      let rawJson = '';
-      let finalParsed: Record<string, string> = {};
-      let pushedUndo = false;
-      let usageData = null as { promptTokens: number; completionTokens: number } | null;
-      
-      await fetchSseStream(res, (dataStr) => {
-        try {
-          const parsedChunk = JSON.parse(dataStr);
-          if (parsedChunk.usage) usageData = parsedChunk.usage;
-          if (parsedChunk.error) throw new Error(parsedChunk.error);
-          if (parsedChunk.text) {
-            rawJson += parsedChunk.text;
-            const partial = parsePartialJson(rawJson);
-            finalParsed = partial;
-            setAiProgress(prev => prev ? { ...prev, current: Object.keys(partial).length, label: 'Генерация...' } : prev);
-            setData(prev => {
-              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-              return { ...prev, ...partial };
-            });
-          }
-        } catch (e) {
-          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-             console.error(e);
-          }
-        }
-      });
-      
-      setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
-      });
-      
-      if (Object.keys(finalParsed).length > 0) {
-        setFixedFields(Object.keys(finalParsed));
-        setTimeout(() => setFixedFields([]), 5000);
-      }
-      
-      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
-      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
-      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: Object.keys(finalParsed).length, label: `✓ ${modelInfo}${usageStr}` } : null);
-      
-      setOpenSections(prev => new Set(prev).add(sectionId));
-      setTimeout(() => { setAiSectionLoading(null); setAiProgress(null); }, 6000);
-    } catch (err: unknown) {
-      clearTimeout(timeoutId); 
-      setAiSectionLoading(null);
-      setAiProgress(null);
-      const isAbort = err instanceof Error && err.name === 'AbortError';
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (isAbort) {
-        setAiError('Запрос отменён');
-      } else {
-        setAiError(errMsg || 'Ошибка при заполнении секции');
-      }
-    }
-  }, [data, doSave, aiSectionLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, setOpenSections, saveTimer]);
+    
+    await executeAiStreamRequest({
+      url: '/api/ai/fill',
+      body: {
+        existingData: data,
+        sectionIds: [sectionId],
+        context: projectContext,
+        stream: true,
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        apiKey: aiSettings.apiKeys[aiSettings.provider]
+      },
+      progressLabel: 'Анализ секции...',
+      progressTotal: section ? section.fields.length : 1,
+      errorLabelFallback: 'Ошибка при заполнении секции',
+      onStart: () => setAiSectionLoading(sectionId),
+      onSuccess: () => setOpenSections(prev => new Set(prev).add(sectionId)),
+      onFinish: () => setAiSectionLoading(null),
+    });
+  }, [aiSectionLoading, data, projectContext, aiSettings, executeAiStreamRequest, setOpenSections]);
 
   const handleAiFillField = useCallback(async (fieldId: string) => {
     if (aiFieldLoading || aiSectionLoading || aiLoading) return;
-    setAiFieldLoading(fieldId);
-    setAiError(null);
-    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Генерация...' });
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const res = await fetch('/api/ai/fill', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          existingData: data, 
-          fieldIds: [fieldId], 
-          context: projectContext,
-          stream: true,
-          provider: aiSettings.provider, 
-          model: aiSettings.model, 
-          apiKey: aiSettings.apiKeys[aiSettings.provider] 
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error('Ошибка сервера');
-      let rawJson = '';
-      let finalParsed: Record<string, string> = {};
-      let pushedUndo = false;
-      let usageData = null as { promptTokens: number; completionTokens: number } | null;
-      
-      await fetchSseStream(res, (dataStr) => {
-        try {
-          const parsedChunk = JSON.parse(dataStr);
-          if (parsedChunk.usage) usageData = parsedChunk.usage;
-          if (parsedChunk.error) throw new Error(parsedChunk.error);
-          if (parsedChunk.text) {
-            rawJson += parsedChunk.text;
-            const partial = parsePartialJson(rawJson);
-            finalParsed = partial;
-            setAiProgress(prev => prev ? { ...prev, current: 1, label: 'Генерация...' } : prev);
-            setData(prev => {
-              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-              return { ...prev, ...partial };
-            });
-          }
-        } catch (e) {
-          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-             console.error(e);
-          }
-        }
-      });
-      
-      setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
-      });
-      
-      if (Object.keys(finalParsed).length > 0) {
-        setFixedFields(Object.keys(finalParsed));
-        setTimeout(() => setFixedFields([]), 5000);
-      }
-      
-      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
-      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
-      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
-      
-      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);
-    } catch (err: unknown) {
-      clearTimeout(timeoutId); 
-      setAiFieldLoading(null);
-      setAiProgress(null);
-      const isAbort = err instanceof Error && err.name === 'AbortError';
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (isAbort) {
-        setAiError('Запрос отменён');
-      } else {
-        setAiError(errMsg || 'Ошибка при заполнении поля');
-      }
-    }
-  }, [data, doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, projectContext, pushUndo, setData, setFixedFields, saveTimer]);
+    
+    await executeAiStreamRequest({
+      url: '/api/ai/fill',
+      body: {
+        existingData: data,
+        fieldIds: [fieldId],
+        context: projectContext,
+        stream: true,
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        apiKey: aiSettings.apiKeys[aiSettings.provider]
+      },
+      progressLabel: 'Генерация...',
+      progressTotal: 1,
+      errorLabelFallback: 'Ошибка при заполнении поля',
+      onStart: () => setAiFieldLoading(fieldId),
+      onSuccess: () => {},
+      onFinish: () => setAiFieldLoading(null),
+    });
+  }, [aiFieldLoading, aiSectionLoading, aiLoading, data, projectContext, aiSettings, executeAiStreamRequest]);
 
   const handleAiCondenseField = useCallback(async (fieldId: string, text: string) => {
     if (aiFieldLoading || aiSectionLoading || aiLoading) return;
-    setAiFieldLoading(fieldId + '-condense');
-    setAiError(null);
-    setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Ужатие...' });
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      const res = await fetch('/api/ai/condense', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          fieldId,
-          text,
-          provider: aiSettings.provider, 
-          model: aiSettings.model, 
-          apiKey: aiSettings.apiKeys[aiSettings.provider] 
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error('Ошибка сервера');
-      let rawJson = '';
-      let finalParsed: Record<string, string> = {};
-      let pushedUndo = false;
-      let usageData = null as { promptTokens: number; completionTokens: number } | null;
-      
-      await fetchSseStream(res, (dataStr) => {
-        try {
-          const parsedChunk = JSON.parse(dataStr);
-          if (parsedChunk.usage) usageData = parsedChunk.usage;
-          if (parsedChunk.error) throw new Error(parsedChunk.error);
-          if (parsedChunk.text) {
-            rawJson += parsedChunk.text;
-            const partial = parsePartialJson(rawJson);
-            finalParsed = partial;
-            setData(prev => {
-              if (!pushedUndo) { pushUndo(prev); pushedUndo = true; }
-              return { ...prev, ...partial };
-            });
-          }
-        } catch (e) {
-          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-             console.error(e);
-          }
-        }
-      });
-      
-      setData(prev => {
-         if (saveTimer.current) clearTimeout(saveTimer.current);
-         saveTimer.current = setTimeout(() => doSave(prev), 800);
-         return prev;
-      });
-      
-      if (Object.keys(finalParsed).length > 0) {
-        setFixedFields(Object.keys(finalParsed));
-        setTimeout(() => setFixedFields([]), 5000);
-      }
-      
-      const modelInfo = (aiSettings.model || aiSettings.provider).toUpperCase();
-      const usage = usageData as { promptTokens: number; completionTokens: number } | null;
-      const usageStr = usage ? ` • ${usage.promptTokens + usage.completionTokens} токенов` : '';
-      setAiProgress(prev => prev ? { ...prev, isVisible: false, current: 1, label: `✓ ${modelInfo}${usageStr}` } : null);
-      
-      setTimeout(() => { setAiFieldLoading(null); setAiProgress(null); }, 6000);
-    } catch (err: unknown) {
-      clearTimeout(timeoutId); 
-      setAiFieldLoading(null);
-      setAiProgress(null);
-      const isAbort = err instanceof Error && err.name === 'AbortError';
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (isAbort) {
-        setAiError('Запрос отменён');
-      } else {
-        setAiError(errMsg || 'Ошибка при ужатии текста');
-      }
-    }
-  }, [doSave, aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, pushUndo, setData, setFixedFields, saveTimer]);
+    
+    await executeAiStreamRequest({
+      url: '/api/ai/condense',
+      body: {
+        fieldId,
+        text,
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        apiKey: aiSettings.apiKeys[aiSettings.provider]
+      },
+      progressLabel: 'Ужатие...',
+      progressTotal: 1,
+      errorLabelFallback: 'Ошибка при ужатии текста',
+      onStart: () => setAiFieldLoading(fieldId + '-condense'),
+      onSuccess: () => {},
+      onFinish: () => setAiFieldLoading(null),
+    });
+  }, [aiFieldLoading, aiSectionLoading, aiLoading, aiSettings, executeAiStreamRequest]);
 
   const handleAiScratchpad = useCallback(async (scratchpadText: string): Promise<Record<string, string>> => {
     if (aiLoading) return {};

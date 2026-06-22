@@ -21,6 +21,7 @@ interface CharacterFormHeaderProps {
   aiLoading: boolean;
   aiAbortRef: MutableRefObject<AbortController | null>;
   handleAiFill: () => void;
+  onWizardOpen: () => void;
   showPrompts: boolean;
   setShowPrompts: (show: boolean) => void;
   showTweaks: boolean;
@@ -47,6 +48,7 @@ export function CharacterFormHeader({
   aiLoading,
   aiAbortRef,
   handleAiFill,
+  onWizardOpen,
   showPrompts,
   setShowPrompts,
   showTweaks,
@@ -154,6 +156,9 @@ export function CharacterFormHeader({
              ✨ Автозаполнение
           </button>
         )}
+        <button onClick={onWizardOpen} className="bg-surface border border-primary text-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px]">auto_fix_high</span> Wizard
+        </button>
         <button onClick={() => setShowPrompts(!showPrompts)} className="text-on-surface-variant hover:text-primary transition-colors" title="Системные промпты">
           <span className="material-symbols-outlined">code_blocks</span>
         </button>

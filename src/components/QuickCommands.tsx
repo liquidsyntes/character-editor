@@ -1,7 +1,5 @@
 'use client';
 
-import { CharacterData } from '@/types/character';
-
 interface QuickCommandsProps {
   aiLoading: boolean;
   handleQuickCommand: (cmd: 'lifeEvent' | 'hiddenMotive' | 'innerConflict') => Promise<Record<string, string>>;

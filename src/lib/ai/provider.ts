@@ -5,7 +5,7 @@
 import { createXai } from '@ai-sdk/xai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText, streamText } from 'ai';
+import { generateText, streamText, LanguageModelV1 } from 'ai';
 import { env } from '../env';
 import { getServerSideApiKeys } from '../settingsActions';
 
@@ -87,16 +87,11 @@ export function checkProviderAvailable(provider: AiProvider): boolean {
   return !!PROVIDER_CONFIGS[provider].apiKey;
 }
 
-export async function chatCompletion(
-  messages: ChatMessage[],
-  options: CompletionOptions = {}
-): Promise<CompletionResult> {
-  const provider: AiProvider = options.provider || 'deepseek';
+export async function resolveApiKey(provider: AiProvider, options: CompletionOptions): Promise<string> {
   const cfg = PROVIDER_CONFIGS[provider];
-  const model = options.model || cfg.defaultModel;
-  
   const cookieKeys = await getServerSideApiKeys();
   let apiKey = options.apiKey;
+  
   if (!apiKey || apiKey === '********') {
     apiKey = cookieKeys[provider];
   }
@@ -107,25 +102,62 @@ export async function chatCompletion(
   if (!apiKey) {
     throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI) или в .env как ${provider.toUpperCase()}_API_KEY`);
   }
+  
+  return apiKey;
+}
+
+export function createProviderModelInstance(provider: AiProvider, model: string, apiKey: string): LanguageModelV1 {
+  if (provider === 'xai') {
+    return createXai({ apiKey })(model);
+  } else if (provider === 'anthropic') {
+    return createAnthropic({ apiKey })(model);
+  } else if (provider === 'gemini') {
+    return createGoogleGenerativeAI({ apiKey })(model);
+  }
+  throw new Error(`AI SDK instance creation not supported for provider: ${provider}`);
+}
+
+export function buildRequestBody(
+  model: string,
+  messages: ChatMessage[],
+  options: CompletionOptions,
+  provider: AiProvider,
+  stream: boolean
+): Record<string, unknown> {
+  const requestBody: Record<string, unknown> = {
+    model,
+    messages,
+    temperature: options.temperature ?? 0.8,
+    max_tokens: options.maxTokens ?? 16384,
+    stream,
+  };
+
+  if (provider === 'deepseek' && (model.includes('pro') || model.includes('reasoner'))) {
+    requestBody.thinking = { type: 'enabled' };
+    requestBody.reasoning_effort = 'high';
+  }
+
+  return requestBody;
+}
+
+export async function chatCompletion(
+  messages: ChatMessage[],
+  options: CompletionOptions = {}
+): Promise<CompletionResult> {
+  const provider: AiProvider = options.provider || 'deepseek';
+  const cfg = PROVIDER_CONFIGS[provider];
+  const model = options.model || cfg.defaultModel;
+  
+  const apiKey = await resolveApiKey(provider, options);
 
   if (provider === 'xai' || provider === 'anthropic' || provider === 'gemini') {
-    let modelInstance;
-    if (provider === 'xai') {
-      const xai = createXai({ apiKey });
-      modelInstance = xai(model);
-    } else if (provider === 'anthropic') {
-      const anthropic = createAnthropic({ apiKey });
-      modelInstance = anthropic(model);
-    } else if (provider === 'gemini') {
-      const google = createGoogleGenerativeAI({ apiKey });
-      modelInstance = google(model);
-    }
+    const modelInstance = createProviderModelInstance(provider, model, apiKey);
 
     const systemMsg = messages.find(m => m.role === 'system')?.content;
     const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     
     const { text, usage } = await generateText({
-      model: modelInstance!,
+      model: modelInstance,
       system: systemMsg,
       messages: coreMessages,
       temperature: options.temperature ?? 0.8,
@@ -139,18 +171,7 @@ export async function chatCompletion(
     };
   }
 
-  const requestBody: Record<string, unknown> = {
-    model,
-    messages,
-    temperature: options.temperature ?? 0.8,
-    max_tokens: options.maxTokens ?? 16384,
-    stream: false,
-  };
-
-  if (provider === 'deepseek' && (model.includes('pro') || model.includes('reasoner'))) {
-    requestBody.thinking = { type: 'enabled' };
-    requestBody.reasoning_effort = 'high';
-  }
+  const requestBody = buildRequestBody(model, messages, options, provider, false);
 
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',
@@ -186,37 +207,16 @@ export async function chatCompletionStream(
   const cfg = PROVIDER_CONFIGS[provider];
   const model = options.model || cfg.defaultModel;
   
-  const cookieKeys = await getServerSideApiKeys();
-  let apiKey = options.apiKey;
-  if (!apiKey || apiKey === '********') {
-    apiKey = cookieKeys[provider];
-  }
-  if (!apiKey) {
-    apiKey = cfg.apiKey;
-  }
-
-  if (!apiKey) {
-    throw new Error(`API-ключ для "${provider}" не указан. Добавьте его в настройках (⚙ → AI)`);
-  }
+  const apiKey = await resolveApiKey(provider, options);
 
   if (provider === 'xai' || provider === 'anthropic' || provider === 'gemini') {
-    let modelInstance;
-    if (provider === 'xai') {
-      const xai = createXai({ apiKey });
-      modelInstance = xai(model);
-    } else if (provider === 'anthropic') {
-      const anthropic = createAnthropic({ apiKey });
-      modelInstance = anthropic(model);
-    } else if (provider === 'gemini') {
-      const google = createGoogleGenerativeAI({ apiKey });
-      modelInstance = google(model);
-    }
+    const modelInstance = createProviderModelInstance(provider, model, apiKey);
 
     const systemMsg = messages.find(m => m.role === 'system')?.content;
     const coreMessages = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     
     const { textStream, usage } = streamText({
-      model: modelInstance!,
+      model: modelInstance,
       system: systemMsg,
       messages: coreMessages,
       temperature: options.temperature ?? 0.8,
@@ -249,18 +249,7 @@ export async function chatCompletionStream(
     });
   }
 
-  const requestBody: Record<string, unknown> = {
-    model,
-    messages,
-    temperature: options.temperature ?? 0.8,
-    max_tokens: options.maxTokens ?? 16384,
-    stream: true,
-  };
-
-  if (provider === 'deepseek' && (model.includes('pro') || model.includes('reasoner'))) {
-    requestBody.thinking = { type: 'enabled' };
-    requestBody.reasoning_effort = 'high';
-  }
+  const requestBody = buildRequestBody(model, messages, options, provider, true);
 
   const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
     method: 'POST',

@@ -24,6 +24,21 @@ vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
   };
 });
 
+// withAiMiddleware closes over the real requireAuth, so mock the session source directly.
+vi.mock('next-auth/next', () => ({
+  getServerSession: vi.fn().mockResolvedValue({ user: { id: 'test-user' } }),
+}));
+
+// Avoid hitting the DB when building prompts (getPromptTemplate falls back to defaults).
+vi.mock('@/lib/prisma', () => ({
+  prisma: { appSetting: { findUnique: vi.fn().mockResolvedValue(null) } },
+}));
+
+// withAiMiddleware closes over the real checkApiRateLimit -> checkRateLimit, so mock the source.
+vi.mock('@/lib/rateLimit', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 10 }),
+}));
+
 describe('POST /api/ai/fill', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -63,6 +78,28 @@ describe('POST /api/ai/fill', () => {
     const data = await res.json();
     expect(data.data).toEqual({ firstName: 'Алексей' });
     expect(data.filledCount).toBe(1);
+  });
+
+  it('should process a wizardAnswers request without existingData', async () => {
+    vi.mocked(provider.chatCompletion).mockResolvedValue({
+      content: '{"firstName": "Анна", "roleInPlot": "Главный герой"}',
+      usage: { promptTokens: 20, completionTokens: 10 },
+    });
+
+    const req = new NextRequest('http://localhost/api/ai/fill', {
+      method: 'POST',
+      body: JSON.stringify({
+        wizardAnswers: { w_gender: 'женщина', w_role: 'Главный герой' },
+        stream: false,
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    const data = await res.json();
+    expect(data.data).toEqual({ firstName: 'Анна', roleInPlot: 'Главный герой' });
+    expect(data.filledCount).toBe(2);
   });
 
   it('should handle streaming request successfully', async () => {

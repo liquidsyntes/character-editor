@@ -120,6 +120,9 @@ export async function importCharacter(projectId: string | null | undefined, form
   const nickname = formData.nickname || '';
   const name = [firstName, lastName].filter(Boolean).join(' ');
   const summary = formData.oneLiner || '';
+  const gender = formData.gender || '';
+  const archetype = formData.archetype || '';
+  const age = formData.age || '';
 
   const character = await prisma.character.create({
     data: {
@@ -128,6 +131,9 @@ export async function importCharacter(projectId: string | null | undefined, form
       name,
       nickname,
       summary,
+      gender,
+      archetype,
+      age,
       data: JSON.stringify(formData),
       isDraft: false,
     },
@@ -143,6 +149,9 @@ export async function updateCharacter(id: string, formData: CharacterData) {
   const nickname = formData.nickname || '';
   const name = [firstName, lastName].filter(Boolean).join(' ');
   const summary = formData.oneLiner || '';
+  const gender = formData.gender || '';
+  const archetype = formData.archetype || '';
+  const age = formData.age || '';
 
   const result = await prisma.character.updateMany({
     where: { id, userId },
@@ -150,6 +159,9 @@ export async function updateCharacter(id: string, formData: CharacterData) {
       name,
       nickname,
       summary,
+      gender,
+      archetype,
+      age,
       data: JSON.stringify(formData),
       isDraft: false,
     },
@@ -220,6 +232,9 @@ export async function duplicateCharacter(id: string) {
       name: original.name ? `${original.name} (копия)` : '',
       nickname: original.nickname,
       data: original.data,
+      gender: original.gender,
+      archetype: original.archetype,
+      age: original.age,
       emoji: original.emoji,
       color: original.color,
       summary: original.summary,

@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-# Ожидаем, пока директория /app/prisma/data будет доступна (если примонтирована)
+# Ensure data directory exists
 mkdir -p /app/prisma/data
 
-# Применяем миграции (db push безопасно применять для SQLite)
-echo "Running Prisma db push..."
-npx prisma db push --accept-data-loss
+# Apply database schema (pass URL explicitly for Prisma 7)
+echo "=== Running Prisma db push..."
+prisma db push --url="${DATABASE_URL}" --accept-data-loss
 
-echo "Starting Next.js server..."
+echo "=== Starting Character Editor..."
 exec "$@"

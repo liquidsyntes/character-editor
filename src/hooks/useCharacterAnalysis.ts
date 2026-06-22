@@ -3,6 +3,7 @@ import { CharacterData } from '@/types/character';
 import { AnalysisRecord } from '@/components/AnalyzeHistorySidebar';
 import { AiSettings } from '@/lib/ai/useAiSettings';
 import { fetchSseStream } from '@/lib/ai/prompt-parser';
+import { getAnalysisHistory, saveAnalysis, deleteAnalysis, bulkMigrateLocalAnalyses } from '@/lib/analysisActions';
 
 interface UseCharacterAnalysisProps {
   characterId: string;
@@ -37,21 +38,31 @@ export function useCharacterAnalysis({
   
   const analyzeAbortRef = useRef<AbortController | null>(null);
 
-  // Load analyses from localStorage on mount or when characterId changes
+  // Load analyses from DB and migrate localStorage if needed
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`analyses_${characterId}`);
-      if (saved) {
-        try {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setAnalyses(JSON.parse(saved));
-        } catch (e) {
-          console.error(e);
+    let isMounted = true;
+    
+    async function loadHistory() {
+      try {
+        const savedLocal = localStorage.getItem(`analyses_${characterId}`);
+        if (savedLocal) {
+          const parsed = JSON.parse(savedLocal);
+          if (parsed && parsed.length > 0) {
+            await bulkMigrateLocalAnalyses(characterId, parsed);
+          }
+          localStorage.removeItem(`analyses_${characterId}`);
         }
-      } else {
-        setAnalyses([]);
+
+        const history = await getAnalysisHistory(characterId);
+        if (isMounted) setAnalyses(history as unknown as AnalysisRecord[]);
+      } catch (err) {
+        console.error('Failed to load analysis history:', err);
       }
     }
+
+    loadHistory();
+
+    return () => { isMounted = false; };
   }, [characterId]);
 
   const handleAnalyze = useCallback(async () => {
@@ -119,20 +130,18 @@ export function useCharacterAnalysis({
         throw new Error(parseErr instanceof Error ? parseErr.message : 'Не удалось разобрать ответ AI. Попробуйте ещё раз.');
       }
 
-      const now = new Date();
-      const ts = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + ' · ' + now.toLocaleDateString('ru-RU');
-      const record: AnalysisRecord = {
-        id: Date.now().toString(36), timestamp: ts,
-        result: { categories: result.categories, totalIssues: result.totalIssues, summary: result.summary },
-        provider: aiSettings.provider,
-        dataSnapshot: { ...data }
-      };
+      const savedRecord = await saveAnalysis(
+        characterId,
+        { categories: result.categories, totalIssues: result.totalIssues, summary: result.summary },
+        aiSettings.provider,
+        { ...data }
+      );
+      
       setAnalyses(prev => {
-        const next = [record, ...prev];
-        localStorage.setItem(`analyses_${characterId}`, JSON.stringify(next));
+        const next = [savedRecord as unknown as AnalysisRecord, ...prev];
         return next;
       });
-      setActiveAnalysisId(record.id);
+      setActiveAnalysisId(savedRecord.id);
     } catch (err) {
       clearTimeout(timeoutId); 
       if (err instanceof Error && err.name === 'AbortError') {
@@ -202,14 +211,15 @@ export function useCharacterAnalysis({
     setPendingDiff(null);
   }, []);
 
-  const handleDeleteAnalysis = useCallback((id: string) => {
-    setAnalyses(prev => {
-      const next = prev.filter(a => a.id !== id);
-      localStorage.setItem(`analyses_${characterId}`, JSON.stringify(next));
-      return next;
-    });
-    if (activeAnalysisId === id) {
-      setActiveAnalysisId(null);
+  const handleDeleteAnalysis = useCallback(async (id: string) => {
+    try {
+      await deleteAnalysis(id, characterId);
+      setAnalyses(prev => prev.filter(a => a.id !== id));
+      if (activeAnalysisId === id) {
+        setActiveAnalysisId(null);
+      }
+    } catch (e) {
+      console.error('Failed to delete analysis', e);
     }
   }, [characterId, activeAnalysisId]);
 

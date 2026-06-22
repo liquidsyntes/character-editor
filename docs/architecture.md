@@ -127,7 +127,7 @@ model AppSetting {
 }
 
 model RateLimit {
-  id, ip, endpoint, hits, resetAt
+  ip, count, resetAt
 }
 ```
 
