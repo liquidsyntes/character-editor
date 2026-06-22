@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { parseFillResponse, parseAnalyzeResponse } from './prompt-parser';
+import { buildWizardPrompt } from './prompt';
+import { CHARACTER_SCHEMA } from '@/lib/schema';
+
+// Avoid hitting the DB: getPromptTemplate falls back to defaults when no setting.
+vi.mock('@/lib/prisma', () => ({
+  prisma: { appSetting: { findUnique: vi.fn().mockResolvedValue(null) } },
+}));
 
 describe('AI Parsing Logic', () => {
   describe('parseFillResponse', () => {
@@ -111,5 +118,42 @@ describe('AI Parsing Logic', () => {
       const result = parseAnalyzeResponse(rawResponse);
       expect(result.totalIssues).toBe(3);
     });
+  });
+});
+
+describe('buildWizardPrompt', () => {
+  const answers = {
+    w_name: 'Анна Ковалёва',
+    w_gender: 'женщина',
+    w_role: 'Главный герой',
+    w_brings: ['Тайну', 'Опасность'],
+    w_logicEmotion: 7,
+  };
+
+  it('should embed the serialized wizard answers in the user prompt', async () => {
+    const { user } = await buildWizardPrompt(answers);
+    expect(user).toContain('w_role');
+    expect(user).toContain('Главный герой');
+    expect(user).toContain('Тайну');
+    expect(user).toContain('w_logicEmotion');
+  });
+
+  it('should include the full character schema as a generation target', async () => {
+    const { user } = await buildWizardPrompt(answers);
+    const allFieldIds = CHARACTER_SCHEMA.flatMap((s) => s.fields.map((f) => f.id));
+    // Spot-check fields across the whole schema (first, middle, last).
+    expect(user).toContain(allFieldIds[0]);
+    expect(user).toContain(allFieldIds[Math.floor(allFieldIds.length / 2)]);
+    expect(user).toContain(allFieldIds[allFieldIds.length - 1]);
+    expect(allFieldIds.length).toBeGreaterThan(100);
+  });
+
+  it('should inject the wizard→fields mapping and a gender instruction in the system prompt', async () => {
+    const { system } = await buildWizardPrompt(answers);
+    expect(system).toContain('w_role');
+    expect(system).not.toContain('{{WIZARD_MAPPING}}');
+    const { user } = await buildWizardPrompt(answers);
+    expect(user).not.toContain('{{');
+    expect(user).toContain('женщина');
   });
 });

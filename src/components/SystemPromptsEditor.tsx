@@ -9,7 +9,9 @@ import {
   DEFAULT_USER_FILL_PROMPT,
   DEFAULT_USER_REGENERATE_PROMPT,
   DEFAULT_USER_ANALYZE_PROMPT,
-  DEFAULT_USER_FIX_PROMPT
+  DEFAULT_USER_FIX_PROMPT,
+  DEFAULT_WIZARD_SYSTEM_PROMPT,
+  DEFAULT_WIZARD_USER_PROMPT
 } from '@/lib/ai/prompt-constants';
 import { HighlightedTextarea } from './HighlightedTextarea';
 
@@ -22,6 +24,9 @@ export default function SystemPromptsEditor() {
   const [userRegenPrompt, setUserRegenPrompt] = useState(DEFAULT_USER_REGENERATE_PROMPT);
   const [userAnalyzePrompt, setUserAnalyzePrompt] = useState(DEFAULT_USER_ANALYZE_PROMPT);
   const [userFixPrompt, setUserFixPrompt] = useState(DEFAULT_USER_FIX_PROMPT);
+
+  const [wizardPrompt, setWizardPrompt] = useState(DEFAULT_WIZARD_SYSTEM_PROMPT);
+  const [userWizardPrompt, setUserWizardPrompt] = useState(DEFAULT_WIZARD_USER_PROMPT);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,6 +54,12 @@ export default function SystemPromptsEditor() {
 
       const pUserFix = await getAppSetting('USER_FIX_PROMPT');
       if (pUserFix) setUserFixPrompt(pUserFix);
+
+      const pWizard = await getAppSetting('WIZARD_PROMPT');
+      if (pWizard) setWizardPrompt(pWizard);
+
+      const pUserWizard = await getAppSetting('USER_WIZARD_PROMPT');
+      if (pUserWizard) setUserWizardPrompt(pUserWizard);
       
       setLoading(false);
     }
@@ -130,6 +141,7 @@ export default function SystemPromptsEditor() {
           {renderPromptEditor('FILL_PROMPT', 'Системный Промпт: Заполнение', fillPrompt, setFillPrompt, DEFAULT_FILL_SYSTEM_PROMPT)}
           {renderPromptEditor('ANALYZE_PROMPT', 'Системный Промпт: Анализ', analyzePrompt, setAnalyzePrompt, DEFAULT_ANALYZE_SYSTEM_PROMPT)}
           {renderPromptEditor('FIX_PROMPT', 'Системный Промпт: Исправление', fixPrompt, setFixPrompt, DEFAULT_FIX_SYSTEM_PROMPT)}
+          {renderPromptEditor('WIZARD_PROMPT', 'Системный Промпт: Wizard', wizardPrompt, setWizardPrompt, DEFAULT_WIZARD_SYSTEM_PROMPT)}
         </div>
       </section>
 
@@ -145,6 +157,7 @@ export default function SystemPromptsEditor() {
           {renderPromptEditor('USER_REGENERATE_PROMPT', 'Шаблон: Пересоздание персонажа', userRegenPrompt, setUserRegenPrompt, DEFAULT_USER_REGENERATE_PROMPT)}
           {renderPromptEditor('USER_ANALYZE_PROMPT', 'Шаблон: Поиск противоречий', userAnalyzePrompt, setUserAnalyzePrompt, DEFAULT_USER_ANALYZE_PROMPT)}
           {renderPromptEditor('USER_FIX_PROMPT', 'Шаблон: Исправление проблем', userFixPrompt, setUserFixPrompt, DEFAULT_USER_FIX_PROMPT)}
+          {renderPromptEditor('USER_WIZARD_PROMPT', 'Шаблон: Wizard-генерация', userWizardPrompt, setUserWizardPrompt, DEFAULT_WIZARD_USER_PROMPT)}
         </div>
       </section>
     </div>

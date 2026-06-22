@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
-import * as routeUtils from '@/lib/ai/routeUtils';
+import * as rateLimit from '@/lib/rateLimit';
 import * as provider from '@/lib/ai/provider';
 import { NextResponse } from 'next/server';
 
@@ -23,6 +23,21 @@ vi.mock('@/lib/ai/routeUtils', async (importOriginal) => {
   };
 });
 
+// withAiMiddleware closes over the real requireAuth, so mock the session source directly.
+vi.mock('next-auth/next', () => ({
+  getServerSession: vi.fn().mockResolvedValue({ user: { id: 'test-user' } }),
+}));
+
+// Avoid hitting the DB when building prompts (getPromptTemplate falls back to defaults).
+vi.mock('@/lib/prisma', () => ({
+  prisma: { appSetting: { findUnique: vi.fn().mockResolvedValue(null) } },
+}));
+
+// withAiMiddleware closes over the real checkApiRateLimit -> checkRateLimit, so mock the source.
+vi.mock('@/lib/rateLimit', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 10 }),
+}));
+
 describe('POST /api/ai/analyze', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,9 +56,7 @@ describe('POST /api/ai/analyze', () => {
   });
 
   it('should return 429 if rate limit is exceeded', async () => {
-    vi.mocked(routeUtils.checkApiRateLimit).mockResolvedValueOnce(
-      NextResponse.json({ error: 'Слишком много запросов. Подождите немного.' }, { status: 429 })
-    );
+    vi.mocked(rateLimit.checkRateLimit).mockResolvedValueOnce({ success: false, remaining: 0 });
 
     const req = new NextRequest('http://localhost/api/ai/analyze', {
       method: 'POST',
