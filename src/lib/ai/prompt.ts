@@ -5,6 +5,8 @@
 
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 import { CharacterData } from '@/types/character';
+import { WizardAnswers } from '@/types/wizard';
+import { WIZARD_TO_FIELDS_MAPPING } from '@/lib/wizard-mapping';
 import { prisma } from '@/lib/prisma';
 import { 
   DEFAULT_FILL_SYSTEM_PROMPT, 
@@ -17,7 +19,9 @@ import {
   DEFAULT_SCRATCHPAD_SYSTEM_PROMPT,
   DEFAULT_USER_SCRATCHPAD_PROMPT,
   DEFAULT_QUICK_COMMAND_SYSTEM_PROMPT,
-  DEFAULT_USER_QUICK_COMMAND_PROMPT
+  DEFAULT_USER_QUICK_COMMAND_PROMPT,
+  DEFAULT_WIZARD_SYSTEM_PROMPT,
+  DEFAULT_WIZARD_USER_PROMPT
 } from './prompt-constants';
 
 interface FillRequest {
@@ -27,7 +31,7 @@ interface FillRequest {
   context?: string;
 }
 
-export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT' | 'SCRATCHPAD_PROMPT' | 'USER_SCRATCHPAD_PROMPT' | 'QUICK_COMMAND_PROMPT' | 'USER_QUICK_COMMAND_PROMPT';
+export type PromptKey = 'FILL_PROMPT' | 'ANALYZE_PROMPT' | 'FIX_PROMPT' | 'USER_FILL_PROMPT' | 'USER_REGENERATE_PROMPT' | 'USER_ANALYZE_PROMPT' | 'USER_FIX_PROMPT' | 'SCRATCHPAD_PROMPT' | 'USER_SCRATCHPAD_PROMPT' | 'QUICK_COMMAND_PROMPT' | 'USER_QUICK_COMMAND_PROMPT' | 'WIZARD_PROMPT' | 'USER_WIZARD_PROMPT';
 
 type CacheEntry = { value: string | null; expiresAt: number };
 const promptCache = new Map<string, CacheEntry>();
@@ -70,6 +74,8 @@ export async function getPromptTemplate(key: PromptKey): Promise<string> {
     case 'USER_SCRATCHPAD_PROMPT': return DEFAULT_USER_SCRATCHPAD_PROMPT;
     case 'QUICK_COMMAND_PROMPT': return DEFAULT_QUICK_COMMAND_SYSTEM_PROMPT;
     case 'USER_QUICK_COMMAND_PROMPT': return DEFAULT_USER_QUICK_COMMAND_PROMPT;
+    case 'WIZARD_PROMPT': return DEFAULT_WIZARD_SYSTEM_PROMPT;
+    case 'USER_WIZARD_PROMPT': return DEFAULT_WIZARD_USER_PROMPT;
     default: return DEFAULT_FILL_SYSTEM_PROMPT;
   }
 }
@@ -394,5 +400,76 @@ export async function buildQuickCommandPrompt(
     .replace('{{SCHEMA_DESC}}', schemaDesc);
 
   const system = await getPromptTemplate('QUICK_COMMAND_PROMPT');
+  return { system, user: userPrompt };
+}
+
+// ── AI Wizard Generation ─────────────────────────────────────────
+
+/**
+ * Builds a human-readable representation of WIZARD_TO_FIELDS_MAPPING,
+ * annotating target field IDs with their Russian labels for the prompt.
+ */
+function buildWizardMappingText(): string {
+  const labelMap = new Map<string, string>();
+  for (const section of CHARACTER_SCHEMA) {
+    for (const field of section.fields) {
+      labelMap.set(field.id, field.label);
+    }
+  }
+
+  return Object.entries(WIZARD_TO_FIELDS_MAPPING)
+    .map(([wizardKey, fieldIds]) => {
+      const fields = fieldIds
+        .map((id) => {
+          const label = labelMap.get(id);
+          return label ? `${id} (${label})` : id;
+        })
+        .join(', ');
+      return `- ${wizardKey} → ${fields}`;
+    })
+    .join('\n');
+}
+
+export async function buildWizardPrompt(
+  wizardAnswers: WizardAnswers,
+  context?: string
+): Promise<{ system: string; user: string }> {
+  // 1. Serialize wizard answers
+  const wizardAnswersJson = JSON.stringify(wizardAnswers, null, 2);
+
+  // 2. Determine gender for proper grammatical agreement
+  const genderRaw = wizardAnswers.w_gender;
+  const gender = typeof genderRaw === 'string' ? genderRaw.trim() : '';
+  const genderInstruction = gender
+    ? `\nКРИТИЧЕСКИ ВАЖНО: Пол персонажа — «${gender}». Строго следи за правильными окончаниями глаголов, прилагательных и местоимениями (он/она/оно) во всех генерируемых текстах.`
+    : '';
+
+  const contextInstruction = context ? `Дополнительный контекст от автора: ${context}\n` : '';
+
+  // 3. Build TARGET_SCHEMA from the full schema (wizard generates the whole card)
+  const targetSchemaStr = CHARACTER_SCHEMA
+    .map((section) => {
+      const fields = section.fields
+        .map((f) => {
+          return `  "${f.id}": "" // ${f.label}${
+            f.placeholder ? ` (пример: ${f.placeholder})` : ''
+          }`;
+        })
+        .join('\n');
+      return `## ${section.icon} ${section.label}\n${fields}`;
+    })
+    .join('\n\n');
+
+  // 4. Fill placeholders
+  const userTemplate = await getPromptTemplate('USER_WIZARD_PROMPT');
+  const userPrompt = userTemplate
+    .replace('{{GENDER_INSTRUCTION}}', genderInstruction)
+    .replace('{{CONTEXT}}', contextInstruction)
+    .replace('{{WIZARD_ANSWERS_JSON}}', wizardAnswersJson)
+    .replace('{{TARGET_SCHEMA}}', targetSchemaStr);
+
+  const systemTemplate = await getPromptTemplate('WIZARD_PROMPT');
+  const system = systemTemplate.replace('{{WIZARD_MAPPING}}', buildWizardMappingText());
+
   return { system, user: userPrompt };
 }

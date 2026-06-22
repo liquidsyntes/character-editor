@@ -13,12 +13,14 @@ import AnalyzePanel from './AnalyzePanel';
 import AnalyzeHistorySidebar from './AnalyzeHistorySidebar';
 import { SiblingCharacter } from './CharacterListPanel';
 import { DiffModal } from './DiffModal';
+import { WizardModal } from './wizard/WizardModal';
 import { CharacterSection } from './CharacterSection';
 import { CharacterFormHeader } from './CharacterFormHeader';
 import { CharacterFormSummary } from './CharacterFormSummary';
 import { CharacterSidebar } from './CharacterSidebar';
 import { useCharacterFormState } from '@/hooks/useCharacterFormState';
 import { useAiFill } from '@/hooks/useAiFill';
+import { useWizardGenerate } from '@/hooks/useWizardGenerate';
 import { useCharacterAnalysis } from '@/hooks/useCharacterAnalysis';
 import { useKeyboard } from '@/hooks/useKeyboard';
 
@@ -45,6 +47,7 @@ export default function CharacterForm({
   const [showTweaks, setShowTweaks] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
   const [showAnalyzeHistory, setShowAnalyzeHistory] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const aiState = useAiSettings();
@@ -95,6 +98,10 @@ export default function CharacterForm({
     handleQuickCommand,
   } = useAiFill({
     data, setData, doSave, pushUndo, setFixedFields, setOpenSections, aiSettings, projectContext: enrichedContext, saveTimer
+  });
+
+  const { generateFromWizard } = useWizardGenerate({
+    aiSettings, projectContext: enrichedContext
   });
 
   const {
@@ -221,6 +228,7 @@ export default function CharacterForm({
           aiLoading={aiLoading}
           aiAbortRef={aiAbortRef}
           handleAiFill={handleAiFill}
+          onWizardOpen={() => setShowWizard(true)}
           showPrompts={showPrompts}
           setShowPrompts={setShowPrompts}
           showTweaks={showTweaks}
@@ -363,6 +371,20 @@ export default function CharacterForm({
             proposedData={pendingDiff}
             onAccept={handleAcceptDiff}
             onReject={handleRejectDiff}
+          />
+        )}
+
+        {showWizard && (
+          <WizardModal
+            isOpen={showWizard}
+            onClose={() => setShowWizard(false)}
+            onGenerate={async (answers) => {
+              setShowWizard(false);
+              const proposed = await generateFromWizard(answers);
+              if (Object.keys(proposed).length > 0) {
+                setPendingDiff(proposed);
+              }
+            }}
           />
         )}
 

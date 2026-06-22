@@ -23,6 +23,7 @@ describe('CharacterFormHeader', () => {
     aiLoading: false,
     aiAbortRef: { current: null },
     handleAiFill: vi.fn(),
+    onWizardOpen: vi.fn(),
     showPrompts: false,
     setShowPrompts: vi.fn(),
     showTweaks: false,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chatCompletion, chatCompletionStream, AiProvider } from '@/lib/ai/provider';
-import { buildFillPrompt, buildScratchpadPrompt, buildQuickCommandPrompt } from '@/lib/ai/prompt';
+import { buildFillPrompt, buildScratchpadPrompt, buildQuickCommandPrompt, buildWizardPrompt } from '@/lib/ai/prompt';
 import { parseFillResponse, parsePartialJson } from '@/lib/ai/prompt-parser';
 import { sseResponse } from '@/lib/ai/streamUtils';
 import { handleAiError, validateExistingData, withAiMiddleware } from '@/lib/ai/routeUtils';
@@ -12,8 +12,6 @@ export const maxDuration = 120;
 async function generateHandler(req: NextRequest) {
   try {
     const body = await req.json();
-    const validationError = validateExistingData(body);
-    if (validationError) return validationError;
 
     const {
       existingData,
@@ -27,13 +25,22 @@ async function generateHandler(req: NextRequest) {
       apiKey,
       scratchpadText,
       quickCommand,
+      wizardAnswers,
     } = body;
+
+    // Wizard requests build a character from scratch and don't carry existingData.
+    if (!wizardAnswers) {
+      const validationError = validateExistingData(body);
+      if (validationError) return validationError;
+    }
 
     let promptResult;
     if (scratchpadText) {
       promptResult = await buildScratchpadPrompt(existingData, scratchpadText, context);
     } else if (quickCommand) {
       promptResult = await buildQuickCommandPrompt(existingData, quickCommand, context);
+    } else if (wizardAnswers) {
+      promptResult = await buildWizardPrompt(wizardAnswers, context);
     } else {
       promptResult = await buildFillPrompt({
         existingData,
