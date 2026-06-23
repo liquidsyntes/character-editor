@@ -148,15 +148,15 @@ export function CharacterFormHeader({
           <span className="material-symbols-outlined">share</span>
         </button>
         {aiLoading ? (
-          <button onClick={() => aiAbortRef.current?.abort()} className="bg-error text-on-error px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+          <button onClick={() => aiAbortRef.current?.abort()} className="bg-error text-on-error h-8 px-4 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
              <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Отменить
           </button>
         ) : (
-          <button onClick={handleAiFill} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform">
-             ✨ Автозаполнение
+          <button onClick={handleAiFill} className="bg-primary text-on-primary h-8 px-4 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+             <span>✨</span> Автозаполнение
           </button>
         )}
-        <button onClick={onWizardOpen} className="bg-surface border border-primary text-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+        <button onClick={onWizardOpen} className="bg-orange-600 text-white h-8 px-4 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
           <span className="material-symbols-outlined text-[16px]">auto_fix_high</span> Wizard
         </button>
         <button onClick={() => setShowPrompts(!showPrompts)} className="text-on-surface-variant hover:text-primary transition-colors" title="Системные промпты">

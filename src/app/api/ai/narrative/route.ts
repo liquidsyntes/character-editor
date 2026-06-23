@@ -7,7 +7,7 @@ import { DEFAULT_NARRATIVE_SYSTEM_PROMPT } from '@/lib/ai/prompt-constants';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 async function generateHandler(req: NextRequest) {
   try {

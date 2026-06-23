@@ -12,6 +12,7 @@ interface NarrativeHeaderProps {
   showTweaks: boolean;
   setShowTweaks: (show: boolean) => void;
   hasNarrative: boolean;
+  onAnalyze?: () => void;
 }
 
 export function NarrativeHeader({
@@ -26,6 +27,7 @@ export function NarrativeHeader({
   showTweaks,
   setShowTweaks,
   hasNarrative,
+  onAnalyze,
 }: NarrativeHeaderProps) {
   return (
     <header className="sticky top-0 z-40 flex justify-between items-center px-container-padding h-16 w-full border-b border-outline-variant bg-surface shrink-0">
@@ -62,10 +64,17 @@ export function NarrativeHeader({
              <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span> Остановить
           </button>
         ) : (
-          <button onClick={handleGenerate} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
-             <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
-             {hasNarrative ? 'Перегенерировать' : 'Сформировать описание'}
-          </button>
+          <>
+            {hasNarrative && (
+              <button onClick={onAnalyze} className="bg-surface border border-primary text-primary px-4 py-2 rounded font-label-caps text-label-caps hover:bg-primary/5 transition-colors flex items-center gap-2">
+                 <span className="material-symbols-outlined text-[16px]">psychology</span> Анализ текста
+              </button>
+            )}
+            <button onClick={handleGenerate} className="bg-primary text-on-primary px-4 py-2 rounded font-label-caps text-label-caps hover:scale-95 duration-100 transition-transform flex items-center gap-2">
+               <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+               {hasNarrative ? 'Перегенерировать' : 'Сформировать описание'}
+            </button>
+          </>
         )}
         
         <div className="h-6 w-px bg-outline-variant mx-2"></div>

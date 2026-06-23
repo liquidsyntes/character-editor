@@ -5,6 +5,8 @@ import { parseFillResponse } from '@/lib/ai/prompt-parser';
 import { AiProvider } from '@/lib/ai/provider';
 import { handleAiError, validateExistingData, withAiMiddleware } from '@/lib/ai/routeUtils';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 async function generateHandler(req: NextRequest) {
