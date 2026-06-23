@@ -5,7 +5,7 @@
 import { createXai } from '@ai-sdk/xai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText, streamText, LanguageModelV1 } from 'ai';
+import { generateText, streamText, LanguageModel } from 'ai';
 import { env } from '../env';
 import { getServerSideApiKeys } from '../settingsActions';
 
@@ -106,7 +106,7 @@ export async function resolveApiKey(provider: AiProvider, options: CompletionOpt
   return apiKey;
 }
 
-export function createProviderModelInstance(provider: AiProvider, model: string, apiKey: string): LanguageModelV1 {
+export function createProviderModelInstance(provider: AiProvider, model: string, apiKey: string): LanguageModel {
   if (provider === 'xai') {
     return createXai({ apiKey })(model);
   } else if (provider === 'anthropic') {
