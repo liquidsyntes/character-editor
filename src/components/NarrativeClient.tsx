@@ -46,6 +46,7 @@ export function NarrativeClient({
   const [analyzeResult, setAnalyzeResult] = useState<NarrativeAnalyzeResult | null>(null);
   const [showAnalyzePanel, setShowAnalyzePanel] = useState(false);
   const [fixingIssueTitle, setFixingIssueTitle] = useState<string | null>(null);
+  const [analyzeThoughts, setAnalyzeThoughts] = useState('');
   const analyzeAbortRef = useRef<AbortController | null>(null);
 
   const aiSettings = useAiSettings();
@@ -101,6 +102,8 @@ export function NarrativeClient({
     if (!narrative.trim()) return;
     setAnalyzeLoading(true);
     setShowAnalyzePanel(true);
+    setAnalyzeThoughts('');
+    setAnalyzeResult(null);
     
     const controller = new AbortController();
     analyzeAbortRef.current = controller;
@@ -121,7 +124,21 @@ export function NarrativeClient({
       if (!res.ok) throw new Error('Ошибка сервера');
       
       let rawJson = '';
-      await fetchSseStream(res, (data) => { rawJson += JSON.parse(data).delta || ''; });
+      await fetchSseStream(res, (data) => { 
+        try {
+          const parsedChunk = JSON.parse(data);
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          const chunkStr = parsedChunk.text || parsedChunk.delta || '';
+          rawJson += chunkStr;
+          
+          const thinkMatch = rawJson.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+          if (thinkMatch && thinkMatch[1].trim()) {
+            setAnalyzeThoughts(thinkMatch[1].trim());
+          }
+        } catch (e) {
+          // ignore incomplete json parsing error if any
+        }
+      });
       
       const result = parseNarrativeAnalyzeResponse(rawJson);
       setAnalyzeResult(result);
@@ -160,7 +177,12 @@ export function NarrativeClient({
       if (!res.ok) throw new Error('Ошибка сервера');
       
       let newText = '';
-      await fetchSseStream(res, (data) => { newText += JSON.parse(data).delta || ''; });
+      await fetchSseStream(res, (data) => {
+        try {
+          const parsedChunk = JSON.parse(data);
+          newText += parsedChunk.text || parsedChunk.delta || '';
+        } catch (e) {}
+      });
       
       newText = newText.trim();
       if (newText) {
@@ -310,23 +332,51 @@ export function NarrativeClient({
           
           {/* Analyze Sidebar */}
           {showAnalyzePanel && analyzeLoading ? (
-            <div className="w-[400px] border-l border-outline-variant bg-surface flex flex-col items-center justify-center p-8 shrink-0">
-              <span className="material-symbols-outlined animate-spin text-[32px] text-primary mb-4">refresh</span>
-              <div className="text-center">
-                <div className="font-semibold text-on-surface mb-2">Нейросеть читает ваш текст...</div>
-                <div className="text-sm text-on-surface-variant mb-6 text-center max-w-[250px]">
-                  Мы ищем стилистические огрехи, клише и возможности сделать описание ярче. Это может занять около 30 секунд.
-                </div>
-                <button 
-                  onClick={() => {
+            <div className="w-[400px] border-l border-outline-variant bg-surface flex flex-col p-6 shrink-0">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-headline-sm text-[18px] font-bold flex items-center gap-2 text-primary">
+                  <span className="material-symbols-outlined animate-spin">refresh</span> 
+                  Анализ текста...
+                </h2>
+                <button onClick={() => {
                     analyzeAbortRef.current?.abort();
                     setShowAnalyzePanel(false);
                     setAnalyzeLoading(false);
-                  }}
-                  className="px-4 py-2 border border-outline-variant rounded font-label-caps text-[12px] uppercase tracking-wider hover:bg-surface-container transition-colors"
+                  }} 
+                  className="text-on-surface-variant hover:text-primary transition-colors p-1"
                 >
-                  Отмена
+                  <span className="material-symbols-outlined text-[18px]">close</span>
                 </button>
+              </div>
+
+              <div className="flex-1 flex flex-col min-h-0 relative">
+                {/* Thoughts overlay */}
+                <div 
+                  className="flex-1 overflow-y-auto custom-scrollbar bg-surface-container-low border border-outline-variant rounded-lg p-4 font-body-md text-[13px] text-on-surface-variant/80 italic leading-relaxed whitespace-pre-wrap flex flex-col"
+                  ref={(el) => {
+                    if (el) {
+                      el.scrollTop = el.scrollHeight;
+                    }
+                  }}
+                >
+                  {analyzeThoughts ? (
+                    <span>{analyzeThoughts}</span>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center opacity-50 text-center">
+                      <span className="material-symbols-outlined text-[32px] mb-2">psychology</span>
+                      <p>Нейросеть читает ваш текст и формирует мысли...</p>
+                    </div>
+                  )}
+                  {analyzeThoughts && (
+                    <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1 align-middle" />
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 text-center">
+                <div className="text-[11px] text-on-surface-variant max-w-[250px] mx-auto">
+                  Мы ищем стилистические огрехи, клише и возможности сделать описание ярче. Это может занять около 30-60 секунд.
+                </div>
               </div>
             </div>
           ) : showAnalyzePanel && analyzeResult ? (

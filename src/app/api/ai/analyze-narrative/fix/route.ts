@@ -5,7 +5,7 @@ import { handleAiError, withAiMiddleware } from '@/lib/ai/routeUtils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `Ты — профессиональный литературный редактор и писатель. 
 Твоя задача — переписать конкретный фрагмент текста (цитату), чтобы исправить стилистическую или смысловую ошибку.

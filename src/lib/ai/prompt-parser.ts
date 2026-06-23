@@ -164,6 +164,10 @@ export function parseNarrativeAnalyzeResponse(raw: string): import('@/types/char
   const json = removeThinking(raw);
 
   let parsed: Record<string, unknown> | null = null;
+  console.log("=== RAW AI NARRATIVE ANALYZE RESPONSE ===");
+  console.log(raw);
+  console.log("=========================================");
+  
   try {
     parsed = JSON.parse(json);
   } catch {
@@ -171,7 +175,8 @@ export function parseNarrativeAnalyzeResponse(raw: string): import('@/types/char
     try {
       parsed = JSON.parse(extracted);
     } catch {
-      throw new Error(`Не удалось разобрать ответ AI — невалидный JSON.`);
+      console.error('Raw JSON parsing failed. Raw (with think) response:', raw);
+      throw new Error(`Не удалось разобрать ответ AI — невалидный JSON. Возможно, текст слишком большой или ИИ прервал ответ.`);
     }
   }
 
