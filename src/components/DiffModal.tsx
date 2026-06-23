@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { diffWords } from 'diff';
 import { CHARACTER_SCHEMA } from '@/lib/schema';
 
 interface DiffModalProps {
@@ -29,19 +28,17 @@ export function DiffModal({ originalData, proposedData, onAccept, onReject }: Di
     onAccept(finalData);
   };
 
-  const renderDiffText = (oldStr: string = '', newStr: string = '') => {
-    const diffs = diffWords(oldStr, newStr);
+  const renderDiffBlocks = (oldStr: string = '', newStr: string = '') => {
     return (
-      <div className="font-body-md whitespace-pre-wrap leading-relaxed">
-        {diffs.map((part, index) => {
-          if (part.added) {
-            return <span key={index} className="bg-[#22c55e]/20 text-[#22c55e] px-0.5 rounded">{part.value}</span>;
-          }
-          if (part.removed) {
-            return <span key={index} className="bg-[#ef4444]/20 text-[#ef4444] line-through px-0.5 rounded opacity-60">{part.value}</span>;
-          }
-          return <span key={index}>{part.value}</span>;
-        })}
+      <div className="flex flex-col gap-2 font-body-md whitespace-pre-wrap leading-relaxed mt-2">
+        <div className="p-3 rounded-md bg-[#ef4444]/10 text-[#ef4444]/90 border border-[#ef4444]/20">
+          <div className="text-xs uppercase tracking-wider font-semibold opacity-70 mb-1">Было</div>
+          {oldStr || <span className="opacity-50 italic">Пустое поле</span>}
+        </div>
+        <div className="p-3 rounded-md bg-[#22c55e]/10 text-[#22c55e]/90 border border-[#22c55e]/20">
+          <div className="text-xs uppercase tracking-wider font-semibold opacity-70 mb-1">Стало</div>
+          {newStr || <span className="opacity-50 italic">Пустое поле</span>}
+        </div>
       </div>
     );
   };
@@ -97,7 +94,7 @@ export function DiffModal({ originalData, proposedData, onAccept, onReject }: Di
                   </div>
                   
                   <div className="mt-3 pl-8">
-                    {renderDiffText(oldVal, newVal)}
+                    {renderDiffBlocks(oldVal, newVal)}
                   </div>
                 </div>
               );

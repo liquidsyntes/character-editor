@@ -160,6 +160,53 @@ function validateAnalyzeResult(raw: Record<string, unknown>): AnalyzeResult {
   };
 }
 
+export function parseNarrativeAnalyzeResponse(raw: string): import('@/types/character').NarrativeAnalyzeResult {
+  const json = removeThinking(raw);
+
+  let parsed: Record<string, unknown> | null = null;
+  console.log("=== RAW AI NARRATIVE ANALYZE RESPONSE ===");
+  console.log(raw);
+  console.log("=========================================");
+  
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    const extracted = extractFirstJsonObject(json) || json.match(/```(?:json)?\s*([\s\S]*?)\s*```/)?.[1]?.trim() || '';
+    try {
+      parsed = JSON.parse(extracted);
+    } catch {
+      console.error('Raw JSON parsing failed. Raw (with think) response:', raw);
+      throw new Error(`Не удалось разобрать ответ AI — невалидный JSON. Возможно, текст слишком большой или ИИ прервал ответ.`);
+    }
+  }
+
+  if (!parsed) throw new Error('Empty parsed result');
+
+  const categories = (Array.isArray(parsed.categories) ? parsed.categories : []).map((catItem) => {
+    const cat = catItem as Record<string, unknown>;
+    return {
+      title: String(cat.title || ''),
+      icon: String(cat.icon || ''),
+      severity: String(cat.severity || 'style') as import('@/types/character').NarrativeAnalyzeIssue['severity'],
+      issues: (Array.isArray(cat.issues) ? cat.issues : []).map((issItem) => {
+        const iss = issItem as Record<string, unknown>;
+        return {
+          title: String(iss.title || ''),
+          quote: String(iss.quote || ''),
+          severity: String(iss.severity || cat.severity || 'style') as import('@/types/character').NarrativeAnalyzeIssue['severity'],
+          description: String(iss.description || '')
+        };
+      })
+    };
+  });
+
+  return {
+    categories,
+    totalIssues: Number(parsed.totalIssues || 0) || categories.reduce((s, c) => s + c.issues.length, 0),
+    summary: String(parsed.summary || '')
+  };
+}
+
 export function parseFillResponse(raw: string): CharacterData {
   const json = removeThinking(raw);
 
