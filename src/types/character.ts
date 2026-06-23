@@ -61,3 +61,24 @@ export interface AnalyzeResult {
   totalIssues: number;
   summary: string;
 }
+
+export interface NarrativeAnalyzeIssue {
+  title: string;
+  quote: string; // The exact substring from the narrative text
+  severity: 'style' | 'show-dont-tell' | 'pacing' | 'cliche' | 'opportunity';
+  description: string;
+}
+
+export interface NarrativeAnalyzeCategory {
+  title: string;
+  icon: string;
+  severity: NarrativeAnalyzeIssue['severity'];
+  issues: NarrativeAnalyzeIssue[];
+}
+
+export interface NarrativeAnalyzeResult {
+  categories: NarrativeAnalyzeCategory[];
+  totalIssues: number;
+  summary: string;
+}
+
