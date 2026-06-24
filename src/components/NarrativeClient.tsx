@@ -184,10 +184,13 @@ export function NarrativeClient({
         } catch (e) {}
       });
       
-      newText = newText.trim();
-      if (newText) {
-        const updatedNarrative = narrative.replace(issue.quote, newText);
+      let cleanedNewText = newText.replace(/<think>[\s\S]*?<\/think>/g, '');
+      cleanedNewText = cleanedNewText.replace(/<think>[\s\S]*$/g, '').trim();
+
+      if (cleanedNewText) {
+        const updatedNarrative = narrative.replace(issue.quote, cleanedNewText);
         setNarrative(updatedNarrative);
+        setFixingIssueTitle(null);
         await updateCharacterNarrative(characterId, updatedNarrative);
         
         // Remove issue from the panel

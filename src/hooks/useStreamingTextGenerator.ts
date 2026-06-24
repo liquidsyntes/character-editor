@@ -82,7 +82,10 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 generatedText += parsedChunk.text;
-                onChunk(generatedText);
+                // Удаляем теги <think> и их содержимое для полей текста
+                let cleanedText = generatedText.replace(/<think>[\s\S]*?<\/think>/g, '');
+                cleanedText = cleanedText.replace(/<think>[\s\S]*$/g, '');
+                onChunk(cleanedText.trimStart());
               }
               if (parsedChunk.usage) {
                 setUsage(parsedChunk.usage);
@@ -98,7 +101,9 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
       }
 
       if (onFinish) {
-        await onFinish(generatedText);
+        let finalCleaned = generatedText.replace(/<think>[\s\S]*?<\/think>/g, '');
+        finalCleaned = finalCleaned.replace(/<think>[\s\S]*$/g, '').trimStart();
+        onFinish(finalCleaned).catch(e => console.error(e));
       }
 
     } catch (err: unknown) {
