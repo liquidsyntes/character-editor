@@ -64,11 +64,20 @@ export function NarrativeClient({
 
   React.useEffect(() => {
     if (textareaRef.current) {
+      const wrapper = textareaRef.current.parentElement;
       const scrollContainer = textareaRef.current.closest('main') || textareaRef.current.closest('.overflow-y-auto');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
+      if (wrapper) {
+        wrapper.style.minHeight = `${wrapper.offsetHeight}px`;
+      }
+      
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      
+      if (wrapper) {
+        wrapper.style.minHeight = '';
+      }
       
       if (scrollContainer) {
         scrollContainer.scrollTop = currentScroll;

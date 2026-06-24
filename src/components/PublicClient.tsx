@@ -99,11 +99,16 @@ function AutoResizeTextarea({ value, onChange, placeholder, title, onBlur }: Aut
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (ref.current) {
+      const wrapper = ref.current.parentElement;
       const scrollContainer = ref.current.closest('main') || ref.current.closest('.overflow-y-auto');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
+      if (wrapper) wrapper.style.minHeight = `${wrapper.offsetHeight}px`;
+      
       ref.current.style.height = 'auto';
       ref.current.style.height = `${Math.max(ref.current.scrollHeight, 120)}px`;
+      
+      if (wrapper) wrapper.style.minHeight = '';
       
       if (scrollContainer) {
         scrollContainer.scrollTop = currentScroll;

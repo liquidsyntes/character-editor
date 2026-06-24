@@ -61,11 +61,16 @@ export default function WorldElementForm({
 
   useEffect(() => {
     if (contentRef.current) {
+      const wrapper = contentRef.current.parentElement;
       const scrollContainer = contentRef.current.closest('main');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
+      if (wrapper) wrapper.style.minHeight = `${wrapper.offsetHeight}px`;
+      
       contentRef.current.style.height = 'auto';
       contentRef.current.style.height = `${contentRef.current.scrollHeight}px`;
+      
+      if (wrapper) wrapper.style.minHeight = '';
       
       if (scrollContainer) {
         scrollContainer.scrollTop = currentScroll;
