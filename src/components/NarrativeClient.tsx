@@ -46,6 +46,8 @@ export function NarrativeClient({
   const [analyzeResult, setAnalyzeResult] = useState<NarrativeAnalyzeResult | null>(null);
   const [showAnalyzePanel, setShowAnalyzePanel] = useState(false);
   const [fixingIssueTitle, setFixingIssueTitle] = useState<string | null>(null);
+  const [highlightedFragment, setHighlightedFragment] = useState<string | null>(null);
+  const analyzeThoughtsRef = useRef<HTMLDivElement>(null);
   const [analyzeThoughts, setAnalyzeThoughts] = useState('');
   const analyzeAbortRef = useRef<AbortController | null>(null);
 
@@ -202,6 +204,22 @@ export function NarrativeClient({
           })).filter(c => c.issues.length > 0);
           return { ...prev, categories: newCategories, totalIssues: prev.totalIssues - 1 };
         });
+
+        // Set highlighted fragment to show orange overlay
+        setHighlightedFragment(cleanedNewText);
+        
+        // Scroll to the highlighted text after a short delay to allow React to render the overlay
+        setTimeout(() => {
+          const el = document.getElementById('narrative-highlight');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+
+        // Clear highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedFragment(null);
+        }, 3000);
       }
     } catch (err: unknown) {
       console.error(err);
@@ -209,6 +227,26 @@ export function NarrativeClient({
     } finally {
       setFixingIssueTitle(null);
     }
+  };
+
+  const renderHighlightedNarrative = () => {
+    if (!highlightedFragment) return null;
+    const index = narrative.indexOf(highlightedFragment);
+    if (index === -1) return null;
+    
+    const before = narrative.slice(0, index);
+    const match = narrative.slice(index, index + highlightedFragment.length);
+    const after = narrative.slice(index + highlightedFragment.length);
+    
+    return (
+      <>
+        {before}
+        <mark id="narrative-highlight" className="bg-[#f97316] text-[#f97316]/0 rounded-[4px] px-1 -mx-1 shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-all duration-300">
+          {match}
+        </mark>
+        {after}
+      </>
+    );
   };
 
   return (
@@ -290,14 +328,25 @@ export function NarrativeClient({
               <div className="flex-1 pb-16">
                 {narrative ? (
                   <>
-                    <textarea
-                      ref={textareaRef}
-                      className="w-full min-h-[600px] bg-surface-container-lowest border-[0.5px] border-outline-variant/30 rounded-xl p-8 shadow-sm text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 overflow-hidden"
-                      value={narrative}
-                      onChange={(e) => setNarrative(e.target.value)}
-                      onBlur={() => updateCharacterNarrative(characterId, narrative)}
-                      placeholder="Начните писать описание здесь..."
-                    />
+                    <div className="relative w-full min-h-[600px] bg-surface-container-lowest border-[0.5px] border-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
+                      {highlightedFragment && (
+                        <div 
+                          className="absolute inset-0 p-8 text-[16px] leading-relaxed whitespace-pre-wrap break-words pointer-events-none text-transparent"
+                          aria-hidden="true"
+                          style={{ fontFamily: 'inherit' }}
+                        >
+                          {renderHighlightedNarrative()}
+                        </div>
+                      )}
+                      <textarea
+                        ref={textareaRef}
+                        className="relative z-10 w-full h-full min-h-[600px] bg-transparent p-8 text-[16px] leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 text-on-surface"
+                        value={narrative}
+                        onChange={(e) => setNarrative(e.target.value)}
+                        onBlur={() => updateCharacterNarrative(characterId, narrative)}
+                        placeholder="Начните писать описание здесь..."
+                      />
+                    </div>
                     {usage && (
                       <div className="text-right text-[10px] text-on-surface-variant font-mono-data mt-3 opacity-70">
                         Сгенерировано с помощью {aiSettings.saved.model} • Промпт: {usage.prompt_tokens || usage.promptTokens} токенов, Ответ: {usage.completion_tokens || usage.completionTokens} токенов
