@@ -105,8 +105,20 @@ export default function DashboardClient({
 
   useEffect(() => {
     if (descRef.current) {
+      const wrapper = descRef.current.parentElement;
+      const scrollContainer = descRef.current.closest('main') || descRef.current.closest('.overflow-y-auto');
+      const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
+      
+      if (wrapper) wrapper.style.minHeight = `${wrapper.offsetHeight}px`;
+      
       descRef.current.style.height = 'auto';
       descRef.current.style.height = `${descRef.current.scrollHeight}px`;
+      
+      if (wrapper) wrapper.style.minHeight = '';
+      
+      if (scrollContainer) {
+        scrollContainer.scrollTop = currentScroll;
+      }
     }
   }, [pDesc]);
 

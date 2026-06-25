@@ -54,7 +54,7 @@ export function NarrativeClient({
   const aiSettings = useAiSettings();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { generate, stop, loading, error, usage } = useStreamingTextGenerator({
+  const { generate, stop, loading, error, usage, thoughts } = useStreamingTextGenerator({
     endpoint: '/api/ai/narrative',
     onChunk: setNarrative,
     onFinish: async (text) => {
@@ -62,13 +62,13 @@ export function NarrativeClient({
     }
   });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (textareaRef.current) {
-      const scrollContainer = textareaRef.current.closest('main') || textareaRef.current.closest('.overflow-y-auto');
+      const scrollContainer = textareaRef.current.closest('.custom-scrollbar');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      textareaRef.current.style.height = `${Math.max(600, textareaRef.current.scrollHeight)}px`;
       
       if (scrollContainer) {
         scrollContainer.scrollTop = currentScroll;
@@ -142,7 +142,10 @@ export function NarrativeClient({
         }
       });
       
-      const result = parseNarrativeAnalyzeResponse(rawJson);
+      let cleanedJson = rawJson.replace(/<think>[\s\S]*?<\/think>/g, '');
+      cleanedJson = cleanedJson.replace(/<think>[\s\S]*$/g, '').trim();
+      
+      const result = parseNarrativeAnalyzeResponse(cleanedJson);
       setAnalyzeResult(result);
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -304,6 +307,22 @@ export function NarrativeClient({
         />
 
         <main className="flex-1 flex overflow-hidden relative">
+          
+          {/* Thoughts Overlay for Narrative Generation */}
+          {loading && thoughts && (
+            <div 
+              className="fixed top-20 right-8 w-[350px] bg-surface-container-low border border-outline-variant rounded-lg p-4 shadow-xl z-50 text-[12px] text-on-surface-variant/80 italic leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col"
+              ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-primary font-medium not-italic border-b border-outline-variant/50 pb-2 shrink-0">
+                <span className="material-symbols-outlined text-[16px]">psychology</span>
+                Мысли нейросети...
+              </div>
+              <span className="whitespace-pre-wrap">{thoughts}</span>
+              <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1 align-middle mt-1 shrink-0" />
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             <div className="p-container-padding max-w-[1200px] mx-auto min-h-full pb-32 flex flex-col gap-8">
               

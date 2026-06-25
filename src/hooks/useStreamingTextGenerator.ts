@@ -18,6 +18,7 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageStats | null>(null);
+  const [thoughts, setThoughts] = useState<string>('');
   
   const abortRef = useRef<AbortController | null>(null);
 
@@ -82,6 +83,12 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
               if (parsedChunk.error) throw new Error(parsedChunk.error);
               if (parsedChunk.text) {
                 generatedText += parsedChunk.text;
+                
+                const thinkMatch = generatedText.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                if (thinkMatch && thinkMatch[1].trim()) {
+                  setThoughts(thinkMatch[1].trim());
+                }
+
                 // Удаляем теги <think> и их содержимое для полей текста
                 let cleanedText = generatedText.replace(/<think>[\s\S]*?<\/think>/g, '');
                 cleanedText = cleanedText.replace(/<think>[\s\S]*$/g, '');
@@ -121,5 +128,5 @@ export function useStreamingTextGenerator({ endpoint, onChunk, onFinish, onError
     }
   }, [endpoint, loading, onChunk, onFinish, onError, stop]);
 
-  return { generate, stop, loading, error, usage };
+  return { generate, stop, loading, error, usage, thoughts };
 }

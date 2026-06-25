@@ -50,11 +50,13 @@ export function useAiFill({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSectionLoading, setAiSectionLoading] = useState<string | null>(null);
   const [aiFieldLoading, setAiFieldLoading] = useState<string | null>(null);
+  const [aiThoughts, setAiThoughts] = useState<string>('');
   const aiAbortRef = useRef<AbortController | null>(null);
 
   const executeAiStreamRequest = useCallback(async (config: ExecuteStreamConfig) => {
     config.onStart();
     setAiError(null);
+    setAiThoughts('');
     setAiProgress({ isVisible: true, current: 0, total: config.progressTotal, label: config.progressLabel });
     
     const controller = new AbortController();
@@ -88,7 +90,14 @@ export function useAiFill({
           if (parsedChunk.error) throw new Error(parsedChunk.error);
           if (parsedChunk.text) {
             rawJson += parsedChunk.text;
-            const partial = parsePartialJson(rawJson);
+            
+            const thinkMatch = rawJson.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+            if (thinkMatch && thinkMatch[1].trim()) {
+              setAiThoughts(thinkMatch[1].trim());
+            }
+
+            const processedJson = rawJson.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '');
+            const partial = parsePartialJson(processedJson);
             finalParsed = partial;
             
             const curLength = config.progressTotal > 1 ? Object.keys(partial).length : 1;
@@ -280,6 +289,7 @@ export function useAiFill({
     setAiProgress({ isVisible: true, current: 0, total: 1, label: 'Генерация идеи...' });
     const controller = new AbortController();
     aiAbortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
       const res = await fetch('/api/ai/fill', {
@@ -288,7 +298,7 @@ export function useAiFill({
         body: JSON.stringify({
           existingData: data,
           context: projectContext,
-          stream: false,
+          stream: true,
           quickCommand: commandType,
           provider: aiSettings.provider,
           model: aiSettings.model,
@@ -297,17 +307,45 @@ export function useAiFill({
         signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         let errMsg = `Ошибка сервера (HTTP ${res.status})`;
         try { const errData = await res.json(); if (errData.error) errMsg = errData.error; } catch{}
         throw new Error(errMsg);
       }
 
-      const result = await res.json();
+      let rawJson = '';
+      let finalParsed: Record<string, string> = {};
+
+      await fetchSseStream(res, (dataStr) => {
+        try {
+          const parsedChunk = JSON.parse(dataStr);
+          if (parsedChunk.error) throw new Error(parsedChunk.error);
+          if (parsedChunk.text) {
+            rawJson += parsedChunk.text;
+            
+            const thinkMatch = rawJson.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+            if (thinkMatch && thinkMatch[1].trim()) {
+              setAiThoughts(thinkMatch[1].trim());
+            }
+
+            const processedJson = rawJson.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '');
+            const partial = parsePartialJson(processedJson);
+            finalParsed = partial;
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+            console.error(e);
+          }
+        }
+      });
+
       setAiProgress(null);
       setAiLoading(false);
-      return result.data || {};
+      return finalParsed;
     } catch (err) {
+      clearTimeout(timeoutId);
       setAiProgress(null);
       setAiLoading(false);
       const isAbort = err instanceof Error && err.name === 'AbortError';
@@ -323,6 +361,7 @@ export function useAiFill({
     aiError,
     aiSectionLoading,
     aiFieldLoading,
+    aiThoughts,
     aiAbortRef,
     handleAiFill,
     handleAiFillSection,

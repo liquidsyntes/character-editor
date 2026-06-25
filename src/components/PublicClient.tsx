@@ -97,9 +97,9 @@ interface AutoResizeTextareaProps {
 
 function AutoResizeTextarea({ value, onChange, placeholder, title, onBlur }: AutoResizeTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     if (ref.current) {
-      const scrollContainer = ref.current.closest('main') || ref.current.closest('.overflow-y-auto');
+      const scrollContainer = ref.current.closest('.custom-scrollbar');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
       ref.current.style.height = 'auto';
@@ -145,7 +145,7 @@ export function PublicClient({
   
   const aiSettings = useAiSettings();
 
-  const { generate, stop, loading, error, usage } = useStreamingTextGenerator({
+  const { generate, stop, loading, error, usage, thoughts } = useStreamingTextGenerator({
     endpoint: '/api/ai/public',
     onChunk: (text) => {
       const parsed = parseMarkdownToOpinions(text);
@@ -250,8 +250,25 @@ export function PublicClient({
           hasOpinions={hasOpinions}
         />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="p-container-padding max-w-[1200px] mx-auto min-h-full pb-32 flex flex-col gap-8">
+        <div className="flex-1 flex overflow-hidden relative">
+          
+          {/* Thoughts Overlay for Public Generation */}
+          {loading && thoughts && (
+            <div 
+              className="fixed top-20 right-8 w-[350px] bg-surface-container-low border border-outline-variant rounded-lg p-4 shadow-xl z-50 text-[12px] text-on-surface-variant/80 italic leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col"
+              ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-primary font-medium not-italic border-b border-outline-variant/50 pb-2 shrink-0">
+                <span className="material-symbols-outlined text-[16px]">psychology</span>
+                Мысли нейросети...
+              </div>
+              <span className="whitespace-pre-wrap">{thoughts}</span>
+              <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1 align-middle mt-1 shrink-0" />
+            </div>
+          )}
+
+          <main className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="p-container-padding max-w-[1200px] mx-auto min-h-full pb-32 flex flex-col gap-8">
             
             <CharacterFormSummary 
               data={initialData}
@@ -313,6 +330,7 @@ export function PublicClient({
             </div>
           </div>
         </main>
+        </div>
       </div>
 
       <PublicPromptsPanel isOpen={showPrompts} onClose={() => setShowPrompts(false)} />

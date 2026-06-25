@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { updateWorldElement } from '@/lib/actions';
 import { useAiSettings } from '@/lib/ai/useAiSettings';
@@ -55,17 +55,18 @@ export default function WorldElementForm({
   const [showTweaks, setShowTweaks] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showPrompts, setShowPrompts] = useState(false);
+  const [aiThoughts, setAiThoughts] = useState('');
   const aiAbortRef = useRef<AbortController | null>(null);
 
   const catInfo = CATEGORY_MAP[category] || CATEGORY_MAP.other;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (contentRef.current) {
       const scrollContainer = contentRef.current.closest('main');
       const currentScroll = scrollContainer ? scrollContainer.scrollTop : 0;
       
       contentRef.current.style.height = 'auto';
-      contentRef.current.style.height = `${contentRef.current.scrollHeight}px`;
+      contentRef.current.style.height = `${Math.max(400, contentRef.current.scrollHeight)}px`;
       
       if (scrollContainer) {
         scrollContainer.scrollTop = currentScroll;
@@ -111,6 +112,7 @@ export default function WorldElementForm({
 
     setAiLoading(true);
     setAiError(null);
+    setAiThoughts('');
     const controller = new AbortController();
     aiAbortRef.current = controller;
 
@@ -160,7 +162,15 @@ export default function WorldElementForm({
               if (p.error) throw new Error(p.error);
               if (p.text) {
                 generatedText += p.text;
-                setContent(generatedText);
+                
+                const thinkMatch = generatedText.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+                if (thinkMatch && thinkMatch[1].trim()) {
+                  setAiThoughts(thinkMatch[1].trim());
+                }
+
+                let cleanedText = generatedText.replace(/<think>[\s\S]*?<\/think>/g, '');
+                cleanedText = cleanedText.replace(/<think>[\s\S]*$/g, '');
+                setContent(cleanedText.trimStart());
               }
             } catch (e) {
               if (e instanceof Error && e.message !== 'Unexpected end of JSON input') console.error(e);
@@ -324,6 +334,21 @@ export default function WorldElementForm({
             </button>
           </div>
         </header>
+
+        {/* Thoughts Overlay */}
+        {aiLoading && aiThoughts && (
+          <div 
+            className="fixed top-20 right-8 w-[350px] bg-surface-container-low border border-outline-variant rounded-lg p-4 shadow-xl z-50 text-[12px] text-on-surface-variant/80 italic leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col"
+            ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+          >
+            <div className="flex items-center gap-2 mb-2 text-primary font-medium not-italic border-b border-outline-variant/50 pb-2 shrink-0">
+              <span className="material-symbols-outlined text-[16px]">psychology</span>
+              Мысли нейросети...
+            </div>
+            <span className="whitespace-pre-wrap">{aiThoughts}</span>
+            <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1 align-middle mt-1 shrink-0" />
+          </div>
+        )}
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-container-padding pb-[50vh]">

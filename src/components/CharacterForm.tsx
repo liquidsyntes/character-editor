@@ -96,6 +96,7 @@ export default function CharacterForm({
     handleAiCondenseField,
     handleAiScratchpad,
     handleQuickCommand,
+    aiThoughts,
   } = useAiFill({
     data, setData, doSave, pushUndo, setFixedFields, setOpenSections, aiSettings, projectContext: enrichedContext, saveTimer
   });
@@ -237,6 +238,22 @@ export default function CharacterForm({
         />
 
         <div className="flex-1 flex overflow-hidden relative">
+          
+          {/* Thoughts Overlay for AI Fill */}
+          {aiLoading && aiThoughts && (
+            <div 
+              className="fixed top-20 right-8 w-[350px] bg-surface-container-low border border-outline-variant rounded-lg p-4 shadow-xl z-50 text-[12px] text-on-surface-variant/80 italic leading-relaxed max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col"
+              ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-primary font-medium not-italic border-b border-outline-variant/50 pb-2 shrink-0">
+                <span className="material-symbols-outlined text-[16px]">psychology</span>
+                Мысли нейросети...
+              </div>
+              <span className="whitespace-pre-wrap">{aiThoughts}</span>
+              <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1 align-middle mt-1 shrink-0" />
+            </div>
+          )}
+
           {/* Hotkeys Reference (Left Workspace Area) */}
           <div className="hidden 2xl:flex flex-col gap-3 absolute left-8 top-8 w-[180px] text-on-surface-variant/40 text-[11px] select-none pointer-events-none z-10">
             <div className="font-label-caps text-[10px] tracking-widest opacity-50 mb-1">Горячие клавиши</div>
