@@ -57,7 +57,7 @@ graph TD
 
 We identified several clear DRY violations where identical or highly similar logic is duplicated across files:
 
-### 1. Duplication of SSE Streaming Read Loop (4x Duplicated)
+### 1. ✅ [RESOLVED] Duplication of SSE Streaming Read Loop (4x Duplicated)
 > [!IMPORTANT]
 > The exact same SSE chunk reader, stream decoder, buffer builder, and line splitter logic is repeated **4 times** in:
 > - [useAiFill.ts](file:///c:/Screen/character-editor/src/hooks/useAiFill.ts#L107-L142) (`handleAiFill`)
@@ -145,7 +145,7 @@ export async function fetchSseStream(
 
 ---
 
-### 2. Duplication of JSON Braces Scanner (2x Duplicated)
+### 2. ✅ [RESOLVED] Duplication of JSON Braces Scanner (2x Duplicated)
 > [!IMPORTANT]
 > A custom loop that scans braces (`{` and `}`) to extract the first valid JSON block while ignoring braces inside double-quoted strings and escaped characters is duplicated in:
 > - [prompt-parser.ts: Strategy 3 in parseAnalyzeResponse](file:///c:/Screen/character-editor/src/lib/ai/prompt-parser.ts#L34-L80)
@@ -211,7 +211,7 @@ Move the cleaner, escape-sequence-aware regex parser to a central utility (e.g. 
 
 ---
 
-### 4. Duplicate Provider Configurations and Model Lists
+### 4. ✅ [RESOLVED] Duplicate Provider Configurations and Model Lists
 > [!WARNING]
 > The providers list, default models, and UI labels are declared multiple times in slightly different formats:
 > - Server-side [provider.ts: PROVIDER_CONFIGS](file:///c:/Screen/character-editor/src/lib/ai/provider.ts#L22-L84)
@@ -225,7 +225,7 @@ Centralize the static list of models and configurations in a single place (e.g. 
 
 ---
 
-### 5. `formatDate` Date Utility Function
+### 5. ✅ [RESOLVED] `formatDate` Date Utility Function
 > [!NOTE]
 > The `formatDate(d: string)` function is copy-pasted in:
 > - [DashboardClient.tsx](file:///c:/Screen/character-editor/src/components/DashboardClient.tsx#L26-L30)

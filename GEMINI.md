@@ -14,7 +14,7 @@
 ## Как работать с проектом
 
 - **Стек:** Next.js 16 (App Router), Prisma 7 + SQLite (libsql), Vercel AI SDK 6, Tailwind 3
-- **Запуск:** `npm run dev` → localhost:3000
+- **Запуск:** `npm run dev` → localhost:4000
 - **Билд:** `npm run build` (TypeScript + ESLint)
 - **Тесты:** `npm test` (Vitest)
 - **WSL-питфол:** если падает с `@libsql/linux-x64-gnu` → `npm install @libsql/linux-x64-gnu`
@@ -47,6 +47,7 @@
 - `prisma/schema.prisma` — схема БД
 - `src/lib/schema.ts` — 145 полей персонажа (24 секции)
 - `src/lib/ai/provider.ts` — абстракция AI-провайдеров
+- `src/lib/ai/models.ts` — единый список моделей для всех провайдеров
 - `src/lib/actions.ts` — все Server Actions
 
 ## В конце задачи

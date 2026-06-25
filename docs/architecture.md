@@ -16,41 +16,50 @@ src/
 │   ├── layout.tsx                # Root layout, шрифты (Source Sans/Serif, JetBrains Mono)
 │   ├── page.tsx                  # Дашборд проектов (SSR)
 │   ├── globals.css               # Tailwind + Material Symbols + кастомные утилиты
-│   ├── actions/                  # (пусто — Server Actions в lib/)
 │   ├── api/ai/
 │   │   ├── fill/route.ts         # POST — AI-заполнение (stream + non-stream)
 │   │   ├── analyze/route.ts      # POST — AI-анализ (SSE stream)
 │   │   ├── analyze/fix/route.ts  # POST — AI-исправление проблем
 │   │   ├── condense/route.ts     # POST — AI-ужатие текста (stream)
-│   │   ├── models/route.ts       # GET  — Получение списка доступных моделей
-│   │   └── voice/..., narrative/..., public/..., world/... # Специфичные роуты (stream)
+│   │   ├── models/route.ts       # GET  — Получение списка моделей
+│   │   ├── voice/route.ts        # POST — Генерация фраз (stream)
+│   │   ├── narrative/route.ts    # POST — Нарратив (stream)
+│   │   ├── analyze-narrative/route.ts # POST — Анализ нарратива
+│   │   ├── public/route.ts       # POST — Публичное представление (stream)
+│   │   └── world/route.ts        # POST — Мировые элементы
 │   ├── character/[id]/page.tsx   # Редактор (SSR → CharacterForm)
 │   └── project/[id]/page.tsx     # Дашборд проекта (SSR → DashboardClient)
 ├── components/
 │   ├── CharacterForm.tsx         # Главная форма (объединяет компоненты ниже)
-│   ├── CharacterSidebar.tsx      # Сайдбар с навигацией по секциям и переключением персонажей
+│   ├── CharacterSidebar.tsx      # Сайдбар с навигацией по секциям
 │   ├── QuickCommands.tsx         # Быстрые команды AI (Scratchpad, Motive, Conflict)
 │   ├── AnalyzePanel.tsx          # Правая панель результатов анализа
 │   ├── AnalyzeHistorySidebar.tsx # Левая панель истории
 │   ├── TweaksPanel.tsx           # Настройки AI (провайдер, модель, t°, ключи)
 │   ├── DiffModal.tsx             # Word-level diff перед применением AI-изменений
-│   ├── ExportModal.tsx           # Экспорт в Markdown
-│   └── ProjectDashboard.tsx      # Дашборд проектов
+│   ├── ExportModal.tsx           # Экспорт в 5 форматов (Markdown, JSON, Text, Obsidian, SillyTavern)
+│   ├── ProjectDashboard.tsx      # Дашборд проектов
+│   ├── voice/VoiceClient.tsx     # Вкладка речевых паттернов
+│   ├── narrative/NarrativeClient.tsx # Вкладка нарратива
+│   ├── public/PublicClient.tsx   # Вкладка публичного образа
+│   ├── world/WorldElementForm.tsx # Форма элементов мира
+│   └── wizard/WizardModal.tsx    # Пошаговый мастер создания персонажа
 ├── lib/
 │   ├── prisma.ts                 # Singleton PrismaClient
 │   ├── schema.ts                 # CHARACTER_SCHEMA: 24 секции, >145 полей
 │   ├── actions.ts                # Server Actions: createCharacter, updateCharacter, ...
 │   ├── rateLimit.ts              # DB-backed rate limiter (Prisma)
+│   ├── auth.ts                   # NextAuth (Credentials + Registration)
 │   └── ai/
-│       ├── provider.ts           # chatCompletion, chatCompletionStream, PROVIDER_CONFIGS
-│       ├── prompt.ts             # buildFillPrompt, buildAnalyzePrompt, buildFixPrompt
-│       ├── prompt-parser.ts      # parsePartialJson, fetchSseStream (универсальный парсинг)
+│       ├── provider.ts           # chatCompletion, chatCompletionStream
+│       ├── prompt.ts             # buildFillPrompt, buildAnalyzePrompt...
+│       ├── prompt-parser.ts      # parsePartialJson, fetchSseStream
 │       ├── routeUtils.ts         # withAiMiddleware (HOC для auth и rate-limit)
 │       ├── streamUtils.ts        # sseResponse (серверный стриминг)
 │       ├── models.ts             # Единый список моделей (PROVIDER_MODELS)
 │       └── useAiSettings.ts      # Клиентский хук: staged/saved/apply/revert
 └── types/
-    └── character.ts              # TypeScript-типы: FieldDef, SectionDef, AnalyzeIssue, ...
+    └── character.ts              # TypeScript-типы: FieldDef, SectionDef...
 ```
 
 ## Data flow: AI-заполнение
@@ -112,14 +121,30 @@ TweaksPanel (staged) ──apply()──→ saved (localStorage) ──→ Chara
 ## База данных
 
 ```prisma
+model User {
+  id, name, email, emailVerified, image, password
+  accounts Account[]
+  sessions Session[]
+}
+
+model Account { ... }
+model Session { ... }
+model VerificationToken { ... }
+
 model Project {
   id, name, description, emoji, color, isArchived, createdAt, updatedAt
   characters Character[]
+  worldElements WorldElement[]
 }
 
 model Character {
   id, name, data (JSON-строка), emoji, color, summary, isDraft, isArchived
   projectId → Project (optional)
+  analysisRecords AnalysisRecord[]
+}
+
+model AnalysisRecord {
+  id, characterId, data, summary, createdAt
 }
 
 model AppSetting {
