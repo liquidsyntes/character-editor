@@ -86,7 +86,7 @@ npm run lint      # линтер
 
 ## Договорённости по стилю
 
-- Git workflow: `docs/git-workflow.md` (ветки, merge --no-ff, не коммитить в main)
+- Git workflow: agent.md или в gemeni.md
 - Код на английском, UI-лейблы на русском
 - `'use client'` только где нужно клиентское состояние
 - Новые AI-модели → обновлять **1 файл**: `src/lib/ai/models.ts`
